@@ -1,0 +1,131 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <h1>Dashboard</h1>
+    <p>Welcome back, {{ app.user.prenom }}! Here's what's happening today.</p>
+</div>
+
+<!-- Stats Row -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card stat-card primary">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Total Products</div>
+                    <div class="stat-value">--</div>
+                </div>
+                <div class="stat-icon"><i class="bi bi-box-seam"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card stat-card success">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Total Orders</div>
+                    <div class="stat-value">--</div>
+                </div>
+                <div class="stat-icon"><i class="bi bi-cart-check"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card stat-card warning">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Pending Deliveries</div>
+                    <div class="stat-value">--</div>
+                </div>
+                <div class="stat-icon"><i class="bi bi-truck"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card stat-card info">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Total Users</div>
+                    <div class="stat-value">--</div>
+                </div>
+                <div class="stat-icon"><i class="bi bi-people"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-4">
+    <div class="col-xl-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-lightning-charge me-2"></i>Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6 col-lg-4">
+                        <a href="{{ path('app_produit_new') }}" class="text-decoration-none">
+                            <div class="p-3 rounded border text-center h-100 hover-shadow" style="transition: all 0.2s;">
+                                <div class="mb-2"><i class="bi bi-plus-circle fs-1 text-primary"></i></div>
+                                <h6 class="mb-1 text-dark">Add Product</h6>
+                                <small class="text-muted">Create new product listing</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                        <a href="{{ path('app_commande_new') }}" class="text-decoration-none">
+                            <div class="p-3 rounded border text-center h-100 hover-shadow" style="transition: all 0.2s;">
+                                <div class="mb-2"><i class="bi bi-cart-plus fs-1 text-success"></i></div>
+                                <h6 class="mb-1 text-dark">New Order</h6>
+                                <small class="text-muted">Create customer order</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                        <a href="{{ path('app_feedback_new') }}" class="text-decoration-none">
+                            <div class="p-3 rounded border text-center h-100 hover-shadow" style="transition: all 0.2s;">
+                                <div class="mb-2"><i class="bi bi-chat-heart fs-1 text-warning"></i></div>
+                                <h6 class="mb-1 text-dark">Add Feedback</h6>
+                                <small class="text-muted">Share your experience</small>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-speedometer2 me-2"></i>Your Info</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="user-avatar me-3" style="width: 60px; height: 60px; font-size: 1.5rem;">{{ app.user.prenom|first }}{{ app.user.nom|first }}</div>
+                    <div>
+                        <h5 class="mb-1">{{ app.user.nomComplet }}</h5>
+                        <p class="text-muted mb-0">{{ app.user.email }}</p>
+                    </div>
+                </div>
+                <hr>
+                <div class="mb-2">
+                    <span class="badge bg-primary">{{ app.user.role.nomRole }}</span>
+                </div>
+                {% if app.user.telephone %}
+                <p class="mb-1"><i class="bi bi-telephone me-2 text-muted"></i>{{ app.user.telephone }}</p>
+                {% endif %}
+                {% if app.user.dateNaissance %}
+                <p class="mb-0"><i class="bi bi-calendar me-2 text-muted"></i>{{ app.user.dateNaissance|date('Y-m-d') }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

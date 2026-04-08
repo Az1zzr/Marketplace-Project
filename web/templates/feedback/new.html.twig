@@ -1,0 +1,216 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}New Feedback{% endblock %}
+
+{% block breadcrumb %}
+<li><a href="{{ path('app_feedback_index') }}">Feedbacks</a></li>
+<li class="breadcrumb-item active" aria-current="page">New</li>
+{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+<style>
+.spell-error {
+    background-color: #fff3cd;
+    border-bottom: 2px wavy #dc3545;
+    padding: 0 2px;
+}
+#spellCheckResults {
+    max-height: 200px;
+    overflow-y: auto;
+}
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <h1><i class="bi bi-chat-heart me-2"></i>Create Feedback</h1>
+    <p>Share your experience with us</p>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Feedback Details</h5>
+            </div>
+            <div class="card-body">
+                {% if errors is defined and errors|length > 0 %}
+                <div class="alert alert-danger">
+                    <h6><i class="bi bi-exclamation-triangle-fill me-2"></i>Please fix the following errors:</h6>
+                    <ul class="mb-0 mt-2">
+                        {% for error in errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <form method="post" id="feedbackForm">
+                    <div class="mb-4">
+                        <label for="note" class="form-label">Rating <span class="text-danger">*</span></label>
+                        <div class="rating-input">
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="note" id="star1" value="1" required>
+                                <label class="btn btn-outline-warning" for="star1">⭐ 1</label>
+                                
+                                <input type="radio" class="btn-check" name="note" id="star2" value="2">
+                                <label class="btn btn-outline-warning" for="star2">⭐⭐ 2</label>
+                                
+                                <input type="radio" class="btn-check" name="note" id="star3" value="3">
+                                <label class="btn btn-outline-warning" for="star3">⭐⭐⭐ 3</label>
+                                
+                                <input type="radio" class="btn-check" name="note" id="star4" value="4">
+                                <label class="btn btn-outline-warning" for="star4">⭐⭐⭐⭐ 4</label>
+                                
+                                <input type="radio" class="btn-check" name="note" id="star5" value="5">
+                                <label class="btn btn-outline-warning" for="star5">⭐⭐⭐⭐⭐ 5</label>
+                            </div>
+                        </div>
+                        {% if errors['note'] is defined %}
+                        <div class="invalid-feedback d-block">{{ errors['note'] }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="commentaire" class="form-label">Your Comment <span class="text-danger">*</span></label>
+                        <textarea 
+                            name="commentaire" 
+                            id="commentaire" 
+                            class="form-control {% if errors['commentaire'] is defined or errors['profanity'] is defined %}is-invalid{% endif %}" 
+                            rows="5" 
+                            required 
+                            placeholder="Tell us about your experience..."
+                        >{% if errors is defined %}{{ app.request.request.get('commentaire') }}{% endif %}</textarea>
+                        {% if errors['commentaire'] is defined %}
+                        <div class="invalid-feedback">{{ errors['commentaire'] }}</div>
+                        {% endif %}
+                        {% if errors['profanity'] is defined %}
+                        <div class="invalid-feedback d-block">
+                            <i class="bi bi-shield-exclamation me-1"></i>{{ errors['profanity'] }}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Your comment will be checked for inappropriate language.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <button type="button" id="spellCheckBtn" class="btn btn-outline-info">
+                            <i class="bi bi-spell-check me-1"></i> Check Spelling
+                        </button>
+                        <div id="spellCheckResults" class="mt-2"></div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i> Submit Feedback
+                        </button>
+                        <a href="{{ path('app_feedback_index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg me-1"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Guidelines</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-3">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        Be honest and constructive
+                    </li>
+                    <li class="mb-3">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        Provide specific details
+                    </li>
+                    <li class="mb-3">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        Keep it respectful and professional
+                    </li>
+                    <li class="mb-3">
+                        <i class="bi bi-x-circle-fill text-danger me-2"></i>
+                        No inappropriate language
+                    </li>
+                    <li>
+                        <i class="bi bi-x-circle-fill text-danger me-2"></i>
+                        No personal attacks
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-magic me-2"></i>Features</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0 small">
+                    <li class="mb-2">
+                        <i class="bi bi-shield-check text-success me-2"></i>
+                        Bad words filter (French & English)
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-spell-check text-info me-2"></i>
+                        Spell checker (LanguageTool API)
+                    </li>
+                    <li>
+                        <i class="bi bi-emoji-smile text-warning me-2"></i>
+                        Sentiment analysis
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+document.getElementById('spellCheckBtn').addEventListener('click', function() {
+    const text = document.getElementById('commentaire').value;
+    const resultsDiv = document.getElementById('spellCheckResults');
+    
+    if (!text.trim()) {
+        resultsDiv.innerHTML = '<div class="alert alert-warning">Please enter some text to check.</div>';
+        return;
+    }
+    
+    resultsDiv.innerHTML = '<div class="text-muted"><i class="bi bi-arrow-repeat spin me-1"></i>Checking spelling...</div>';
+    
+    fetch('{{ path('api_spellcheck') }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'text=' + encodeURIComponent(text)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.errors && data.errors.length > 0) {
+            let html = '<div class="alert alert-warning"><strong><i class="bi bi-exclamation-triangle me-1"></i>Found ' + data.errorCount + ' spelling/grammar issue(s):</strong><ul class="mb-0 mt-2">';
+            data.errors.forEach(function(error) {
+                html += '<li>' + error.context + ' <em class="text-danger">' + error.message + '</em>';
+                if (error.suggestions && error.suggestions.length > 0) {
+                    html += '<br><small class="text-success">Suggestions: ' + error.suggestions.slice(0, 3).join(', ') + '</small>';
+                }
+                html += '</li>';
+            });
+            html += '</ul></div>';
+            resultsDiv.innerHTML = html;
+        } else if (data.success) {
+            resultsDiv.innerHTML = '<div class="alert alert-success"><i class="bi bi-check-circle me-1"></i>No spelling errors found!</div>';
+        } else {
+            resultsDiv.innerHTML = '<div class="alert alert-danger"><i class="bi bi-x-circle me-1"></i>Error checking spelling: ' + (data.error || 'Unknown error') + '</div>';
+        }
+    })
+    .catch(error => {
+        resultsDiv.innerHTML = '<div class="alert alert-danger"><i class="bi bi-x-circle me-1"></i>Network error. Please try again.</div>';
+    });
+});
+</script>
+{% endblock %}

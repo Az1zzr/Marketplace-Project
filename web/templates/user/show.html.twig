@@ -1,0 +1,121 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ user.nomComplet }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ path('app_user_index') }}">Users</a></li>
+<li class="breadcrumb-item active">{{ user.nomComplet }}</li>
+{% endblock %}
+
+{% block body %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1><i class="bi bi-person me-2"></i>User Details</h1>
+        <p>View user information</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ path('app_user_edit', {'id': user.id}) }}" class="btn btn-primary">
+            <i class="bi bi-pencil me-1"></i> Edit
+        </a>
+        <a href="{{ path('app_user_index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-4 mb-4">
+        <div class="card text-center">
+            <div class="card-body py-5">
+                {% if user.photoProfil %}
+                <img src="{{ user.photoProfil }}" class="rounded-circle mb-3" alt="{{ user.nomComplet }}" style="width: 150px; height: 150px; object-fit: cover;">
+                {% else %}
+                <div class="user-avatar mx-auto mb-3" style="width: 150px; height: 150px; font-size: 3rem;">{{ user.prenom|first }}{{ user.nom|first }}</div>
+                {% endif %}
+                <h4 class="mb-1">{{ user.nomComplet }}</h4>
+                <p class="text-muted mb-2">{{ user.email }}</p>
+                {% if user.role %}
+                <span class="badge {% if user.role.nomRole == 'Admin' %}bg-primary{% elseif user.role.nomRole == 'Vendeur' %}bg-success{% else %}bg-secondary{% endif %} fs-6">
+                    {{ user.role.nomRole }}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Account Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">User ID</div>
+                    <div class="col-sm-8 fw-medium">#{{ user.id }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Full Name</div>
+                    <div class="col-sm-8 fw-medium">{{ user.nomComplet }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Email</div>
+                    <div class="col-sm-8">
+                        <a href="mailto:{{ user.email }}" class="text-decoration-none">
+                            <i class="bi bi-envelope me-1"></i>{{ user.email }}
+                        </a>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Phone</div>
+                    <div class="col-sm-8">
+                        {% if user.telephone %}
+                        <a href="tel:{{ user.telephone }}" class="text-decoration-none">
+                            <i class="bi bi-telephone me-1"></i>{{ user.telephone }}
+                        </a>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Birth Date</div>
+                    <div class="col-sm-8">
+                        {% if user.dateNaissance %}
+                        <i class="bi bi-calendar3 me-1"></i>{{ user.dateNaissance|date('Y-m-d') }}
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Role</div>
+                    <div class="col-sm-8">
+                        {% if user.role %}
+                        <span class="badge {% if user.role.nomRole == 'Admin' %}bg-primary{% elseif user.role.nomRole == 'Vendeur' %}bg-success{% else %}bg-secondary{% endif %}">
+                            {{ user.role.nomRole }}
+                        </span>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-trash me-2 text-danger"></i>Danger Zone</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">Deleting this user will permanently remove their account and all associated data.</p>
+        <form action="{{ path('app_user_delete', {'id': user.id}) }}" method="post" onsubmit="return confirm('Delete this user? This action cannot be undone.');">
+            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id) }}">
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="bi bi-trash me-1"></i> Delete User
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
