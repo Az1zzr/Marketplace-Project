@@ -38,4 +38,18 @@ class FeedbackRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function findBySearchAndSort(string $search, string $sort, string $order): array
+    {
+        $qb = $this->createQueryBuilder('f');
+
+        if (!empty($search)) {
+            $qb->andWhere('f.commentaire LIKE :search')
+               ->setParameter('search', '%' . $search . '%');
+        }
+
+        $qb->orderBy('f.' . $sort, strtoupper($order));
+
+        return $qb->getQuery()->getResult();
+    }
 }

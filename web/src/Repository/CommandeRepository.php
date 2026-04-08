@@ -60,4 +60,23 @@ class CommandeRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function findBySearchAndSort(string $search, string $sort, string $order, ?string $statut): array
+    {
+        $qb = $this->createQueryBuilder('c');
+
+        if (!empty($search)) {
+            $qb->andWhere('c.client LIKE :search OR c.numeroCommande LIKE :search OR c.adresseLivraison LIKE :search')
+               ->setParameter('search', '%' . $search . '%');
+        }
+
+        if (!empty($statut)) {
+            $qb->andWhere('c.statut = :statut')
+               ->setParameter('statut', $statut);
+        }
+
+        $qb->orderBy('c.' . $sort, strtoupper($order));
+
+        return $qb->getQuery()->getResult();
+    }
 }

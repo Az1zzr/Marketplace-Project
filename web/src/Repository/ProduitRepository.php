@@ -50,4 +50,18 @@ class ProduitRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function findBySearchAndSort(string $search, string $sort, string $order): array
+    {
+        $qb = $this->createQueryBuilder('p');
+
+        if (!empty($search)) {
+            $qb->andWhere('p.nomProduit LIKE :search OR p.adresse LIKE :search')
+               ->setParameter('search', '%' . $search . '%');
+        }
+
+        $qb->orderBy('p.' . $sort, strtoupper($order));
+
+        return $qb->getQuery()->getResult();
+    }
 }

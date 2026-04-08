@@ -17,12 +17,51 @@
     </a>
 </div>
 
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="search" class="form-label">Search</label>
+                <input type="text" name="search" id="search" class="form-control" value="{{ search }}" placeholder="Search by name or address...">
+            </div>
+            <div class="col-md-3">
+                <label for="sort" class="form-label">Sort by</label>
+                <select name="sort" id="sort" class="form-select">
+                    <option value="nomProduit" {% if sort == 'nomProduit' %}selected{% endif %}>Name</option>
+                    <option value="prix" {% if sort == 'prix' %}selected{% endif %}>Price</option>
+                    <option value="quantite" {% if sort == 'quantite' %}selected{% endif %}>Quantity</option>
+                    <option value="adresse" {% if sort == 'adresse' %}selected{% endif %}>Address</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="order" class="form-label">Order</label>
+                <select name="order" id="order" class="form-select">
+                    <option value="asc" {% if order == 'asc' %}selected{% endif %}>Ascending</option>
+                    <option value="desc" {% if order == 'desc' %}selected{% endif %}>Descending</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="bi bi-search me-1"></i> Apply
+                </button>
+                <a href="{{ path('app_produit_index') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-lg me-1"></i> Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
 {% if produits is empty %}
 <div class="card">
     <div class="card-body text-center py-5">
         <i class="bi bi-box-seam" style="font-size: 3rem; color: #94a3b8;"></i>
         <h5 class="mt-3 text-muted">No products found</h5>
+        {% if search %}
+        <p class="text-muted">No products match your search criteria.</p>
+        {% else %}
         <p class="text-muted">Get started by adding your first product.</p>
+        {% endif %}
         <a href="{{ path('app_produit_new') }}" class="btn btn-primary mt-2">
             <i class="bi bi-plus-lg me-1"></i> Add Product
         </a>

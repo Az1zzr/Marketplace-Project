@@ -15,12 +15,25 @@ use Symfony\Component\Routing\Annotation\Route;
 class CommandeController extends AbstractController
 {
     #[Route('/commande', name: 'app_commande_index')]
-    public function index(CommandeRepository $commandeRepository): Response
+    public function index(Request $request, CommandeRepository $commandeRepository): Response
     {
-        $commandes = $commandeRepository->findAll();
+        $search = $request->query->get('search', '');
+        $sort = $request->query->get('sort', 'dateCommande');
+        $order = $request->query->get('order', 'desc');
+        $statut = $request->query->get('statut', '');
+
+        $validSorts = ['numeroCommande', 'client', 'dateCommande', 'montantTotal', 'statut'];
+        $sort = in_array($sort, $validSorts) ? $sort : 'dateCommande';
+        $order = in_array($order, ['asc', 'desc']) ? $order : 'desc';
+
+        $commandes = $commandeRepository->findBySearchAndSort($search, $sort, $order, $statut);
 
         return $this->render('commande/index.html.twig', [
             'commandes' => $commandes,
+            'search' => $search,
+            'sort' => $sort,
+            'order' => $order,
+            'statut' => $statut,
         ]);
     }
 

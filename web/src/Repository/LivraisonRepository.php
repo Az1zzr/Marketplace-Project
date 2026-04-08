@@ -69,4 +69,23 @@ class LivraisonRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function findBySearchAndSort(string $search, string $sort, string $order, ?string $statut): array
+    {
+        $qb = $this->createQueryBuilder('l');
+
+        if (!empty($search)) {
+            $qb->andWhere('l.numeroBL LIKE :search OR l.livreur LIKE :search OR l.noteDelivery LIKE :search')
+               ->setParameter('search', '%' . $search . '%');
+        }
+
+        if (!empty($statut)) {
+            $qb->andWhere('l.statutLivraison = :statut')
+               ->setParameter('statut', $statut);
+        }
+
+        $qb->orderBy('l.' . $sort, strtoupper($order));
+
+        return $qb->getQuery()->getResult();
+    }
 }
