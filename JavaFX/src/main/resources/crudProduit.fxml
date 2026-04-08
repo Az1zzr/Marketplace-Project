@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+
+<!--
+    Produit.fxml  — chargé dans contentArea de MainLayout
+    Design cohérent avec le thème #f1f4f9 / white-card / orange-accent
+-->
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="Controller.ProduitCRUDController"
+      spacing="16"
+      style="-fx-background-color: transparent;">
+
+    <!-- ══ TITRE + BARRE ACTIONS ══ -->
+    <HBox alignment="CENTER_LEFT" spacing="12">
+        <VBox spacing="2">
+            <Label text="📦  Gestion des Produits"
+                   style="-fx-font-size:22px;-fx-font-weight:bold;-fx-text-fill:#1e293b;"/>
+            <Label text="Ajouter, modifier et supprimer vos produits"
+                   style="-fx-font-size:12px;-fx-text-fill:#94a3b8;"/>
+        </VBox>
+        <Region HBox.hgrow="ALWAYS"/>
+        <HBox alignment="CENTER_LEFT" spacing="6"
+              style="-fx-background-color:white;-fx-background-radius:20px;
+                     -fx-border-color:#e5e9f0;-fx-border-width:1.5px;-fx-border-radius:20px;-fx-padding:0 14;">
+            <Label text="🔍" style="-fx-font-size:12px;-fx-text-fill:#94a3b8;"/>
+            <TextField fx:id="searchField" promptText="Rechercher (nom / adresse)..."
+                       style="-fx-pref-width:220px;-fx-pref-height:34px;
+                              -fx-background-color:transparent;-fx-border-color:transparent;
+                              -fx-font-size:13px;-fx-padding:0 0 0 4;"/>
+            <Button text="Chercher" onAction="#onSearch"
+                    style="-fx-background-color:#f97316;-fx-text-fill:white;-fx-font-size:12px;
+                           -fx-font-weight:bold;-fx-background-radius:16px;-fx-cursor:hand;-fx-padding:6 14;"/>
+        </HBox>
+        <Button text="⟳  Actualiser" onAction="#onRefresh"
+                style="-fx-background-color:white;-fx-text-fill:#1e293b;-fx-font-size:13px;
+                       -fx-font-weight:bold;-fx-background-radius:10px;-fx-cursor:hand;
+                       -fx-padding:10 18;-fx-border-color:#e5e9f0;-fx-border-width:1.5px;-fx-border-radius:10px;"/>
+        <Button text="📊  Statistiques" onAction="#onShowStats"
+                style="-fx-background-color:#0d1b2e;-fx-text-fill:white;-fx-font-size:13px;
+                       -fx-font-weight:bold;-fx-background-radius:10px;-fx-cursor:hand;-fx-padding:10 18;"/>
+    </HBox>
+
+    <!-- ══ CONTENU PRINCIPAL ══ -->
+    <HBox spacing="16" VBox.vgrow="ALWAYS">
+
+        <!-- ─── TABLE CARD ─── -->
+        <VBox spacing="0" HBox.hgrow="ALWAYS"
+              style="-fx-background-color:white;-fx-background-radius:16px;
+                     -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.07),10,0,0,3);">
+            <!-- Bandeau orange -->
+            <Region style="-fx-background-color:#f97316;-fx-background-radius:16 16 0 0;-fx-pref-height:4px;"/>
+            <VBox spacing="12" VBox.vgrow="ALWAYS">
+                <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
+
+                <HBox alignment="CENTER_LEFT" spacing="10">
+                    <Label text="Liste des produits"
+                           style="-fx-font-size:15px;-fx-font-weight:bold;-fx-text-fill:#1e293b;"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="statusLabel" text=""
+                           style="-fx-font-size:12px;-fx-text-fill:#64748b;"/>
+                </HBox>
+
+                <TableView fx:id="produitTable" VBox.vgrow="ALWAYS"
+                           style="-fx-background-color:transparent;-fx-border-color:#f1f4f9;
+                                  -fx-border-width:1px;-fx-font-size:13px;">
+                    <columns>
+                        <TableColumn fx:id="colId"       text="#"           prefWidth="55"/>
+                        <TableColumn fx:id="colNom"      text="Nom produit" prefWidth="210"/>
+                        <TableColumn fx:id="colAdresse"  text="Adresse"     prefWidth="175"/>
+                        <TableColumn fx:id="colPrix"     text="Prix (TND)"  prefWidth="105"/>
+                        <TableColumn fx:id="colPrixEUR"  text="Prix (€)"    prefWidth="90"/>
+                        <TableColumn fx:id="colPrixUSD"  text="Prix ($)"    prefWidth="90"/>
+                        <TableColumn fx:id="colQuantite" text="Qté"         prefWidth="70"/>
+                        <TableColumn fx:id="colImage"    text="Image"       prefWidth="110"/>
+                        <TableColumn fx:id="colDetail"   text="Action"      prefWidth="100"/>
+                    </columns>
+                    <placeholder>
+                        <Label text="Aucun produit trouvé."
+                               style="-fx-font-size:14px;-fx-text-fill:#94a3b8;"/>
+                    </placeholder>
+                </TableView>
+            </VBox>
+        </VBox>
+
+        <!-- ─── FORM CARD ─── -->
+        <VBox spacing="0" prefWidth="340"
+              style="-fx-background-color:white;-fx-background-radius:16px;
+                     -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.07),10,0,0,3);">
+            <Region style="-fx-background-color:#f97316;-fx-background-radius:16 16 0 0;-fx-pref-height:4px;"/>
+            <VBox spacing="11" VBox.vgrow="ALWAYS">
+                <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
+
+                <Label text="Formulaire Produit"
+                       style="-fx-font-size:15px;-fx-font-weight:bold;-fx-text-fill:#1e293b;"/>
+
+                <!-- ID -->
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <Label text="ID :"
+                           style="-fx-font-size:12px;-fx-text-fill:#94a3b8;"/>
+                    <Label fx:id="idLabel" text="(auto)"
+                           style="-fx-font-size:13px;-fx-font-weight:bold;-fx-text-fill:#f97316;"/>
+                </HBox>
+
+                <!-- Nom -->
+                <Label text="Nom produit"
+                       style="-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#64748b;"/>
+                <TextField fx:id="nomField" promptText="Ex: iPhone 15 Pro"
+                           style="-fx-pref-height:36px;-fx-background-color:#f8fafc;
+                                  -fx-border-color:#e5e9f0;-fx-border-width:1.5px;
+                                  -fx-border-radius:8px;-fx-background-radius:8px;
+                                  -fx-font-size:13px;-fx-padding:0 10;"/>
+
+                <!-- Adresse -->
+                <Label text="Adresse"
+                       style="-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#64748b;"/>
+                <TextField fx:id="adresseField" promptText="Ex: Tunis, Lac 2"
+                           style="-fx-pref-height:36px;-fx-background-color:#f8fafc;
+                                  -fx-border-color:#e5e9f0;-fx-border-width:1.5px;
+                                  -fx-border-radius:8px;-fx-background-radius:8px;
+                                  -fx-font-size:13px;-fx-padding:0 10;"/>
+
+                <!-- Prix -->
+                <Label text="Prix (TND)"
+                       style="-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#64748b;"/>
+                <TextField fx:id="prixField" promptText="Ex: 50.00"
+                           style="-fx-pref-height:36px;-fx-background-color:#f8fafc;
+                                  -fx-border-color:#e5e9f0;-fx-border-width:1.5px;
+                                  -fx-border-radius:8px;-fx-background-radius:8px;
+                                  -fx-font-size:13px;-fx-padding:0 10;"/>
+
+                <!-- Quantité -->
+                <Label text="Quantité"
+                       style="-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#64748b;"/>
+                <TextField fx:id="quantiteField" promptText="Ex: 10"
+                           style="-fx-pref-height:36px;-fx-background-color:#f8fafc;
+                                  -fx-border-color:#e5e9f0;-fx-border-width:1.5px;
+                                  -fx-border-radius:8px;-fx-background-radius:8px;
+                                  -fx-font-size:13px;-fx-padding:0 10;"/>
+
+                <!-- Image -->
+                <Label text="Image"
+                       style="-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#64748b;"/>
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <Button fx:id="uploadImageButton" text="📁 Choisir Image" onAction="#onUploadImage"
+                            style="-fx-background-color:#f1f4f9;-fx-text-fill:#1e293b;-fx-font-size:12px;
+                                   -fx-background-radius:8px;-fx-cursor:hand;-fx-padding:7 12;
+                                   -fx-border-color:#e5e9f0;-fx-border-width:1.5px;-fx-border-radius:8px;"/>
+                    <Label fx:id="imageLabel" text=""
+                           style="-fx-font-size:11px;-fx-text-fill:#94a3b8;"/>
+                </HBox>
+
+                <Separator style="-fx-background-color:#f1f4f9;"/>
+
+                <!-- Boutons CRUD -->
+                <HBox spacing="8">
+                    <Button text="✚  Ajouter" onAction="#onAdd" HBox.hgrow="ALWAYS" maxWidth="Infinity"
+                            style="-fx-background-color:#16a34a;-fx-text-fill:white;-fx-font-size:13px;
+                                   -fx-font-weight:bold;-fx-background-radius:8px;-fx-cursor:hand;-fx-padding:9 0;"/>
+                    <Button text="✎  Modifier" onAction="#onUpdate" HBox.hgrow="ALWAYS" maxWidth="Infinity"
+                            style="-fx-background-color:#f97316;-fx-text-fill:white;-fx-font-size:13px;
+                                   -fx-font-weight:bold;-fx-background-radius:8px;-fx-cursor:hand;-fx-padding:9 0;"/>
+                </HBox>
+                <HBox spacing="8">
+                    <Button text="🗑  Supprimer" onAction="#onDelete" HBox.hgrow="ALWAYS" maxWidth="Infinity"
+                            style="-fx-background-color:#ef4444;-fx-text-fill:white;-fx-font-size:13px;
+                                   -fx-font-weight:bold;-fx-background-radius:8px;-fx-cursor:hand;-fx-padding:9 0;"/>
+                    <Button text="✕  Vider" onAction="#onClear" HBox.hgrow="ALWAYS" maxWidth="Infinity"
+                            style="-fx-background-color:#f1f4f9;-fx-text-fill:#64748b;-fx-font-size:13px;
+                                   -fx-font-weight:bold;-fx-background-radius:8px;-fx-cursor:hand;-fx-padding:9 0;
+                                   -fx-border-color:#e5e9f0;-fx-border-width:1.5px;-fx-border-radius:8px;"/>
+                </HBox>
+
+                <!-- QR Code -->
+                <Button text="📱  Générer QR Code" onAction="#onGenerateQR" maxWidth="Infinity"
+                        style="-fx-background-color:#0d1b2e;-fx-text-fill:white;-fx-font-size:13px;
+                               -fx-font-weight:bold;-fx-background-radius:8px;-fx-cursor:hand;-fx-padding:9 0;"/>
+
+                <Separator style="-fx-background-color:#f1f4f9;"/>
+
+                <!-- Navigation vers Stock -->
+                <Button fx:id="addStockForSelectedButton" text="📦  Gérer Stock de ce Produit"
+                        onAction="#onAddStockForSelected" maxWidth="Infinity"
+                        style="-fx-background-color:rgba(249,115,22,0.1);-fx-text-fill:#f97316;
+                               -fx-font-size:13px;-fx-font-weight:bold;-fx-background-radius:8px;
+                               -fx-cursor:hand;-fx-padding:9 0;-fx-border-color:#f97316;
+                               -fx-border-width:1.5px;-fx-border-radius:8px;"/>
+
+                <!-- QR preview -->
+                <ImageView fx:id="qrImageView" fitWidth="130" fitHeight="130" preserveRatio="true"/>
+            </VBox>
+        </VBox>
+
+    </HBox>
+</VBox>

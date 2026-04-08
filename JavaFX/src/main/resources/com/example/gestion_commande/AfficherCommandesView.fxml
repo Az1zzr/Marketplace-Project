@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.text.Font?>
+
+<!--
+    AfficherCommandesView.fxml — Version Dashboard
+    Navbar retirée, intégrée dans le contentArea du UserDashboard.
+    Navigation via UserDashboardController.current
+-->
+<VBox spacing="0"
+      maxWidth="1.7976931348623157E308"
+      maxHeight="1.7976931348623157E308"
+      xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="Controller.AfficherCommandesController">
+
+    <!-- ══ Header bande style dashboard ══ -->
+    <VBox style="-fx-background-color: white; -fx-background-radius: 16 16 0 0;
+                 -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.07), 8, 0, 0, 2);">
+        <Region style="-fx-background-color: #f97316; -fx-pref-height: 4px; -fx-background-radius: 16 16 0 0;"/>
+        <HBox alignment="CENTER_LEFT" spacing="16" style="-fx-padding: 18 24 16 24;">
+            <Label text="🛍️" style="-fx-font-size: 24px;"/>
+            <VBox spacing="2">
+                <Label text="Mes Commandes"
+                       style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+                <Label text="Consultez et gérez toutes vos commandes"
+                       style="-fx-font-size: 12px; -fx-text-fill: #94a3b8;"/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <!-- Bouton raccourci Ajouter -->
+
+        </HBox>
+    </VBox>
+
+    <!-- ══ Zone de contenu — FlowPane commandes ══ -->
+    <AnchorPane VBox.vgrow="ALWAYS"
+                style="-fx-background-color: #f5f1ee; -fx-background-radius: 0 0 16 16;">
+        <VBox alignment="TOP_CENTER" spacing="16"
+              AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="0.0"
+              AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="12.0">
+
+            <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
+                        style="-fx-background-color: #f5f1ee;
+                               -fx-border-color: #FF9800; -fx-border-width: 2;
+                               -fx-background-radius: 12; -fx-border-radius: 12;">
+                <content>
+                    <FlowPane fx:id="commandesFlowPane" hgap="20.0" vgap="20.0"
+                              style="-fx-background-color: #f5f1ee;">
+                        <padding>
+                            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
+                        </padding>
+                    </FlowPane>
+                </content>
+            </ScrollPane>
+
+            <!-- Barre actions bas -->
+            <HBox alignment="CENTER" spacing="16" style="-fx-padding: 8 16 0 16;">
+                <Button text="🔄  Actualiser" onAction="#actualiser"
+                        prefHeight="44"
+                        style="-fx-background-color: #10b981; -fx-text-fill: white;
+                               -fx-font-size: 13px; -fx-font-weight: bold;
+                               -fx-background-radius: 10px; -fx-padding: 0 22; -fx-cursor: hand;"/>
+                <Button text="🚚  Commandes avec Livraison" onAction="#afficherAvecLivraison"
+                        prefHeight="44"
+                        style="-fx-background-color: #FF9800; -fx-text-fill: white;
+                               -fx-font-size: 13px; -fx-font-weight: bold;
+                               -fx-background-radius: 10px; -fx-padding: 0 22; -fx-cursor: hand;"/>
+            </HBox>
+        </VBox>
+    </AnchorPane>
+</VBox>

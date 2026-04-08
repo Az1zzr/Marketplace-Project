@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="Controller.AfficherUser"
+      spacing="20" style="-fx-background-color: transparent;">
+
+    <!-- Titre + barre actions -->
+    <HBox alignment="CENTER_LEFT" spacing="12">
+        <VBox spacing="3">
+            <Label text="Gestion des Utilisateurs"
+                   style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+            <Label text="Fournisseurs et Entrepreneurs inscrits sur la plateforme"
+                   style="-fx-font-size: 12px; -fx-text-fill: #94a3b8;"/>
+        </VBox>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="⟳  Actualiser" onAction="#handleRefresh"
+                style="-fx-background-color: white; -fx-text-fill: #1e293b;
+                       -fx-font-size: 12px; -fx-font-weight: bold; -fx-background-radius: 10px;
+                       -fx-cursor: hand; -fx-padding: 10 18; -fx-border-color: #e5e9f0;
+                       -fx-border-width: 1.5px; -fx-border-radius: 10px;"/>
+    </HBox>
+
+    <!-- Carte principale -->
+    <VBox spacing="0" VBox.vgrow="ALWAYS"
+          style="-fx-background-color: white; -fx-background-radius: 16px;
+                 -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.07), 10, 0, 0, 3);">
+
+        <!-- Top bar : bande bleu marine + titre card -->
+        <Region style="-fx-background-color: #1e3a5f; -fx-background-radius: 16 16 0 0; -fx-pref-height: 4px;"/>
+
+        <HBox alignment="CENTER_LEFT" spacing="16" style="-fx-padding: 16 22 14 22;">
+            <!-- Recherche -->
+            <HBox alignment="CENTER_LEFT" spacing="8"
+                  style="-fx-background-color: #f8fafc; -fx-background-radius: 22px;
+                         -fx-border-color: #e2e8f0; -fx-border-width: 1.5px; -fx-border-radius: 22px;
+                         -fx-padding: 0 14;">
+                <Label text="🔍" style="-fx-font-size: 13px; -fx-text-fill: #94a3b8;"/>
+                <TextField fx:id="searchField" promptText="Rechercher par nom, email ou rôle..."
+                           style="-fx-pref-width: 320px; -fx-pref-height: 38px;
+                                  -fx-background-color: transparent; -fx-border-color: transparent;
+                                  -fx-font-size: 13px;"/>
+            </HBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="countLabel" text="0 utilisateur(s)"
+                   style="-fx-font-size: 12px; -fx-text-fill: #64748b;
+                          -fx-background-color: #f1f5f9; -fx-padding: 6 16;
+                          -fx-background-radius: 20px;"/>
+        </HBox>
+
+        <Region style="-fx-background-color: #f1f5f9; -fx-pref-height: 1px;"/>
+
+        <!-- TableView -->
+        <TableView fx:id="userTable" VBox.vgrow="ALWAYS"
+                   style="-fx-background-color: transparent; -fx-border-color: transparent;
+                          -fx-table-cell-border-color: #f1f5f9; -fx-font-size: 13px;">
+            <columns>
+                <TableColumn fx:id="colId"         text="#"               prefWidth="55"  style="-fx-alignment: CENTER;"/>
+                <TableColumn fx:id="colNomComplet"  text="Nom complet"    prefWidth="170"/>
+                <TableColumn fx:id="colEmail"       text="Email"           prefWidth="190"/>
+                <TableColumn fx:id="colTelephone"   text="Téléphone"       prefWidth="120" style="-fx-alignment: CENTER;"/>
+                <TableColumn fx:id="colDDN"         text="Naissance"       prefWidth="110" style="-fx-alignment: CENTER;"/>
+                <TableColumn fx:id="colRole"        text="Rôle"            prefWidth="120" style="-fx-alignment: CENTER;"/>
+                <TableColumn fx:id="colMotDePasse"  text="Mot de passe"    prefWidth="170"/>
+                <TableColumn fx:id="colActions"     text="Actions"         prefWidth="200" style="-fx-alignment: CENTER;"/>
+            </columns>
+            <placeholder>
+                <VBox alignment="CENTER" spacing="10">
+                    <Label text="📭" style="-fx-font-size: 44px;"/>
+                    <Label text="Aucun utilisateur trouvé"
+                           style="-fx-font-size: 15px; -fx-text-fill: #94a3b8;"/>
+                    <Label text="Ajoutez des fournisseurs ou entrepreneurs via le formulaire d'inscription."
+                           style="-fx-font-size: 12px; -fx-text-fill: #cbd5e1;"/>
+                </VBox>
+            </placeholder>
+        </TableView>
+    </VBox>
+</VBox>
