@@ -42,9 +42,16 @@ build/
 /config/secrets/prod/prod.decrypt.private.php
 /public/bundles/
 /var/
-/vendor/
+vendor/
+var/
 /public/assets/
 /assets/vendor/
+
+# PHP
+bin/
+composer.lock
+migrations/
+uploads/
 
 # PHPUnit
 /phpunit.xml
