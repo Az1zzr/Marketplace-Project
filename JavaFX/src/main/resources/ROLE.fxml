@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="Controller.AjouterRole"
+      spacing="20" style="-fx-background-color: transparent;">
+
+    <!-- Titre -->
+    <HBox alignment="CENTER_LEFT" spacing="12">
+        <VBox spacing="3">
+            <Label text="Gestion des Rôles"
+                   style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+            <Label text="Créez et gérez les rôles de la plateforme"
+                   style="-fx-font-size: 12px; -fx-text-fill: #94a3b8;"/>
+        </VBox>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="⟳  Actualiser" onAction="#handleRefresh"
+                style="-fx-background-color: white; -fx-text-fill: #1e293b;
+                       -fx-font-size: 12px; -fx-font-weight: bold; -fx-background-radius: 10px;
+                       -fx-cursor: hand; -fx-padding: 10 18; -fx-border-color: #e5e9f0;
+                       -fx-border-width: 1.5px; -fx-border-radius: 10px;"/>
+    </HBox>
+
+    <!-- Formulaire ajout -->
+    <VBox spacing="0"
+          style="-fx-background-color: white; -fx-background-radius: 16px;
+                 -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.07), 10, 0, 0, 3);">
+        <Region style="-fx-background-color: #f97316; -fx-background-radius: 16 16 0 0; -fx-pref-height: 4px;"/>
+        <HBox alignment="CENTER_LEFT" spacing="16" style="-fx-padding: 20 24;">
+            <Label text="➕ Nouveau rôle"
+                   style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <TextField fx:id="nomRoleField" promptText="Ex: Fournisseur, Entrepreneur..."
+                       style="-fx-pref-width: 340px; -fx-pref-height: 40px;
+                              -fx-background-color: #f8fafc; -fx-border-color: #e2e8f0;
+                              -fx-border-width: 1.5px; -fx-border-radius: 10px; -fx-background-radius: 10px;
+                              -fx-font-size: 13px; -fx-padding: 0 14;"/>
+            <Button text="  Ajouter  " onAction="#ajouterRole"
+                    style="-fx-background-color: #f97316; -fx-text-fill: white;
+                           -fx-font-size: 13px; -fx-font-weight: bold;
+                           -fx-background-radius: 10px; -fx-cursor: hand; -fx-padding: 10 24;
+                           -fx-effect: dropshadow(gaussian, rgba(249,115,22,0.35), 8, 0, 0, 3);"/>
+        </HBox>
+    </VBox>
+
+    <!-- Tableau des rôles -->
+    <VBox spacing="0" VBox.vgrow="ALWAYS"
+          style="-fx-background-color: white; -fx-background-radius: 16px;
+                 -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.07), 10, 0, 0, 3);">
+        <Region style="-fx-background-color: #1e3a5f; -fx-background-radius: 16 16 0 0; -fx-pref-height: 4px;"/>
+
+        <HBox alignment="CENTER_LEFT" style="-fx-padding: 14 22 12 22;">
+            <Label text="📋 Rôles existants"
+                   style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="countLabel" text="0 rôle(s)"
+                   style="-fx-font-size: 12px; -fx-text-fill: #64748b;
+                          -fx-background-color: #f1f5f9; -fx-padding: 5 14; -fx-background-radius: 20px;"/>
+        </HBox>
+
+        <Region style="-fx-background-color: #f1f5f9; -fx-pref-height: 1px;"/>
+
+        <TableView fx:id="roleTable" VBox.vgrow="ALWAYS"
+                   style="-fx-background-color: transparent; -fx-border-color: transparent;
+                          -fx-table-cell-border-color: #f1f5f9; -fx-font-size: 13px;">
+            <columns>
+                <TableColumn fx:id="colId"      text="#"             prefWidth="80"  style="-fx-alignment: CENTER;"/>
+                <TableColumn fx:id="colNom"     text="Nom du Rôle"  prefWidth="360"/>
+                <TableColumn fx:id="colActions" text="Actions"       prefWidth="260" style="-fx-alignment: CENTER;"/>
+            </columns>
+            <placeholder>
+                <VBox alignment="CENTER" spacing="10">
+                    <Label text="📭" style="-fx-font-size: 40px;"/>
+                    <Label text="Aucun rôle trouvé"
+                           style="-fx-font-size: 15px; -fx-text-fill: #94a3b8;"/>
+                </VBox>
+            </placeholder>
+        </TableView>
+    </VBox>
+</VBox>

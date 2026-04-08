@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.geometry.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="Controller.ProduitUserController"
+      spacing="0"
+      style="-fx-background-color: #0f1117;">
+
+    <!-- ══ HEADER ══════════════════════════════════════════════════════ -->
+    <VBox style="-fx-background-color: linear-gradient(to bottom right, #1a1d2e, #0f1117);
+                 -fx-padding: 32 36 24 36;">
+
+        <HBox alignment="CENTER_LEFT" spacing="16">
+            <Label text="🛒" style="-fx-font-size: 28px;"/>
+            <VBox spacing="2">
+                <Label text="Catalogue Produits"
+                       style="-fx-font-size: 26px; -fx-font-weight: bold;
+                              -fx-text-fill: white; -fx-font-family: 'Segoe UI';"/>
+                <Label text="Découvrez notre sélection de produits disponibles"
+                       style="-fx-font-size: 13px; -fx-text-fill: #8892a4;"/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="lblCount"
+                   style="-fx-background-color: rgba(249,115,22,0.15);
+                          -fx-text-fill: #f97316; -fx-font-size: 12px;
+                          -fx-font-weight: bold; -fx-background-radius: 20;
+                          -fx-padding: 6 14;"/>
+        </HBox>
+
+        <!-- Search + filtre -->
+        <HBox spacing="12" style="-fx-padding: 20 0 0 0;" alignment="CENTER_LEFT">
+            <HBox style="-fx-background-color: #1e2130; -fx-background-radius: 12;
+                         -fx-border-color: #2d3347; -fx-border-radius: 12;
+                         -fx-border-width: 1.5; -fx-padding: 0 14;"
+                  alignment="CENTER_LEFT" spacing="10" HBox.hgrow="ALWAYS">
+                <Label text="🔍" style="-fx-font-size: 16px;"/>
+                <TextField fx:id="searchField"
+                           promptText="Rechercher un produit, une adresse..."
+                           style="-fx-background-color: transparent; -fx-text-fill: white;
+                                  -fx-font-size: 14px; -fx-pref-height: 44px;
+                                  -fx-prompt-text-fill: #4a5568;"
+                           HBox.hgrow="ALWAYS"/>
+            </HBox>
+
+            <ComboBox fx:id="sortBox"
+                      promptText="Trier par..."
+                      style="-fx-background-color: #1e2130; -fx-text-fill: white;
+                             -fx-border-color: #2d3347; -fx-border-radius: 12;
+                             -fx-border-width: 1.5; -fx-font-size: 13px;
+                             -fx-pref-height: 44px; -fx-pref-width: 160px;"/>
+
+            <Button fx:id="btnRefresh" text="↻  Actualiser"
+                    onAction="#onRefresh"
+                    style="-fx-background-color: #f97316; -fx-text-fill: white;
+                           -fx-font-weight: bold; -fx-font-size: 13px;
+                           -fx-background-radius: 12; -fx-cursor: hand;
+                           -fx-pref-height: 44px; -fx-padding: 0 20;"/>
+        </HBox>
+    </VBox>
+
+    <!-- ══ CONTENU ══════════════════════════════════════════════════════ -->
+    <ScrollPane fx:id="scrollPane" fitToWidth="true" VBox.vgrow="ALWAYS"
+                style="-fx-background-color: transparent; -fx-background: #0f1117;
+                       -fx-border-color: transparent;">
+
+        <VBox style="-fx-background-color: #0f1117; -fx-padding: 8 36 36 36;" spacing="0">
+
+            <!-- État vide -->
+            <VBox fx:id="emptyState" alignment="CENTER" spacing="16"
+                  style="-fx-padding: 80 0;" visible="false" managed="false">
+                <Label text="📦" style="-fx-font-size: 56px;"/>
+                <Label text="Aucun produit trouvé"
+                       style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #e2e8f0;"/>
+                <Label text="Essayez un autre terme de recherche"
+                       style="-fx-font-size: 14px; -fx-text-fill: #4a5568;"/>
+            </VBox>
+
+            <!-- Grille de produits -->
+            <FlowPane fx:id="productGrid"
+                      hgap="20" vgap="20"
+                      style="-fx-padding: 8 0 0 0;"
+                      prefWrapLength="900"/>
+        </VBox>
+    </ScrollPane>
+</VBox>
