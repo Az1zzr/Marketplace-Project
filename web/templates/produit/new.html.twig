@@ -1,0 +1,72 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}New Product{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ path('app_produit_index') }}">Products</a></li>
+<li class="breadcrumb-item active">New Product</li>
+{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <h1><i class="bi bi-plus-circle me-2"></i>Add New Product</h1>
+    <p>Fill in the details to add a new product to your catalog</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-box-seam me-2"></i>Product Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nomProduit" class="form-label">Product Name <span class="text-danger">*</span></label>
+                            <input type="text" name="nomProduit" id="nomProduit" class="form-control" required placeholder="Enter product name">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="adresse" class="form-label">Address <span class="text-danger">*</span></label>
+                            <input type="text" name="adresse" id="adresse" class="form-control" required placeholder="Enter location/address">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="prix" class="form-label">Price (TND) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">TND</span>
+                                <input type="number" name="prix" id="prix" class="form-control" step="0.01" min="0" required placeholder="0.00">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="quantite" class="form-label">Initial Quantity <span class="text-danger">*</span></label>
+                            <input type="number" name="quantite" id="quantite" class="form-control" min="0" required placeholder="0">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="imageURL" class="form-label">Image URL <span class="text-muted small">(Optional)</span></label>
+                        <input type="url" name="imageURL" id="imageURL" class="form-control" placeholder="https://example.com/image.jpg">
+                        <div class="form-text">Enter a valid image URL (jpg, png, webp)</div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i> Save Product
+                        </button>
+                        <a href="{{ path('app_produit_index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg me-1"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

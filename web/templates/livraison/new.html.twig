@@ -1,0 +1,113 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Add Delivery{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ path('app_commande_index') }}">Orders</a></li>
+<li class="breadcrumb-item"><a href="{{ path('app_commande_show', {'id': commande.idCommande}) }}">Order #{{ commande.numeroCommande }}</a></li>
+<li class="breadcrumb-item active">Add Delivery</li>
+{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <h1><i class="bi bi-plus-circle me-2"></i>Add Delivery</h1>
+    <p>Create delivery for Order <strong>#{{ commande.numeroCommande }}</strong></p>
+</div>
+
+<div class="row">
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>Order Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <span class="text-muted small">Order Number</span>
+                    <div class="fw-medium">#{{ commande.numeroCommande }}</div>
+                </div>
+                <div class="mb-3">
+                    <span class="text-muted small">Client</span>
+                    <div class="fw-medium">{{ commande.client }}</div>
+                </div>
+                <div class="mb-3">
+                    <span class="text-muted small">Delivery Address</span>
+                    <div class="fw-medium">
+                        <i class="bi bi-geo-alt text-primary me-1"></i>{{ commande.adresseLivraison }}
+                    </div>
+                </div>
+                <div>
+                    <span class="text-muted small">Total Amount</span>
+                    <div class="fw-medium text-primary">{{ commande.montantTotal|number_format(2, '.', ',') }} TND</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-truck me-2"></i>Delivery Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="dateLivraison" class="form-label">Delivery Date <span class="text-danger">*</span></label>
+                            <input type="date" name="dateLivraison" id="dateLivraison" class="form-control" value="{{ "now"|date('Y-m-d') }}" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="livreur" class="form-label">Driver Name <span class="text-danger">*</span></label>
+                            <input type="text" name="livreur" id="livreur" class="form-control" required placeholder="Enter driver name">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="statutLivraison" class="form-label">Status</label>
+                        <select name="statutLivraison" id="statutLivraison" class="form-select">
+                            <option value="En cours">En cours</option>
+                            <option value="Livree">Livree</option>
+                            <option value="Retardee">Retardee</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="noteDelivery" class="form-label">Notes <span class="text-muted small">(Optional)</span></label>
+                        <textarea name="noteDelivery" id="noteDelivery" class="form-control" rows="2" placeholder="Delivery instructions or notes"></textarea>
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-header py-2">
+                            <h6 class="mb-0"><i class="bi bi-geo-alt me-2"></i>GPS Location <span class="text-muted small">(Optional)</span></h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-2">
+                                    <label for="latitude" class="form-label">Latitude</label>
+                                    <input type="number" name="latitude" id="latitude" class="form-control" step="0.000001" placeholder="36.8065">
+                                </div>
+                                
+                                <div class="col-md-6 mb-2">
+                                    <label for="longitude" class="form-label">Longitude</label>
+                                    <input type="number" name="longitude" id="longitude" class="form-control" step="0.000001" placeholder="10.1815">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i> Create Delivery
+                        </button>
+                        <a href="{{ path('app_commande_show', {'id': commande.idCommande}) }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg me-1"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

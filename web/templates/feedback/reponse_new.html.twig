@@ -1,0 +1,114 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Add Response{% endblock %}
+
+{% block breadcrumb %}
+<li><a href="{{ path('app_feedback_index') }}">Feedbacks</a></li>
+<li><a href="{{ path('app_feedback_show', {'id': feedback.id}) }}">#{{ feedback.id }}</a></li>
+<li class="breadcrumb-item active" aria-current="page">Add Response</li>
+{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <h1><i class="bi bi-reply me-2"></i>Add Response</h1>
+    <p>Respond to feedback #{{ feedback.id }}</p>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="bi bi-chat-left me-2"></i>Original Feedback</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <span class="star-rating">
+                        {% for i in 1..5 %}
+                            {% if i <= feedback.note|number_format %}&#9733;{% else %}&#9734;{% endif %}
+                        {% endfor %}
+                    </span>
+                </div>
+                <p class="mb-0 text-muted">{{ feedback.commentaire }}</p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Your Response</h5>
+            </div>
+            <div class="card-body">
+                {% if errors is defined and errors|length > 0 %}
+                <div class="alert alert-danger">
+                    <h6><i class="bi bi-exclamation-triangle-fill me-2"></i>Please fix the following errors:</h6>
+                    <ul class="mb-0 mt-2">
+                        {% for field, error in errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <form method="post">
+                    <div class="mb-4">
+                        <label for="contenu" class="form-label">Response Content <span class="text-danger">*</span></label>
+                        <textarea 
+                            name="contenu" 
+                            id="contenu" 
+                            class="form-control {% if errors['contenu'] is defined or errors['profanity'] is defined %}is-invalid{% endif %}" 
+                            rows="5" 
+                            required 
+                            placeholder="Write your response here... (minimum 10 characters)"
+                        ></textarea>
+                        {% if errors['contenu'] is defined %}
+                        <div class="invalid-feedback">{{ errors['contenu'] }}</div>
+                        {% endif %}
+                        {% if errors['profanity'] is defined %}
+                        <div class="invalid-feedback d-block">
+                            <i class="bi bi-shield-exclamation me-1"></i>{{ errors['profanity'] }}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Your response will be checked for inappropriate language.</div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send me-1"></i> Submit Response
+                        </button>
+                        <a href="{{ path('app_feedback_show', {'id': feedback.id}) }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg me-1"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-lightbulb me-2"></i>Tips</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-3">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        Be professional and helpful
+                    </li>
+                    <li class="mb-3">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        Address the concerns raised
+                    </li>
+                    <li class="mb-3">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        Offer solutions when possible
+                    </li>
+                    <li>
+                        <i class="bi bi-x-circle-fill text-danger me-2"></i>
+                        Keep responses respectful
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

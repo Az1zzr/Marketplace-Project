@@ -1,0 +1,99 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Orders{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Orders</li>
+{% endblock %}
+
+{% block body %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1><i class="bi bi-cart3 me-2"></i>Orders</h1>
+        <p>Manage customer orders</p>
+    </div>
+    <a href="{{ path('app_commande_new') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i> New Order
+    </a>
+</div>
+
+{% if commandes is empty %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-cart-x" style="font-size: 3rem; color: #94a3b8;"></i>
+        <h5 class="mt-3 text-muted">No orders found</h5>
+        <p class="text-muted">Orders will appear here when customers place them.</p>
+        <a href="{{ path('app_commande_new') }}" class="btn btn-primary mt-2">
+            <i class="bi bi-plus-lg me-1"></i> Create Order
+        </a>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Order #</th>
+                        <th>Client</th>
+                        <th>Date</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Delivery</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for commande in commandes %}
+                    <tr>
+                        <td><strong>#{{ commande.numeroCommande }}</strong></td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="user-avatar me-2" style="width: 32px; height: 32px; font-size: 0.75rem;">{{ commande.client|first|upper }}</div>
+                                {{ commande.client }}
+                            </div>
+                        </td>
+                        <td>{{ commande.dateCommande|date('Y-m-d') }}</td>
+                        <td><strong>{{ commande.montantTotal|number_format(2, '.', ',') }} TND</strong></td>
+                        <td>
+                            {% if commande.statut == 'En attente' %}
+                            <span class="badge badge-status-pending"><i class="bi bi-clock me-1"></i>{{ commande.statut }}</span>
+                            {% elseif commande.statut == 'Confirmee' %}
+                            <span class="badge badge-status-confirmed"><i class="bi bi-check-circle me-1"></i>{{ commande.statut }}</span>
+                            {% else %}
+                            <span class="badge badge-status-cancelled"><i class="bi bi-x-circle me-1"></i>{{ commande.statut }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if commande.livraison %}
+                            <span class="badge bg-success"><i class="bi bi-truck me-1"></i>Assigned</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Not assigned</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{{ path('app_commande_show', {'id': commande.idCommande}) }}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ path('app_commande_edit', {'id': commande.idCommande}) }}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form action="{{ path('app_commande_delete', {'id': commande.idCommande}) }}" method="post" class="d-inline" onsubmit="return confirm('Delete this order?');">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ commande.idCommande) }}">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,171 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Order #{{ commande.numeroCommande }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ path('app_commande_index') }}">Orders</a></li>
+<li class="breadcrumb-item active">Order #{{ commande.numeroCommande }}</li>
+{% endblock %}
+
+{% block body %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1><i class="bi bi-cart3 me-2"></i>Order #{{ commande.numeroCommande }}</h1>
+        <p>Order details and delivery information</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ path('app_commande_edit', {'id': commande.idCommande}) }}" class="btn btn-primary">
+            <i class="bi bi-pencil me-1"></i> Edit
+        </a>
+        <a href="{{ path('app_commande_index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>Order Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Order Number</div>
+                    <div class="col-sm-8 fw-medium">#{{ commande.numeroCommande }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Client</div>
+                    <div class="col-sm-8">
+                        <div class="d-flex align-items-center">
+                            <div class="user-avatar me-2" style="width: 32px; height: 32px; font-size: 0.75rem;">{{ commande.client|first|upper }}</div>
+                            <strong>{{ commande.client }}</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Order Date</div>
+                    <div class="col-sm-8 fw-medium">
+                        <i class="bi bi-calendar3 me-1"></i>{{ commande.dateCommande|date('Y-m-d') }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Total Amount</div>
+                    <div class="col-sm-8">
+                        <span class="h4 text-primary mb-0">{{ commande.montantTotal|number_format(2, '.', ',') }} TND</span>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Status</div>
+                    <div class="col-sm-8">
+                        {% if commande.statut == 'En attente' %}
+                        <span class="badge badge-status-pending fs-6"><i class="bi bi-clock me-1"></i>{{ commande.statut }}</span>
+                        {% elseif commande.statut == 'Confirmee' %}
+                        <span class="badge badge-status-confirmed fs-6"><i class="bi bi-check-circle me-1"></i>{{ commande.statut }}</span>
+                        {% else %}
+                        <span class="badge badge-status-cancelled fs-6"><i class="bi bi-x-circle me-1"></i>{{ commande.statut }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Delivery Address</div>
+                    <div class="col-sm-8 fw-medium">
+                        <i class="bi bi-geo-alt text-primary me-1"></i>{{ commande.adresseLivraison }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-truck me-2"></i>Delivery Information</h5>
+                {% if livraison %}
+                <a href="{{ path('app_livraison_edit', {'id': livraison.idLivraison}) }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil me-1"></i> Edit
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if livraison %}
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">BL Number</div>
+                    <div class="col-sm-8 fw-medium">#{{ livraison.numeroBL }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Delivery Date</div>
+                    <div class="col-sm-8 fw-medium">
+                        <i class="bi bi-calendar3 me-1"></i>{{ livraison.dateLivraison|date('Y-m-d') }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Driver</div>
+                    <div class="col-sm-8 fw-medium">
+                        <i class="bi bi-person me-1"></i>{{ livraison.livreur }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Status</div>
+                    <div class="col-sm-8">
+                        {% if livraison.statutLivraison == 'En cours' %}
+                        <span class="badge badge-status-progress fs-6"><i class="bi bi-truck me-1"></i>{{ livraison.statutLivraison }}</span>
+                        {% elseif livraison.statutLivraison == 'Livree' %}
+                        <span class="badge badge-status-delivered fs-6"><i class="bi bi-check-circle me-1"></i>{{ livraison.statutLivraison }}</span>
+                        {% elseif livraison.statutLivraison == 'Retardee' %}
+                        <span class="badge badge-status-delayed fs-6"><i class="bi bi-exclamation-triangle me-1"></i>{{ livraison.statutLivraison }}</span>
+                        {% else %}
+                        <span class="badge bg-secondary fs-6">{{ livraison.statutLivraison }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Notes</div>
+                    <div class="col-sm-8">{{ livraison.noteDelivery ?? '-' }}</div>
+                </div>
+                {% if livraison.hasLocation %}
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">GPS Location</div>
+                    <div class="col-sm-8">
+                        <i class="bi bi-geo-alt text-primary me-1"></i>{{ livraison.latitude }}, {{ livraison.longitude }}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <hr class="my-3">
+                
+                <form action="{{ path('app_livraison_delete', {'id': livraison.idLivraison}) }}" method="post" class="d-inline" onsubmit="return confirm('Delete this delivery?');">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ livraison.idLivraison) }}">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-trash me-1"></i> Delete Delivery
+                    </button>
+                </form>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-truck" style="font-size: 3rem; color: #cbd5e1;"></i>
+                    <p class="text-muted mt-3">No delivery assigned yet.</p>
+                    <a href="{{ path('app_livraison_new', {'commandeId': commande.idCommande}) }}" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i> Add Delivery
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-trash me-2 text-danger"></i>Danger Zone</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">Deleting this order will permanently remove it and all associated delivery data.</p>
+        <form action="{{ path('app_commande_delete', {'id': commande.idCommande}) }}" method="post" onsubmit="return confirm('Delete this order? This action cannot be undone.');">
+            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ commande.idCommande) }}">
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="bi bi-trash me-1"></i> Delete Order
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
