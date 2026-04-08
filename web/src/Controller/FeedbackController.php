@@ -21,14 +21,33 @@ class FeedbackController extends AbstractController
 {
     #[Route('/feedback', name: 'app_feedback_index')]
     public function index(
+        Request $request,
         FeedbackRepository $feedbackRepository,
         AISentimentService $sentimentAnalyzer
     ): Response {
-        $feedbacks = $feedbackRepository->findAll();
+        $search = $request->query->get('search', '');
+        $sort = $request->query->get('sort', 'dateStatut');
+        $order = $request->query->get('order', 'desc');
+        $sentimentFilter = $request->query->get('sentiment', '');
+        $ratingFilter = $request->query->get('rating', '');
+
+        $validSorts = ['dateStatut', 'note', 'commentaire'];
+        $sort = in_array($sort, $validSorts) ? $sort : 'dateStatut';
+        $order = in_array($order, ['asc', 'desc']) ? $order : 'desc';
+
+        $feedbacks = $feedbackRepository->findBySearchAndSort($search, $sort, $order);
 
         $feedbacksWithSentiment = [];
         foreach ($feedbacks as $feedback) {
             $sentiment = $sentimentAnalyzer->analyze($feedback->getCommentaire());
+            
+            if ($sentimentFilter && $sentiment['sentiment'] !== $sentimentFilter) {
+                continue;
+            }
+            if ($ratingFilter && $feedback->getNote() != (int)$ratingFilter) {
+                continue;
+            }
+            
             $feedbacksWithSentiment[] = [
                 'feedback' => $feedback,
                 'sentiment' => $sentiment,
@@ -37,6 +56,11 @@ class FeedbackController extends AbstractController
 
         return $this->render('feedback/index.html.twig', [
             'feedbacksWithSentiment' => $feedbacksWithSentiment,
+            'search' => $search,
+            'sort' => $sort,
+            'order' => $order,
+            'sentimentFilter' => $sentimentFilter,
+            'ratingFilter' => $ratingFilter,
         ]);
     }
 

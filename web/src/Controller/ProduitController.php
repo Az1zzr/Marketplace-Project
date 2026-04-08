@@ -15,12 +15,23 @@ use Symfony\Component\Routing\Annotation\Route;
 class ProduitController extends AbstractController
 {
     #[Route('/produit', name: 'app_produit_index')]
-    public function index(ProduitRepository $produitRepository): Response
+    public function index(Request $request, ProduitRepository $produitRepository): Response
     {
-        $produits = $produitRepository->findAll();
+        $search = $request->query->get('search', '');
+        $sort = $request->query->get('sort', 'nomProduit');
+        $order = $request->query->get('order', 'asc');
+
+        $validSorts = ['nomProduit', 'prix', 'quantite', 'adresse'];
+        $sort = in_array($sort, $validSorts) ? $sort : 'nomProduit';
+        $order = in_array($order, ['asc', 'desc']) ? $order : 'asc';
+
+        $produits = $produitRepository->findBySearchAndSort($search, $sort, $order);
 
         return $this->render('produit/index.html.twig', [
             'produits' => $produits,
+            'search' => $search,
+            'sort' => $sort,
+            'order' => $order,
         ]);
     }
 

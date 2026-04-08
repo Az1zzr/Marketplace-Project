@@ -15,12 +15,25 @@ use Symfony\Component\Routing\Annotation\Route;
 class LivraisonController extends AbstractController
 {
     #[Route('/livraison', name: 'app_livraison_index')]
-    public function index(LivraisonRepository $livraisonRepository): Response
+    public function index(Request $request, LivraisonRepository $livraisonRepository): Response
     {
-        $livraisons = $livraisonRepository->findAll();
+        $search = $request->query->get('search', '');
+        $sort = $request->query->get('sort', 'dateLivraison');
+        $order = $request->query->get('order', 'desc');
+        $statut = $request->query->get('statut', '');
+
+        $validSorts = ['numeroBL', 'dateLivraison', 'livreur', 'statutLivraison'];
+        $sort = in_array($sort, $validSorts) ? $sort : 'dateLivraison';
+        $order = in_array($order, ['asc', 'desc']) ? $order : 'desc';
+
+        $livraisons = $livraisonRepository->findBySearchAndSort($search, $sort, $order, $statut);
 
         return $this->render('livraison/index.html.twig', [
             'livraisons' => $livraisons,
+            'search' => $search,
+            'sort' => $sort,
+            'order' => $order,
+            'statut' => $statut,
         ]);
     }
 
