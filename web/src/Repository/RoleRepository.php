@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\Role;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\ORM\QueryBuilder;
 
 class RoleRepository extends ServiceEntityRepository
 {
@@ -36,5 +37,13 @@ class RoleRepository extends ServiceEntityRepository
             ->setParameter('nomRole', $nomRole)
             ->getQuery()
             ->getOneOrNullResult();
+    }
+
+    public function createPublicRegistrationQueryBuilder(): QueryBuilder
+    {
+        return $this->createQueryBuilder('r')
+            ->andWhere('LOWER(r.nomRole) != :adminRole')
+            ->setParameter('adminRole', 'admin')
+            ->orderBy('r.nomRole', 'ASC');
     }
 }

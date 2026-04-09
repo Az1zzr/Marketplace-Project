@@ -44,11 +44,12 @@
                 </thead>
                 <tbody>
                 {% for user in users %}
+                    {% set roleName = user.role ? user.role.nomRole|lower : '' %}
                     <tr>
                         <td>
                             <div class="d-flex align-items-center">
-                                {% if user.photoProfil %}
-                                <img src="{{ user.photoProfil }}" class="rounded-circle me-2" alt="{{ user.nomComplet }}" style="width: 40px; height: 40px; object-fit: cover;">
+                                {% if user.photoPath %}
+                                <img src="{{ user.photoPath }}" class="rounded-circle me-2" alt="{{ user.nomComplet }}" style="width: 40px; height: 40px; object-fit: cover;">
                                 {% else %}
                                 <div class="user-avatar me-2">{{ user.prenom|first }}{{ user.nom|first }}</div>
                                 {% endif %}
@@ -64,8 +65,8 @@
                         <td>{{ user.telephone ?? '-' }}</td>
                         <td>
                             {% if user.role %}
-                            <span class="badge {% if user.role.nomRole == 'Admin' %}bg-primary{% elseif user.role.nomRole == 'Vendeur' %}bg-success{% else %}bg-secondary{% endif %}">
-                                {{ user.role.nomRole }}
+                            <span class="badge {% if roleName == 'admin' %}bg-primary{% elseif roleName in ['fournisseur', 'fournisseurs'] %}bg-success{% elseif roleName in ['entrepreneur', 'entrepreneurs'] %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                {{ user.role.nomRole|title }}
                             </span>
                             {% else %}
                             <span class="text-muted">-</span>

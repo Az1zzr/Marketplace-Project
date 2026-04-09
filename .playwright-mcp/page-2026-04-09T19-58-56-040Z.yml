@@ -1,0 +1,116 @@
+- generic [active] [ref=e1]:
+  - complementary [ref=e2]:
+    - heading " Marketplace" [level=2] [ref=e4]:
+      - generic [ref=e5]: 
+      - text: Marketplace
+    - navigation [ref=e6]:
+      - generic [ref=e7]: Main
+      - link " Dashboard" [ref=e9] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e10]: 
+        - text: Dashboard
+      - generic [ref=e11]: Management
+      - link " Products" [ref=e13] [cursor=pointer]:
+        - /url: /produit
+        - generic [ref=e14]: 
+        - text: Products
+      - link " Orders" [ref=e16] [cursor=pointer]:
+        - /url: /commande
+        - generic [ref=e17]: 
+        - text: Orders
+      - link " Deliveries" [ref=e19] [cursor=pointer]:
+        - /url: /livraison
+        - generic [ref=e20]: 
+        - text: Deliveries
+      - link " Feedbacks" [ref=e22] [cursor=pointer]:
+        - /url: /feedback
+        - generic [ref=e23]: 
+        - text: Feedbacks
+      - generic [ref=e24]: Administration
+      - link " Users" [ref=e26] [cursor=pointer]:
+        - /url: /user
+        - generic [ref=e27]: 
+        - text: Users
+      - link " Roles" [ref=e29] [cursor=pointer]:
+        - /url: /role
+        - generic [ref=e30]: 
+        - text: Roles
+  - main [ref=e31]:
+    - generic [ref=e32]:
+      - navigation "breadcrumb" [ref=e33]:
+        - list [ref=e34]:
+          - listitem [ref=e35]:
+            - link " Home" [ref=e36] [cursor=pointer]:
+              - /url: /
+              - generic [ref=e37]: 
+              - text: Home
+          - listitem [ref=e38]: / Roles
+      - generic [ref=e39]:
+        - button "CA Checker Admin " [ref=e40] [cursor=pointer]:
+          - generic [ref=e41]: CA
+          - generic [ref=e42]: Checker Admin
+          - generic [ref=e43]: 
+        - text:   
+    - generic [ref=e44]:
+      - generic [ref=e45]:
+        - generic [ref=e46]:
+          - heading " Roles" [level=1] [ref=e47]:
+            - generic [ref=e48]: 
+            - text: Roles
+          - paragraph [ref=e49]: Manage user roles and permissions
+        - link " Add Role" [ref=e50] [cursor=pointer]:
+          - /url: /role/new
+          - generic [ref=e51]: 
+          - text: Add Role
+      - generic [ref=e52]:
+        - generic [ref=e54]:
+          - generic [ref=e55]:
+            - generic [ref=e56]:
+              - generic [ref=e58]: 
+              - generic [ref=e59]:
+                - heading "admin" [level=5] [ref=e60]
+                - text: "ID: 1"
+            - generic [ref=e61]:
+              - generic [ref=e62]: 
+              - generic [ref=e63]: 3 user(s)
+          - generic [ref=e65]:
+            - link " Edit" [ref=e66] [cursor=pointer]:
+              - /url: /role/1/edit
+              - generic [ref=e67]: 
+              - text: Edit
+            - button "" [ref=e69] [cursor=pointer]:
+              - generic [ref=e70]: 
+        - generic [ref=e72]:
+          - generic [ref=e73]:
+            - generic [ref=e74]:
+              - generic [ref=e76]: 
+              - generic [ref=e77]:
+                - heading "fournisseurs" [level=5] [ref=e78]
+                - text: "ID: 2"
+            - generic [ref=e79]:
+              - generic [ref=e80]: 
+              - generic [ref=e81]: 1 user(s)
+          - generic [ref=e83]:
+            - link " Edit" [ref=e84] [cursor=pointer]:
+              - /url: /role/2/edit
+              - generic [ref=e85]: 
+              - text: Edit
+            - button "" [ref=e87] [cursor=pointer]:
+              - generic [ref=e88]: 
+        - generic [ref=e90]:
+          - generic [ref=e91]:
+            - generic [ref=e92]:
+              - generic [ref=e94]: 
+              - generic [ref=e95]:
+                - heading "entrepreneur" [level=5] [ref=e96]
+                - text: "ID: 3"
+            - generic [ref=e97]:
+              - generic [ref=e98]: 
+              - generic [ref=e99]: 6 user(s)
+          - generic [ref=e101]:
+            - link " Edit" [ref=e102] [cursor=pointer]:
+              - /url: /role/3/edit
+              - generic [ref=e103]: 
+              - text: Edit
+            - button "" [ref=e105] [cursor=pointer]:
+              - generic [ref=e106]: 

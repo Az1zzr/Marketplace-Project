@@ -461,7 +461,7 @@
                 </a>
             </div>
             
-            {% if 'ROLE_ADMIN' in app.user.roles %}
+            {% if is_granted('ROLE_ADMIN') %}
             <div class="nav-section">Administration</div>
             <div class="nav-item">
                 <a href="{{ path('app_user_index') }}" class="nav-link {% if 'user' in app.request.attributes.get('_route') %}active{% endif %}">
@@ -471,11 +471,6 @@
             <div class="nav-item">
                 <a href="{{ path('app_role_index') }}" class="nav-link {% if 'role' in app.request.attributes.get('_route') %}active{% endif %}">
                     <i class="bi bi-shield-lock"></i> Roles
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="{{ path('app_stock_index') }}" class="nav-link {% if 'stock' in app.request.attributes.get('_route') %}active{% endif %}">
-                    <i class="bi bi-boxes"></i> Stock
                 </a>
             </div>
             {% endif %}

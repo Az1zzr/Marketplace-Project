@@ -30,14 +30,14 @@
                             {% endfor %}
                         </select>
                     </div>
-                    
+
                     <div class="mb-4">
                         <label for="quantite" class="form-label">Available Quantity <span class="text-danger">*</span></label>
                         <input type="number" name="quantite" id="quantite" class="form-control" min="0" value="{{ stock.quantite }}" required>
                     </div>
-                    
+
                     <hr class="my-4">
-                    
+
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-check-lg me-1"></i> Update Stock

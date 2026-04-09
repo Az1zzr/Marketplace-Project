@@ -36,7 +36,7 @@ class StockController extends AbstractController
 
             if ($produit) {
                 $stock->setProduit($produit);
-                $stock->setQuantite((int)$request->request->get('quantite'));
+                $stock->setQuantite((int) $request->request->get('quantite'));
 
                 $entityManager->persist($stock);
                 $entityManager->flush();
@@ -68,7 +68,7 @@ class StockController extends AbstractController
             if ($produit) {
                 $stock->setProduit($produit);
             }
-            $stock->setQuantite((int)$request->request->get('quantite'));
+            $stock->setQuantite((int) $request->request->get('quantite'));
 
             $entityManager->flush();
 
