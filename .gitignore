@@ -35,6 +35,9 @@ build/
 # VS Code
 .vscode/
 
+# Playwright MCP artifacts
+.playwright-mcp/
+
 # Mac OS
 .DS_Store
 
