@@ -4,11 +4,14 @@ namespace App\Entity;
 
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: 'user')]
+#[UniqueEntity(fields: ['email'], message: 'An account with this email already exists.')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
@@ -17,25 +20,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: 'Please enter your last name.')]
+    #[Assert\Length(max: 255, maxMessage: 'Your last name cannot be longer than {{ limit }} characters.')]
     private ?string $nom = null;
 
     #[ORM\Column(length: 100)]
+    #[Assert\NotBlank(message: 'Please enter your first name.')]
+    #[Assert\Length(max: 100, maxMessage: 'Your first name cannot be longer than {{ limit }} characters.')]
     private ?string $prenom = null;
 
     #[ORM\Column(length: 255, unique: true)]
+    #[Assert\NotBlank(message: 'Please enter your email address.')]
+    #[Assert\Email(message: 'Please enter a valid email address.')]
+    #[Assert\Length(max: 255, maxMessage: 'Your email address cannot be longer than {{ limit }} characters.')]
     private ?string $email = null;
 
     #[ORM\Column(length: 20, nullable: true)]
+    #[Assert\Length(max: 20, maxMessage: 'Your phone number cannot be longer than {{ limit }} characters.')]
+    #[Assert\Regex(pattern: '/^$|^\+?[0-9\s().-]{8,20}$/', message: 'Please enter a valid phone number.')]
     private ?string $telephone = null;
 
     #[ORM\Column(name: 'motDePasse', length: 255)]
     private ?string $motDePasse = null;
 
     #[ORM\Column(name: 'date_naissance', type: 'date', nullable: true)]
+    #[Assert\LessThanOrEqual('today', message: 'Birth date cannot be in the future.')]
     private ?\DateTimeInterface $dateNaissance = null;
 
     #[ORM\ManyToOne(inversedBy: 'users')]
     #[ORM\JoinColumn(name: 'id_role', referencedColumnName: 'id_role')]
+    #[Assert\NotNull(message: 'Please select an account type.')]
     private ?Role $role = null;
 
     #[ORM\Column(name: 'photo_profil', length: 500, nullable: true)]
@@ -53,7 +67,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function setNom(string $nom): static
     {
-        $this->nom = $nom;
+        $this->nom = trim($nom);
         return $this;
     }
 
@@ -64,7 +78,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function setPrenom(string $prenom): static
     {
-        $this->prenom = $prenom;
+        $this->prenom = trim($prenom);
         return $this;
     }
 
@@ -75,7 +89,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function setEmail(string $email): static
     {
-        $this->email = $email;
+        $this->email = strtolower(trim($email));
         return $this;
     }
 
@@ -86,7 +100,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function setTelephone(?string $telephone): static
     {
-        $this->telephone = $telephone;
+        $telephone = null === $telephone ? null : trim($telephone);
+        $this->telephone = '' === $telephone ? null : $telephone;
         return $this;
     }
 
@@ -143,12 +158,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $roles = ['ROLE_USER'];
         if ($this->role) {
-            $roleName = $this->role->getNomRole();
-            if ($roleName === 'Admin') {
+            $roleName = strtolower(trim((string) $this->role->getNomRole()));
+            if ('admin' === $roleName) {
                 $roles[] = 'ROLE_ADMIN';
-            } elseif ($roleName === 'Fournisseur') {
+            } elseif (in_array($roleName, ['fournisseur', 'fournisseurs'], true)) {
                 $roles[] = 'ROLE_FOURNISSEUR';
-            } elseif ($roleName === 'Entrepreneur') {
+            } elseif (in_array($roleName, ['entrepreneur', 'entrepreneurs'], true)) {
                 $roles[] = 'ROLE_ENTREPRENEUR';
             }
         }

@@ -3,11 +3,11 @@
 namespace App\Controller;
 
 use App\Entity\User;
-use App\Entity\Role;
-use App\Repository\UserRepository;
-use App\Repository\RoleRepository;
+use App\Form\RegisterType;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -25,6 +25,10 @@ class SecurityController extends AbstractController
     #[Route('/login', name: 'app_login')]
     public function login(AuthenticationUtils $authenticationUtils): Response
     {
+        if ($this->getUser()) {
+            return $this->redirectToRoute('app_home');
+        }
+
         $error = $authenticationUtils->getLastAuthenticationError();
         $lastUsername = $authenticationUtils->getLastUsername();
 
@@ -41,46 +45,35 @@ class SecurityController extends AbstractController
     }
 
     #[Route('/register', name: 'app_register')]
-    public function register(Request $request, UserRepository $userRepository, RoleRepository $roleRepository, EntityManagerInterface $entityManager, UserPasswordHasherInterface $passwordHasher): Response
+    public function register(Request $request, EntityManagerInterface $entityManager, UserPasswordHasherInterface $passwordHasher): Response
     {
-        if ($request->isMethod('POST')) {
-            $existingUser = $userRepository->findByEmail($request->request->get('email'));
-            if ($existingUser) {
-                return $this->render('security/register.html.twig', [
-                    'error' => 'Email already exists',
-                    'roles' => $roleRepository->findAll(),
-                ]);
+        if ($this->getUser()) {
+            return $this->redirectToRoute('app_home');
+        }
+
+        $user = new User();
+        $form = $this->createForm(RegisterType::class, $user);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $user->setMotDePasse($passwordHasher->hashPassword($user, $form->get('plainPassword')->getData()));
+
+            try {
+                $entityManager->persist($user);
+                $entityManager->flush();
+            } catch (UniqueConstraintViolationException) {
+                $form->get('email')->addError(new FormError('An account with this email already exists.'));
             }
 
-            $user = new User();
-            $user->setNom($request->request->get('nom'));
-            $user->setPrenom($request->request->get('prenom'));
-            $user->setEmail($request->request->get('email'));
-            $user->setTelephone($request->request->get('telephone'));
+            if ($form->isValid()) {
+                $this->addFlash('success', 'Your account has been created. You can now sign in.');
 
-            $hashedPassword = $passwordHasher->hashPassword($user, $request->request->get('password'));
-            $user->setMotDePasse($hashedPassword);
-
-            $dateNaissance = $request->request->get('dateNaissance');
-            if ($dateNaissance) {
-                $user->setDateNaissance(new \DateTime($dateNaissance));
+                return $this->redirectToRoute('app_login');
             }
-
-            $roleId = $request->request->get('role');
-            if ($roleId) {
-                $role = $roleRepository->find($roleId);
-                $user->setRole($role);
-            }
-
-            $entityManager->persist($user);
-            $entityManager->flush();
-
-            return $this->redirectToRoute('app_login');
         }
 
         return $this->render('security/register.html.twig', [
-            'roles' => $roleRepository->findAll(),
-            'error' => null,
+            'registrationForm' => $form->createView(),
         ]);
     }
 }
