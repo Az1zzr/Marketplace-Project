@@ -29,8 +29,13 @@ class Produit
     #[ORM\Column(name: 'image_url', length: 500, nullable: true)]
     private ?string $imageURL = null;
 
-    #[ORM\OneToOne(mappedBy: 'produit', cascade: ['persist', 'remove'])]
-    private ?Stock $stock = null;
+    #[ORM\ManyToOne(inversedBy: 'produits')]
+    #[ORM\JoinColumn(name: 'categorie_id', referencedColumnName: 'id', nullable: false)]
+    private ?Categorie $categorie = null;
+
+    #[ORM\ManyToOne(inversedBy: 'produits')]
+    #[ORM\JoinColumn(name: 'fournisseur_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    private ?User $fournisseur = null;
 
     public function getId(): ?int
     {
@@ -81,6 +86,17 @@ class Produit
         return $this;
     }
 
+    public function hasAvailableQuantity(int $quantite): bool
+    {
+        return $quantite > 0 && ($this->quantite ?? 0) >= $quantite;
+    }
+
+    public function decreaseQuantite(int $quantite): static
+    {
+        $this->quantite = max(0, ($this->quantite ?? 0) - $quantite);
+        return $this;
+    }
+
     public function getImageURL(): ?string
     {
         return $this->imageURL;
@@ -92,14 +108,25 @@ class Produit
         return $this;
     }
 
-    public function getStock(): ?Stock
+    public function getCategorie(): ?Categorie
     {
-        return $this->stock;
+        return $this->categorie;
     }
 
-    public function setStock(?Stock $stock): static
+    public function setCategorie(?Categorie $categorie): static
     {
-        $this->stock = $stock;
+        $this->categorie = $categorie;
+        return $this;
+    }
+
+    public function getFournisseur(): ?User
+    {
+        return $this->fournisseur;
+    }
+
+    public function setFournisseur(?User $fournisseur): static
+    {
+        $this->fournisseur = $fournisseur;
         return $this;
     }
 }

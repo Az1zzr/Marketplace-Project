@@ -32,6 +32,8 @@ class ReponseRepository extends ServiceEntityRepository
     public function findByFeedback(int $feedbackId): array
     {
         return $this->createQueryBuilder('r')
+            ->leftJoin('r.auteur', 'a')
+            ->addSelect('a')
             ->andWhere('r.feedback = :feedbackId')
             ->setParameter('feedbackId', $feedbackId)
             ->orderBy('r.dateReponse', 'ASC')

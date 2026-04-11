@@ -8,6 +8,7 @@
 {% endblock %}
 
 {% block body %}
+{% set isDeliveryFeedback = feedback.isDeliveryFeedback %}
 <div class="page-header">
     <h1><i class="bi bi-pencil me-2"></i>Edit Feedback #{{ feedback.id }}</h1>
     <p>Update the feedback details below</p>
@@ -31,27 +32,81 @@
                 </div>
                 {% endif %}
 
-                <form method="post">
+                <form method="post" novalidate>
+                    <div class="mb-4">
+                        <label for="titre" class="form-label">Review Title</label>
+                        <input type="text" name="titre" id="titre" class="form-control {% if errors['titre'] is defined %}is-invalid{% endif %}" value="{{ app.request.request.get('titre', feedback.titre) }}">
+                        {% if errors['titre'] is defined %}
+                        <div class="invalid-feedback d-block">{{ errors['titre'] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Mood</label>
+                        {% set selectedMood = app.request.request.get('ambiance', feedback.ambiance) %}
+                        <div class="border rounded-3 p-3">
+                            {% for mood in [
+                                {'value': 'love', 'emoji': '😍', 'label': 'Loved it'},
+                                {'value': 'happy', 'emoji': '😊', 'label': 'Happy'},
+                                {'value': 'neutral', 'emoji': '😐', 'label': 'Neutral'},
+                                {'value': 'sad', 'emoji': '😕', 'label': 'Disappointed'},
+                                {'value': 'angry', 'emoji': '😡', 'label': 'Frustrated'}
+                            ] %}
+                            <div class="form-check mb-2 {% if loop.last %}mb-0{% endif %}">
+                                <input class="form-check-input" type="radio" name="ambiance" id="edit_ambiance_{{ mood.value }}" value="{{ mood.value }}" {% if selectedMood == mood.value %}checked{% endif %}>
+                                <label class="form-check-label" for="edit_ambiance_{{ mood.value }}">
+                                    <span class="me-2">{{ mood.emoji }}</span>{{ mood.label }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if errors['ambiance'] is defined %}
+                        <div class="invalid-feedback d-block">{{ errors['ambiance'] }}</div>
+                        {% endif %}
+                    </div>
+
                     <div class="mb-4">
                         <label class="form-label">Rating <span class="text-danger">*</span></label>
+                        {% set selectedNote = app.request.request.get('note', feedback.note) %}
                         <div class="rating-input">
                             <div class="btn-group w-100" role="group">
-                                <input type="radio" class="btn-check" name="note" id="star1" value="1" {% if feedback.note == '1' %}checked{% endif %}>
-                                <label class="btn btn-outline-warning {% if feedback.note == '1' %}active{% endif %}" for="star1">⭐ 1</label>
+                                <input type="radio" class="btn-check" name="note" id="star1" value="1" {% if selectedNote == '1' %}checked{% endif %}>
+                                <label class="btn btn-outline-warning {% if selectedNote == '1' %}active{% endif %}" for="star1">⭐ 1</label>
                                 
-                                <input type="radio" class="btn-check" name="note" id="star2" value="2" {% if feedback.note == '2' %}checked{% endif %}>
-                                <label class="btn btn-outline-warning {% if feedback.note == '2' %}active{% endif %}" for="star2">⭐⭐ 2</label>
+                                <input type="radio" class="btn-check" name="note" id="star2" value="2" {% if selectedNote == '2' %}checked{% endif %}>
+                                <label class="btn btn-outline-warning {% if selectedNote == '2' %}active{% endif %}" for="star2">⭐⭐ 2</label>
                                 
-                                <input type="radio" class="btn-check" name="note" id="star3" value="3" {% if feedback.note == '3' %}checked{% endif %}>
-                                <label class="btn btn-outline-warning {% if feedback.note == '3' %}active{% endif %}" for="star3">⭐⭐⭐ 3</label>
+                                <input type="radio" class="btn-check" name="note" id="star3" value="3" {% if selectedNote == '3' %}checked{% endif %}>
+                                <label class="btn btn-outline-warning {% if selectedNote == '3' %}active{% endif %}" for="star3">⭐⭐⭐ 3</label>
                                 
-                                <input type="radio" class="btn-check" name="note" id="star4" value="4" {% if feedback.note == '4' %}checked{% endif %}>
-                                <label class="btn btn-outline-warning {% if feedback.note == '4' %}active{% endif %}" for="star4">⭐⭐⭐⭐ 4</label>
+                                <input type="radio" class="btn-check" name="note" id="star4" value="4" {% if selectedNote == '4' %}checked{% endif %}>
+                                <label class="btn btn-outline-warning {% if selectedNote == '4' %}active{% endif %}" for="star4">⭐⭐⭐⭐ 4</label>
                                 
-                                <input type="radio" class="btn-check" name="note" id="star5" value="5" {% if feedback.note == '5' %}checked{% endif %}>
-                                <label class="btn btn-outline-warning {% if feedback.note == '5' %}active{% endif %}" for="star5">⭐⭐⭐⭐⭐ 5</label>
+                                <input type="radio" class="btn-check" name="note" id="star5" value="5" {% if selectedNote == '5' %}checked{% endif %}>
+                                <label class="btn btn-outline-warning {% if selectedNote == '5' %}active{% endif %}" for="star5">⭐⭐⭐⭐⭐ 5</label>
                             </div>
                         </div>
+                        {% if errors['note'] is defined %}
+                        <div class="invalid-feedback d-block">{{ errors['note'] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Would You Recommend {% if isDeliveryFeedback %}This Driver{% else %}This Product{% endif %}?</label>
+                        {% set selectedRecommendation = app.request.request.get('recommande', feedback.recommande is same as(true) ? 'yes' : (feedback.recommande is same as(false) ? 'no' : '')) %}
+                        <div class="border rounded-3 p-3">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="recommande" id="edit_recommande_yes" value="yes" {% if selectedRecommendation == 'yes' %}checked{% endif %}>
+                                <label class="form-check-label" for="edit_recommande_yes">Yes, I would recommend it</label>
+                            </div>
+                            <div class="form-check mb-0">
+                                <input class="form-check-input" type="radio" name="recommande" id="edit_recommande_no" value="no" {% if selectedRecommendation == 'no' %}checked{% endif %}>
+                                <label class="form-check-label" for="edit_recommande_no">No, I would not recommend it</label>
+                            </div>
+                        </div>
+                        {% if errors['recommande'] is defined %}
+                        <div class="invalid-feedback d-block">{{ errors['recommande'] }}</div>
+                        {% endif %}
                     </div>
                     
                     <div class="mb-4">
@@ -60,11 +115,10 @@
                             name="commentaire" 
                             id="commentaire" 
                             class="form-control {% if errors['commentaire'] is defined or errors['profanity'] is defined %}is-invalid{% endif %}" 
-                            rows="5" 
-                            required
-                        >{{ feedback.commentaire }}</textarea>
+                            rows="5"
+                        >{{ app.request.request.get('commentaire', feedback.commentaire) }}</textarea>
                         {% if errors['commentaire'] is defined %}
-                        <div class="invalid-feedback">{{ errors['commentaire'] }}</div>
+                        <div class="invalid-feedback d-block">{{ errors['commentaire'] }}</div>
                         {% endif %}
                         {% if errors['profanity'] is defined %}
                         <div class="invalid-feedback d-block">

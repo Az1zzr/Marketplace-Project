@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -14,6 +16,16 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[UniqueEntity(fields: ['email'], message: 'An account with this email already exists.')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
+    public const ROLE_CODE_ADMIN = 'admin';
+    public const ROLE_CODE_CLIENT = 'client';
+    public const ROLE_CODE_FOURNISSEUR = 'fournisseur';
+
+    private const ROLE_ALIASES = [
+        self::ROLE_CODE_ADMIN => ['admin', 'administrateur', 'administrator'],
+        self::ROLE_CODE_CLIENT => ['client', 'clients', 'customer', 'customers', 'user', 'users', 'utilisateur', 'utilisateurs'],
+        self::ROLE_CODE_FOURNISSEUR => ['fournisseur', 'fournisseurs', 'supplier', 'suppliers'],
+    ];
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -54,6 +66,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(name: 'photo_profil', length: 500, nullable: true)]
     private ?string $photoPath = null;
+
+    #[ORM\OneToMany(mappedBy: 'fournisseur', targetEntity: Produit::class)]
+    private Collection $produits;
+
+    public function __construct()
+    {
+        $this->produits = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -154,19 +174,60 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return trim(($this->prenom ?? '') . ' ' . ($this->nom ?? ''));
     }
 
+    public function getProduits(): Collection
+    {
+        return $this->produits;
+    }
+
+    public function getRoleCode(): ?string
+    {
+        $roleName = strtolower(trim((string) $this->role?->getNomRole()));
+        if ('' === $roleName) {
+            return null;
+        }
+
+        foreach (self::ROLE_ALIASES as $roleCode => $aliases) {
+            if (in_array($roleName, $aliases, true)) {
+                return $roleCode;
+            }
+        }
+
+        return null;
+    }
+
+    public function getRoleDisplayName(): string
+    {
+        return match ($this->getRoleCode()) {
+            self::ROLE_CODE_ADMIN => 'Admin',
+            self::ROLE_CODE_CLIENT => 'Client',
+            self::ROLE_CODE_FOURNISSEUR => 'Fournisseur',
+            default => $this->role?->getNomRole() ?? 'User',
+        };
+    }
+
+    public function hasRoleCode(string $roleCode): bool
+    {
+        return $this->getRoleCode() === $roleCode;
+    }
+
     public function getRoles(): array
     {
         $roles = ['ROLE_USER'];
-        if ($this->role) {
-            $roleName = strtolower(trim((string) $this->role->getNomRole()));
-            if ('admin' === $roleName) {
+
+        switch ($this->getRoleCode()) {
+            case self::ROLE_CODE_ADMIN:
                 $roles[] = 'ROLE_ADMIN';
-            } elseif (in_array($roleName, ['fournisseur', 'fournisseurs'], true)) {
+                break;
+
+            case self::ROLE_CODE_CLIENT:
+                $roles[] = 'ROLE_CLIENT';
+                break;
+
+            case self::ROLE_CODE_FOURNISSEUR:
                 $roles[] = 'ROLE_FOURNISSEUR';
-            } elseif (in_array($roleName, ['entrepreneur', 'entrepreneurs'], true)) {
-                $roles[] = 'ROLE_ENTREPRENEUR';
-            }
+                break;
         }
+
         return array_unique($roles);
     }
 

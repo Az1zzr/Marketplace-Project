@@ -9,12 +9,12 @@
 {% block body %}
 <div class="page-header">
     <h1><i class="bi bi-truck me-2"></i>Deliveries</h1>
-    <p>Manage all delivery assignments</p>
+    <p>{% if is_granted('ROLE_ADMIN') %}Manage all delivery assignments{% elseif canManageLivraisons %}Assign and follow deliveries for orders containing your products{% else %}Track the current state of your deliveries{% endif %}</p>
 </div>
 
 <div class="card mb-4">
     <div class="card-body">
-        <form method="get" class="row g-3 align-items-end">
+        <form method="get" class="row g-3 align-items-end" novalidate>
             <div class="col-md-3">
                 <label for="search" class="form-label">Search</label>
                 <input type="text" name="search" id="search" class="form-control" value="{{ search }}" placeholder="BL #, driver, notes...">
@@ -63,7 +63,7 @@
         {% if search or statut %}
         <p class="text-muted">No deliveries match your search criteria.</p>
         {% else %}
-        <p class="text-muted">Deliveries are created from order details pages.</p>
+        <p class="text-muted">{% if is_granted('ROLE_ADMIN') %}Deliveries are created from order details pages.{% elseif canManageLivraisons %}Deliveries will appear here after you assign a driver to one of your client orders.{% else %}Your delivery tracking will appear here once a fournisseur assigns shipment details to one of your orders.{% endif %}</p>
         {% endif %}
         <a href="{{ path('app_commande_index') }}" class="btn btn-primary mt-2">
             <i class="bi bi-cart3 me-1"></i> View Orders
@@ -126,12 +126,23 @@
                         </td>
                         <td>
                             <div class="btn-group" role="group">
+                                {% if canManageLivraisons %}
                                 <a href="{{ path('app_livraison_edit', {'id': livraison.idLivraison}) }}" class="btn btn-outline-primary btn-sm">
                                     <i class="bi bi-pencil"></i>
                                 </a>
+                                {% endif %}
                                 {% if livraison.commande %}
                                 <a href="{{ path('app_commande_show', {'id': livraison.commande.idCommande}) }}" class="btn btn-outline-secondary btn-sm">
                                     <i class="bi bi-eye"></i>
+                                </a>
+                                {% endif %}
+                                {% if is_granted('ROLE_CLIENT') and livraison.statutLivraison == 'Livree' and livraison.feedback is null %}
+                                <a href="{{ path('app_feedback_delivery_new', {'livraisonId': livraison.idLivraison}) }}" class="btn btn-outline-success btn-sm">
+                                    <i class="bi bi-chat-heart"></i>
+                                </a>
+                                {% elseif livraison.feedback %}
+                                <a href="{{ path('app_feedback_show', {'id': livraison.feedback.id}) }}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-chat-left-text"></i>
                                 </a>
                                 {% endif %}
                             </div>

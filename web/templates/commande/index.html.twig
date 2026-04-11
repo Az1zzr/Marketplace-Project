@@ -7,19 +7,29 @@
 {% endblock %}
 
 {% block body %}
+{% set isBuyer = is_granted('ROLE_CLIENT') %}
+{% set isSupplier = is_granted('ROLE_FOURNISSEUR') %}
+{% set canManageOrders = is_granted('ROLE_ADMIN') %}
 <div class="page-header d-flex justify-content-between align-items-center">
     <div>
         <h1><i class="bi bi-cart3 me-2"></i>Orders</h1>
-        <p>Manage customer orders</p>
+        <p>{% if canManageOrders %}Review the full marketplace order activity{% elseif isSupplier %}Review client orders that include your products{% else %}Track your purchases and continue your current order{% endif %}</p>
     </div>
+    {% if isBuyer %}
     <a href="{{ path('app_commande_new') }}" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-1"></i> New Order
+        <i class="bi bi-bag-check me-1"></i>
+        {% if cart and cart.totalItems > 0 %}
+        Checkout Current Order ({{ cart.totalItems }})
+        {% else %}
+        View Current Order
+        {% endif %}
     </a>
+    {% endif %}
 </div>
 
 <div class="card mb-4">
     <div class="card-body">
-        <form method="get" class="row g-3 align-items-end">
+        <form method="get" class="row g-3 align-items-end" novalidate>
             <div class="col-md-3">
                 <label for="search" class="form-label">Search</label>
                 <input type="text" name="search" id="search" class="form-control" value="{{ search }}" placeholder="Client, order #, address...">
@@ -69,10 +79,10 @@
         {% if search or statut %}
         <p class="text-muted">No orders match your search criteria.</p>
         {% else %}
-        <p class="text-muted">Orders will appear here when customers place them.</p>
+        <p class="text-muted">{% if canManageOrders %}Orders will appear here when customers place them.{% elseif isSupplier %}Orders containing your catalog products will appear here once clients confirm them.{% else %}Start by adding products to your current order from a product page.{% endif %}</p>
         {% endif %}
-        <a href="{{ path('app_commande_new') }}" class="btn btn-primary mt-2">
-            <i class="bi bi-plus-lg me-1"></i> Create Order
+        <a href="{{ path(isBuyer ? 'app_produit_index' : 'app_commande_index') }}" class="btn btn-primary mt-2">
+            <i class="bi {{ isBuyer ? 'bi-grid' : 'bi-cart3' }} me-1"></i> {{ isBuyer ? 'Browse Products' : 'Refresh Orders' }}
         </a>
     </div>
 </div>
@@ -86,6 +96,7 @@
                         <th>Order #</th>
                         <th>Client</th>
                         <th>Date</th>
+                        <th>Items</th>
                         <th>Total</th>
                         <th>Status</th>
                         <th>Delivery</th>
@@ -98,11 +109,12 @@
                         <td><strong>#{{ commande.numeroCommande }}</strong></td>
                         <td>
                             <div class="d-flex align-items-center">
-                                <div class="user-avatar me-2" style="width: 32px; height: 32px; font-size: 0.75rem;">{{ commande.client|first|upper }}</div>
-                                {{ commande.client }}
+                                <div class="user-avatar me-2" style="width: 32px; height: 32px; font-size: 0.75rem;">{{ commande.clientDisplayName|first|upper }}</div>
+                                {{ commande.clientDisplayName }}
                             </div>
                         </td>
                         <td>{{ commande.dateCommande|date('Y-m-d') }}</td>
+                        <td>{{ commande.totalItems }}</td>
                         <td><strong>{{ commande.montantTotal|number_format(2, '.', ',') }} TND</strong></td>
                         <td>
                             {% if commande.statut == 'En attente' %}
@@ -125,15 +137,28 @@
                                 <a href="{{ path('app_commande_show', {'id': commande.idCommande}) }}" class="btn btn-outline-secondary btn-sm">
                                     <i class="bi bi-eye"></i>
                                 </a>
+                                {% if isSupplier %}
+                                    {% if commande.livraison %}
+                                    <a href="{{ path('app_livraison_edit', {'id': commande.livraison.idLivraison}) }}" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-truck"></i>
+                                    </a>
+                                    {% else %}
+                                    <a href="{{ path('app_livraison_new', {'commandeId': commande.idCommande}) }}" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-truck"></i>
+                                    </a>
+                                    {% endif %}
+                                {% endif %}
+                                {% if canManageOrders %}
                                 <a href="{{ path('app_commande_edit', {'id': commande.idCommande}) }}" class="btn btn-outline-primary btn-sm">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <form action="{{ path('app_commande_delete', {'id': commande.idCommande}) }}" method="post" class="d-inline" onsubmit="return confirm('Delete this order?');">
+                                <form action="{{ path('app_commande_delete', {'id': commande.idCommande}) }}" method="post" class="d-inline" novalidate>
                                     <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ commande.idCommande) }}">
                                     <button type="submit" class="btn btn-outline-danger btn-sm">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </form>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>

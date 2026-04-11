@@ -53,7 +53,7 @@
                 <a href="{{ path('app_role_edit', {'id': role.idRole}) }}" class="btn btn-outline-primary btn-sm flex-grow-1">
                     <i class="bi bi-pencil me-1"></i> Edit
                 </a>
-                <form action="{{ path('app_role_delete', {'id': role.idRole}) }}" method="post" class="d-inline" onsubmit="return confirm('Delete this role?');">
+                <form action="{{ path('app_role_delete', {'id': role.idRole}) }}" method="post" class="d-inline" novalidate>
                     <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ role.idRole) }}">
                     <button type="submit" class="btn btn-outline-danger btn-sm">
                         <i class="bi bi-trash"></i>

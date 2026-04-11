@@ -9,6 +9,10 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'livraison')]
 class Livraison
 {
+    public const STATUS_IN_PROGRESS = 'En cours';
+    public const STATUS_DELIVERED = 'Livree';
+    public const STATUS_DELAYED = 'Retardee';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(name: 'idLivraison')]
@@ -38,6 +42,9 @@ class Livraison
 
     #[ORM\Column(type: 'float')]
     private ?float $longitude = 0.0;
+
+    #[ORM\OneToOne(mappedBy: 'livraison', targetEntity: Feedback::class)]
+    private ?Feedback $feedback = null;
 
     public function getIdLivraison(): ?int
     {
@@ -135,5 +142,16 @@ class Livraison
     public function hasLocation(): bool
     {
         return $this->latitude != 0 && $this->longitude != 0;
+    }
+
+    public function getFeedback(): ?Feedback
+    {
+        return $this->feedback;
+    }
+
+    public function setFeedback(?Feedback $feedback): static
+    {
+        $this->feedback = $feedback;
+        return $this;
     }
 }

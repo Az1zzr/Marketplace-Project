@@ -29,9 +29,22 @@ security:
     access_control:
         - { path: ^/login, roles: PUBLIC_ACCESS }
         - { path: ^/register, roles: PUBLIC_ACCESS }
+        - { path: ^/admin, roles: ROLE_ADMIN }
         - { path: ^/user, roles: ROLE_ADMIN }
         - { path: ^/role, roles: ROLE_ADMIN }
-        - { path: ^/admin, roles: ROLE_ADMIN }
+        - { path: ^/produit/\d+/buy$, roles: ROLE_CLIENT }
+        - { path: ^/categorie, roles: [ROLE_ADMIN, ROLE_FOURNISSEUR] }
+        - { path: ^/commande/new$, roles: ROLE_CLIENT }
+        - { path: ^/commande/ligne/\d+/delete$, roles: ROLE_CLIENT }
+        - { path: ^/commande/\d+/(edit|delete)$, roles: ROLE_ADMIN }
+        - { path: ^/commande, roles: [ROLE_ADMIN, ROLE_CLIENT, ROLE_FOURNISSEUR] }
+        - { path: ^/livraison/new, roles: [ROLE_ADMIN, ROLE_FOURNISSEUR] }
+        - { path: ^/livraison/\d+/(edit|delete)$, roles: [ROLE_ADMIN, ROLE_FOURNISSEUR] }
+        - { path: ^/livraison, roles: [ROLE_ADMIN, ROLE_CLIENT, ROLE_FOURNISSEUR] }
+        - { path: ^/feedback/new, roles: ROLE_CLIENT }
+        - { path: ^/feedback/livraison/\d+/new$, roles: ROLE_CLIENT }
+        - { path: ^/feedback/\d+/reponse/new$, roles: [ROLE_ADMIN, ROLE_FOURNISSEUR] }
+        - { path: ^/reponse/\d+/delete$, roles: [ROLE_ADMIN, ROLE_FOURNISSEUR] }
         - { path: ^/, roles: ROLE_USER }
 
 when@test:

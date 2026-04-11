@@ -44,6 +44,14 @@ class RoleRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('r')
             ->andWhere('LOWER(r.nomRole) != :adminRole')
             ->setParameter('adminRole', 'admin')
-            ->orderBy('r.nomRole', 'ASC');
+            ->addSelect('CASE
+                WHEN LOWER(r.nomRole) IN (:clientRoles) THEN 1
+                WHEN LOWER(r.nomRole) IN (:supplierRoles) THEN 2
+                ELSE 3
+            END AS HIDDEN rolePriority')
+            ->setParameter('clientRoles', ['client', 'clients', 'customer', 'customers', 'user', 'users', 'utilisateur', 'utilisateurs'])
+            ->setParameter('supplierRoles', ['fournisseur', 'fournisseurs', 'supplier', 'suppliers'])
+            ->orderBy('rolePriority', 'ASC')
+            ->addOrderBy('r.nomRole', 'ASC');
     }
 }
