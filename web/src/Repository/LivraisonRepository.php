@@ -3,7 +3,10 @@
 namespace App\Repository;
 
 use App\Entity\Livraison;
+use App\Entity\Commande;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 class LivraisonRepository extends ServiceEntityRepository
@@ -87,5 +90,69 @@ class LivraisonRepository extends ServiceEntityRepository
         $qb->orderBy('l.' . $sort, strtoupper($order));
 
         return $qb->getQuery()->getResult();
+    }
+
+    public function findBySearchAndSortForUser(User $user, string $search, string $sort, string $order, ?string $statut): array
+    {
+        $qb = $this->createBaseQueryBuilder();
+
+        if ($user->hasRoleCode(User::ROLE_CODE_CLIENT)) {
+            $qb->andWhere('c.clientUser = :user')
+                ->setParameter('user', $user);
+        } elseif ($user->hasRoleCode(User::ROLE_CODE_FOURNISSEUR)) {
+            $qb->andWhere('fournisseur = :user')
+                ->setParameter('user', $user);
+        }
+
+        $qb->andWhere('c.statut != :cartStatus')
+            ->setParameter('cartStatus', Commande::STATUS_CART);
+
+        if (!empty($search)) {
+            $qb->andWhere('l.numeroBL LIKE :search OR l.livreur LIKE :search OR l.noteDelivery LIKE :search OR c.numeroCommande LIKE :search')
+               ->setParameter('search', '%' . $search . '%');
+        }
+
+        if (!empty($statut)) {
+            $qb->andWhere('l.statutLivraison = :statut')
+               ->setParameter('statut', $statut);
+        }
+
+        $qb->orderBy('l.' . $sort, strtoupper($order))
+            ->addOrderBy('l.dateLivraison', 'DESC');
+
+        return $qb->getQuery()->getResult();
+    }
+
+    public function findOneVisibleForUser(int $id, User $user): ?Livraison
+    {
+        $qb = $this->createBaseQueryBuilder()
+            ->andWhere('l.idLivraison = :id')
+            ->setParameter('id', $id);
+
+        if ($user->hasRoleCode(User::ROLE_CODE_CLIENT)) {
+            $qb->andWhere('c.clientUser = :user')
+                ->setParameter('user', $user);
+        } elseif ($user->hasRoleCode(User::ROLE_CODE_FOURNISSEUR)) {
+            $qb->andWhere('fournisseur = :user')
+                ->setParameter('user', $user);
+        }
+
+        return $qb->getQuery()->getOneOrNullResult();
+    }
+
+    private function createBaseQueryBuilder(): QueryBuilder
+    {
+        return $this->createQueryBuilder('l')
+            ->distinct()
+            ->leftJoin('l.commande', 'c')
+            ->addSelect('c')
+            ->leftJoin('c.clientUser', 'clientUser')
+            ->addSelect('clientUser')
+            ->leftJoin('c.lignesCommande', 'ligneCommande')
+            ->addSelect('ligneCommande')
+            ->leftJoin('ligneCommande.produit', 'produit')
+            ->addSelect('produit')
+            ->leftJoin('produit.fournisseur', 'fournisseur')
+            ->addSelect('fournisseur');
     }
 }

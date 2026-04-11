@@ -3,6 +3,8 @@
 namespace App\Repository;
 
 use App\Entity\Feedback;
+use App\Entity\Produit;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -39,17 +41,53 @@ class FeedbackRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function findBySearchAndSort(string $search, string $sort, string $order): array
+    public function findBySearchAndSort(string $search, string $sort, string $order, ?User $viewer = null): array
     {
-        $qb = $this->createQueryBuilder('f');
+        $qb = $this->createQueryBuilder('f')
+            ->distinct()
+            ->leftJoin('f.auteur', 'a')
+            ->addSelect('a')
+            ->leftJoin('f.produit', 'p')
+            ->addSelect('p')
+            ->leftJoin('p.fournisseur', 'fournisseur')
+            ->addSelect('fournisseur')
+            ->leftJoin('f.livraison', 'livraison')
+            ->addSelect('livraison')
+            ->leftJoin('livraison.commande', 'deliveryCommande')
+            ->addSelect('deliveryCommande')
+            ->leftJoin('deliveryCommande.lignesCommande', 'deliveryLigneCommande')
+            ->addSelect('deliveryLigneCommande')
+            ->leftJoin('deliveryLigneCommande.produit', 'deliveryProduit')
+            ->addSelect('deliveryProduit')
+            ->leftJoin('deliveryProduit.fournisseur', 'deliveryFournisseur')
+            ->addSelect('deliveryFournisseur')
+            ->leftJoin('f.ligneCommande', 'l')
+            ->addSelect('l');
+
+        if ($viewer instanceof User && $viewer->hasRoleCode(User::ROLE_CODE_FOURNISSEUR)) {
+            $qb->andWhere('p.fournisseur = :viewer OR deliveryFournisseur = :viewer')
+                ->setParameter('viewer', $viewer);
+        }
 
         if (!empty($search)) {
-            $qb->andWhere('f.commentaire LIKE :search')
+            $qb->andWhere('f.commentaire LIKE :search OR f.titre LIKE :search OR p.nomProduit LIKE :search OR livraison.livreur LIKE :search OR deliveryCommande.numeroCommande LIKE :search')
                ->setParameter('search', '%' . $search . '%');
         }
 
         $qb->orderBy('f.' . $sort, strtoupper($order));
 
         return $qb->getQuery()->getResult();
+    }
+
+    public function findByProduit(Produit $produit): array
+    {
+        return $this->createQueryBuilder('f')
+            ->leftJoin('f.auteur', 'a')
+            ->addSelect('a')
+            ->andWhere('f.produit = :produit')
+            ->setParameter('produit', $produit)
+            ->orderBy('f.dateStatut', 'DESC')
+            ->getQuery()
+            ->getResult();
     }
 }

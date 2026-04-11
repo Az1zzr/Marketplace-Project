@@ -95,10 +95,100 @@ class InputValidationService
         return ['valid' => true, 'message' => ''];
     }
 
+    public function validateFeedbackTitle(?string $title): array
+    {
+        if ($title === null || '' === trim($title)) {
+            return ['valid' => false, 'message' => 'Feedback title is required'];
+        }
+
+        $title = trim($title);
+        if (mb_strlen($title) < 5) {
+            return ['valid' => false, 'message' => 'Feedback title must be at least 5 characters long'];
+        }
+
+        if (mb_strlen($title) > 120) {
+            return ['valid' => false, 'message' => 'Feedback title cannot be longer than 120 characters'];
+        }
+
+        return ['valid' => true, 'message' => ''];
+    }
+
+    public function validateFeedbackMood(?string $mood): array
+    {
+        $allowedMoods = ['love', 'happy', 'neutral', 'sad', 'angry'];
+
+        if ($mood === null || '' === trim($mood)) {
+            return ['valid' => false, 'message' => 'Please choose the emoji that best matches your experience'];
+        }
+
+        if (!in_array($mood, $allowedMoods, true)) {
+            return ['valid' => false, 'message' => 'Invalid feedback mood selected'];
+        }
+
+        return ['valid' => true, 'message' => ''];
+    }
+
+    public function validateRecommendation(?string $recommendation): array
+    {
+        if ($recommendation === null || '' === trim($recommendation)) {
+            return ['valid' => false, 'message' => 'Please tell us whether you would recommend this experience'];
+        }
+
+        if (!in_array($recommendation, ['yes', 'no'], true)) {
+            return ['valid' => false, 'message' => 'Invalid recommendation value'];
+        }
+
+        return ['valid' => true, 'message' => ''];
+    }
+
+    public function validateQuantity(?string $quantity): array
+    {
+        if ($quantity === null || trim($quantity) === '') {
+            return ['valid' => false, 'message' => 'Quantity is required'];
+        }
+
+        if (!ctype_digit($quantity) || (int) $quantity < 1) {
+            return ['valid' => false, 'message' => 'Quantity must be a positive whole number'];
+        }
+
+        return ['valid' => true, 'message' => ''];
+    }
+
+    public function validateDeliveryAddress(?string $address): array
+    {
+        if ($address === null || '' === trim($address)) {
+            return ['valid' => false, 'message' => 'Delivery address is required'];
+        }
+
+        if (mb_strlen(trim($address)) < 10) {
+            return ['valid' => false, 'message' => 'Delivery address must contain enough detail'];
+        }
+
+        return ['valid' => true, 'message' => ''];
+    }
+
     public function validateComment(?string $comment): array
     {
         if ($comment === null || trim($comment) === '') {
             return ['valid' => false, 'message' => 'Comment is required'];
+        }
+
+        return ['valid' => true, 'message' => ''];
+    }
+
+    public function validateFeedbackComment(?string $comment): array
+    {
+        if ($comment === null || trim($comment) === '') {
+            return ['valid' => false, 'message' => 'Feedback comment is required'];
+        }
+
+        $comment = trim($comment);
+        if (mb_strlen($comment) < 20) {
+            return ['valid' => false, 'message' => 'Feedback comment must be at least 20 characters long'];
+        }
+
+        if (mb_strlen($comment) > 1500) {
+            return ['valid' => false, 'message' => 'Feedback comment cannot be longer than 1500 characters'];
         }
 
         return ['valid' => true, 'message' => ''];

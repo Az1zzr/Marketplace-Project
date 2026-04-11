@@ -7,25 +7,11 @@
 <li class="breadcrumb-item active" aria-current="page">New</li>
 {% endblock %}
 
-{% block stylesheets %}
-{{ parent() }}
-<style>
-.spell-error {
-    background-color: #fff3cd;
-    border-bottom: 2px wavy #dc3545;
-    padding: 0 2px;
-}
-#spellCheckResults {
-    max-height: 200px;
-    overflow-y: auto;
-}
-</style>
-{% endblock %}
-
 {% block body %}
+{% set isDeliveryFeedback = feedbackType == 'delivery' %}
 <div class="page-header">
     <h1><i class="bi bi-chat-heart me-2"></i>Create Feedback</h1>
-    <p>Share your experience with us</p>
+    <p>{% if isDeliveryFeedback %}Share a professional review about the delivery driver and the delivery experience.{% else %}Share your experience about a product you really purchased and received.{% endif %}</p>
 </div>
 
 <div class="row">
@@ -46,24 +32,95 @@
                 </div>
                 {% endif %}
 
-                <form method="post" id="feedbackForm">
+                <form method="post" id="feedbackForm" novalidate>
+                    {% if isDeliveryFeedback %}
+                    <div class="mb-4">
+                        <label class="form-label">Delivered Order</label>
+                        <div class="border rounded-4 p-3 bg-light">
+                            <div class="fw-semibold">Driver {{ delivery.livreur }}</div>
+                            <div class="text-muted small mt-1">
+                                Order #{{ delivery.commande.numeroCommande }} | Delivered on {{ delivery.dateLivraison|date('Y-m-d') }}
+                            </div>
+                        </div>
+                        <div class="form-text">You can review the driver only after the delivery has been completed.</div>
+                    </div>
+                    {% else %}
+                    <div class="mb-4">
+                        <label for="ligneCommandeId" class="form-label">Purchased Product</label>
+                        {% if selectedLine %}
+                        <div class="border rounded-4 p-3 bg-light">
+                            <div class="fw-semibold">{{ selectedLine.produit.nomProduit }}</div>
+                            <div class="text-muted small mt-1">
+                                Order #{{ selectedLine.commande.numeroCommande }} | Quantity {{ selectedLine.quantite }} | {{ selectedLine.prixUnitaire|number_format(2, '.', ',') }} TND
+                            </div>
+                        </div>
+                        <input type="hidden" name="ligneCommandeId" value="{{ selectedLine.id }}">
+                        {% else %}
+                        <select name="ligneCommandeId" id="ligneCommandeId" class="form-select {% if errors['ligneCommandeId'] is defined %}is-invalid{% endif %}">
+                            <option value="">Choose a purchased product</option>
+                            {% for ligne in availableFeedbackItems %}
+                            <option value="{{ ligne.id }}" {% if app.request.request.get('ligneCommandeId') == ligne.id %}selected{% endif %}>
+                                {{ ligne.produit.nomProduit }} | Order #{{ ligne.commande.numeroCommande }} | Qty {{ ligne.quantite }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if errors['ligneCommandeId'] is defined %}
+                        <div class="invalid-feedback d-block">{{ errors['ligneCommandeId'] }}</div>
+                        {% endif %}
+                        {% endif %}
+                        <div class="form-text">You can only leave feedback for products from orders that have already been delivered.</div>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-4">
+                        <label for="titre" class="form-label">Review Title</label>
+                        <input type="text" name="titre" id="titre" class="form-control {% if errors['titre'] is defined %}is-invalid{% endif %}" value="{{ app.request.request.get('titre') }}" placeholder="{% if isDeliveryFeedback %}Fast driver, careful delivery, very professional{% else %}Great quality, worth the price, excellent packaging{% endif %}">
+                        {% if errors['titre'] is defined %}
+                        <div class="invalid-feedback d-block">{{ errors['titre'] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Mood</label>
+                        {% set selectedMood = app.request.request.get('ambiance') %}
+                        <div class="border rounded-3 p-3">
+                            {% for mood in [
+                                {'value': 'love', 'emoji': '😍', 'label': 'Loved it'},
+                                {'value': 'happy', 'emoji': '😊', 'label': 'Happy'},
+                                {'value': 'neutral', 'emoji': '😐', 'label': 'Neutral'},
+                                {'value': 'sad', 'emoji': '😕', 'label': 'Disappointed'},
+                                {'value': 'angry', 'emoji': '😡', 'label': 'Frustrated'}
+                            ] %}
+                            <div class="form-check mb-2 {% if loop.last %}mb-0{% endif %}">
+                                <input class="form-check-input" type="radio" name="ambiance" id="ambiance_{{ mood.value }}" value="{{ mood.value }}" {% if selectedMood == mood.value %}checked{% endif %}>
+                                <label class="form-check-label" for="ambiance_{{ mood.value }}">
+                                    <span class="me-2">{{ mood.emoji }}</span>{{ mood.label }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if errors['ambiance'] is defined %}
+                        <div class="invalid-feedback d-block">{{ errors['ambiance'] }}</div>
+                        {% endif %}
+                    </div>
+
                     <div class="mb-4">
                         <label for="note" class="form-label">Rating <span class="text-danger">*</span></label>
                         <div class="rating-input">
                             <div class="btn-group w-100" role="group">
-                                <input type="radio" class="btn-check" name="note" id="star1" value="1" required>
+                                <input type="radio" class="btn-check" name="note" id="star1" value="1" {% if app.request.request.get('note') == '1' %}checked{% endif %}>
                                 <label class="btn btn-outline-warning" for="star1">⭐ 1</label>
                                 
-                                <input type="radio" class="btn-check" name="note" id="star2" value="2">
+                                <input type="radio" class="btn-check" name="note" id="star2" value="2" {% if app.request.request.get('note') == '2' %}checked{% endif %}>
                                 <label class="btn btn-outline-warning" for="star2">⭐⭐ 2</label>
                                 
-                                <input type="radio" class="btn-check" name="note" id="star3" value="3">
+                                <input type="radio" class="btn-check" name="note" id="star3" value="3" {% if app.request.request.get('note') == '3' %}checked{% endif %}>
                                 <label class="btn btn-outline-warning" for="star3">⭐⭐⭐ 3</label>
                                 
-                                <input type="radio" class="btn-check" name="note" id="star4" value="4">
+                                <input type="radio" class="btn-check" name="note" id="star4" value="4" {% if app.request.request.get('note') == '4' %}checked{% endif %}>
                                 <label class="btn btn-outline-warning" for="star4">⭐⭐⭐⭐ 4</label>
                                 
-                                <input type="radio" class="btn-check" name="note" id="star5" value="5">
+                                <input type="radio" class="btn-check" name="note" id="star5" value="5" {% if app.request.request.get('note') == '5' %}checked{% endif %}>
                                 <label class="btn btn-outline-warning" for="star5">⭐⭐⭐⭐⭐ 5</label>
                             </div>
                         </div>
@@ -73,14 +130,31 @@
                     </div>
                     
                     <div class="mb-4">
+                        <label class="form-label">Would You Recommend {% if isDeliveryFeedback %}This Driver{% else %}This Product{% endif %}?</label>
+                        {% set selectedRecommendation = app.request.request.get('recommande') %}
+                        <div class="border rounded-3 p-3">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="recommande" id="recommande_yes" value="yes" {% if selectedRecommendation == 'yes' %}checked{% endif %}>
+                                <label class="form-check-label" for="recommande_yes">Yes, I would recommend it</label>
+                            </div>
+                            <div class="form-check mb-0">
+                                <input class="form-check-input" type="radio" name="recommande" id="recommande_no" value="no" {% if selectedRecommendation == 'no' %}checked{% endif %}>
+                                <label class="form-check-label" for="recommande_no">No, I would not recommend it</label>
+                            </div>
+                        </div>
+                        {% if errors['recommande'] is defined %}
+                        <div class="invalid-feedback d-block">{{ errors['recommande'] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4">
                         <label for="commentaire" class="form-label">Your Comment <span class="text-danger">*</span></label>
                         <textarea 
                             name="commentaire" 
                             id="commentaire" 
                             class="form-control {% if errors['commentaire'] is defined or errors['profanity'] is defined %}is-invalid{% endif %}" 
                             rows="5" 
-                            required 
-                            placeholder="Tell us about your experience..."
+                            placeholder="{% if isDeliveryFeedback %}Describe the driver's professionalism, punctuality, package handling, and overall delivery quality...{% else %}Tell us about the product quality, packaging, usability, and overall value...{% endif %}"
                         >{% if errors is defined %}{{ app.request.request.get('commentaire') }}{% endif %}</textarea>
                         {% if errors['commentaire'] is defined %}
                         <div class="invalid-feedback">{{ errors['commentaire'] }}</div>
@@ -93,13 +167,6 @@
                         <div class="form-text">Your comment will be checked for inappropriate language.</div>
                     </div>
 
-                    <div class="mb-4">
-                        <button type="button" id="spellCheckBtn" class="btn btn-outline-info">
-                            <i class="bi bi-spell-check me-1"></i> Check Spelling
-                        </button>
-                        <div id="spellCheckResults" class="mt-2"></div>
-                    </div>
-                    
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-check-lg me-1"></i> Submit Feedback
@@ -133,6 +200,10 @@
                         Keep it respectful and professional
                     </li>
                     <li class="mb-3">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        Match your title, emoji mood, and rating to your real experience
+                    </li>
+                    <li class="mb-3">
                         <i class="bi bi-x-circle-fill text-danger me-2"></i>
                         No inappropriate language
                     </li>
@@ -144,73 +215,6 @@
             </div>
         </div>
         
-        <div class="card mt-3">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-magic me-2"></i>Features</h5>
-            </div>
-            <div class="card-body">
-                <ul class="list-unstyled mb-0 small">
-                    <li class="mb-2">
-                        <i class="bi bi-shield-check text-success me-2"></i>
-                        Bad words filter (French & English)
-                    </li>
-                    <li class="mb-2">
-                        <i class="bi bi-spell-check text-info me-2"></i>
-                        Spell checker (LanguageTool API)
-                    </li>
-                    <li>
-                        <i class="bi bi-emoji-smile text-warning me-2"></i>
-                        Sentiment analysis
-                    </li>
-                </ul>
-            </div>
-        </div>
     </div>
 </div>
-{% endblock %}
-
-{% block javascripts %}
-<script>
-document.getElementById('spellCheckBtn').addEventListener('click', function() {
-    const text = document.getElementById('commentaire').value;
-    const resultsDiv = document.getElementById('spellCheckResults');
-    
-    if (!text.trim()) {
-        resultsDiv.innerHTML = '<div class="alert alert-warning">Please enter some text to check.</div>';
-        return;
-    }
-    
-    resultsDiv.innerHTML = '<div class="text-muted"><i class="bi bi-arrow-repeat spin me-1"></i>Checking spelling...</div>';
-    
-    fetch('{{ path('api_spellcheck') }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'text=' + encodeURIComponent(text)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success && data.errors && data.errors.length > 0) {
-            let html = '<div class="alert alert-warning"><strong><i class="bi bi-exclamation-triangle me-1"></i>Found ' + data.errorCount + ' spelling/grammar issue(s):</strong><ul class="mb-0 mt-2">';
-            data.errors.forEach(function(error) {
-                html += '<li>' + error.context + ' <em class="text-danger">' + error.message + '</em>';
-                if (error.suggestions && error.suggestions.length > 0) {
-                    html += '<br><small class="text-success">Suggestions: ' + error.suggestions.slice(0, 3).join(', ') + '</small>';
-                }
-                html += '</li>';
-            });
-            html += '</ul></div>';
-            resultsDiv.innerHTML = html;
-        } else if (data.success) {
-            resultsDiv.innerHTML = '<div class="alert alert-success"><i class="bi bi-check-circle me-1"></i>No spelling errors found!</div>';
-        } else {
-            resultsDiv.innerHTML = '<div class="alert alert-danger"><i class="bi bi-x-circle me-1"></i>Error checking spelling: ' + (data.error || 'Unknown error') + '</div>';
-        }
-    })
-    .catch(error => {
-        resultsDiv.innerHTML = '<div class="alert alert-danger"><i class="bi bi-x-circle me-1"></i>Network error. Please try again.</div>';
-    });
-});
-</script>
 {% endblock %}

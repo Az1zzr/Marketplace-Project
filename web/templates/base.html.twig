@@ -4,533 +4,663 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Marketplace{% endblock %}</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><text y='1.2em' font-size='96'>🛒</text></svg>">
-    
-    <!-- Bootstrap 5 CSS -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><text y='1.2em' font-size='96'>M</text></svg>">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
     {% block stylesheets %}
     <style>
         :root {
-            --primary-color: #4f46e5;
-            --primary-hover: #4338ca;
-            --secondary-color: #64748b;
-            --success-color: #10b981;
-            --danger-color: #ef4444;
-            --warning-color: #f59e0b;
-            --info-color: #06b6d4;
-            --sidebar-width: 260px;
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --slate-950: #020617;
+            --slate-900: #0f172a;
+            --slate-800: #1e293b;
+            --slate-700: #334155;
+            --slate-600: #475569;
+            --slate-500: #64748b;
+            --slate-200: #e2e8f0;
+            --slate-100: #f1f5f9;
+            --surface: #ffffff;
+            --front-accent: #0f766e;
+            --front-accent-soft: #ccfbf1;
+            --danger-soft: #fee2e2;
+            --success-soft: #dcfce7;
+            --warning-soft: #fef3c7;
         }
-        
+
         * {
-            margin: 0;
-            padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
+            margin: 0;
+            min-height: 100vh;
             font-family: 'Inter', sans-serif;
-            background-color: #f1f5f9;
-            min-height: 100vh;
+            background: var(--slate-100);
+            color: var(--slate-900);
         }
-        
-        /* Sidebar */
-        .sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: var(--sidebar-width);
-            height: 100vh;
-            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-            padding: 0;
-            z-index: 1000;
-            overflow-y: auto;
+
+        a {
+            color: inherit;
         }
-        
-        .sidebar-brand {
-            padding: 1.5rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .sidebar-brand h2 {
-            color: #fff;
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin: 0;
-        }
-        
-        .sidebar-brand h2 i {
-            color: var(--primary-color);
-        }
-        
-        .sidebar-nav {
-            padding: 1rem 0;
-        }
-        
-        .sidebar-nav .nav-section {
-            padding: 0.5rem 1.5rem;
-            color: rgba(255,255,255,0.4);
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-top: 1rem;
-        }
-        
-        .sidebar-nav .nav-item {
-            margin: 0.25rem 0;
-        }
-        
-        .sidebar-nav .nav-link {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem 1.5rem;
-            color: rgba(255,255,255,0.7);
-            text-decoration: none;
-            transition: all 0.2s;
-            border-left: 3px solid transparent;
-        }
-        
-        .sidebar-nav .nav-link:hover {
-            background: rgba(255,255,255,0.05);
-            color: #fff;
-            border-left-color: var(--primary-color);
-        }
-        
-        .sidebar-nav .nav-link.active {
-            background: rgba(79, 70, 229, 0.1);
-            color: #fff;
-            border-left-color: var(--primary-color);
-        }
-        
-        .sidebar-nav .nav-link i {
-            width: 24px;
-            margin-right: 12px;
-            font-size: 1.1rem;
-        }
-        
-        /* Main Content */
-        .main-content {
-            margin-left: var(--sidebar-width);
-            min-height: 100vh;
-        }
-        
-        /* Top Navbar */
-        .top-navbar {
-            background: #fff;
-            padding: 1rem 2rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .top-navbar .breadcrumb {
-            margin: 0;
-            background: transparent;
-        }
-        
-        .top-navbar .breadcrumb-item a {
-            color: var(--secondary-color);
-            text-decoration: none;
-        }
-        
-        .top-navbar .breadcrumb-item.active {
-            color: #1e293b;
-            font-weight: 500;
-        }
-        
-        .user-dropdown .dropdown-toggle {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: transparent;
-            border: none;
-            color: #1e293b;
-            font-weight: 500;
-        }
-        
-        .user-dropdown .dropdown-toggle::after {
-            display: none;
-        }
-        
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary-color), #818cf8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            font-weight: 600;
-        }
-        
-        /* Page Content */
+
         .page-content {
             padding: 2rem;
         }
-        
+
         .page-header {
             margin-bottom: 2rem;
         }
-        
+
         .page-header h1 {
-            font-size: 1.875rem;
-            font-weight: 700;
-            color: #1e293b;
             margin: 0;
-        }
-        
-        .page-header p {
-            color: var(--secondary-color);
-            margin-top: 0.5rem;
-        }
-        
-        /* Cards */
-        .card {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-            margin-bottom: 1.5rem;
-        }
-        
-        .card-header {
-            background: #fff;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 1.25rem 1.5rem;
-            border-radius: 12px 12px 0 0;
-        }
-        
-        .card-header h5 {
-            margin: 0;
-            font-weight: 600;
-            color: #1e293b;
-        }
-        
-        .card-body {
-            padding: 1.5rem;
-        }
-        
-        /* Tables */
-        .table {
-            margin: 0;
-        }
-        
-        .table thead th {
-            background: #f8fafc;
-            border-bottom: 2px solid #e2e8f0;
-            color: var(--secondary-color);
-            font-weight: 600;
-            font-size: 0.875rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            padding: 1rem;
-        }
-        
-        .table tbody td {
-            padding: 1rem;
-            vertical-align: middle;
-            border-bottom: 1px solid #f1f5f9;
-            color: #334155;
-        }
-        
-        .table tbody tr:hover {
-            background: #f8fafc;
-        }
-        
-        /* Buttons */
-        .btn {
-            font-weight: 500;
-            padding: 0.625rem 1.25rem;
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-        
-        .btn-primary {
-            background: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-        
-        .btn-primary:hover {
-            background: var(--primary-hover);
-            border-color: var(--primary-hover);
-            transform: translateY(-1px);
-        }
-        
-        .btn-success {
-            background: var(--success-color);
-            border-color: var(--success-color);
-        }
-        
-        .btn-success:hover {
-            background: #059669;
-            border-color: #059669;
-        }
-        
-        .btn-danger {
-            background: var(--danger-color);
-            border-color: var(--danger-color);
-        }
-        
-        .btn-danger:hover {
-            background: #dc2626;
-            border-color: #dc2626;
-        }
-        
-        .btn-outline-secondary {
-            color: var(--secondary-color);
-            border-color: #e2e8f0;
-        }
-        
-        .btn-outline-secondary:hover {
-            background: #f1f5f9;
-            color: #1e293b;
-            border-color: #e2e8f0;
-        }
-        
-        .btn-sm {
-            padding: 0.375rem 0.75rem;
-            font-size: 0.875rem;
-        }
-        
-        /* Forms */
-        .form-label {
-            font-weight: 500;
-            color: #334155;
-            margin-bottom: 0.5rem;
-        }
-        
-        .form-control, .form-select {
-            border-radius: 8px;
-            border-color: #e2e8f0;
-            padding: 0.75rem 1rem;
-        }
-        
-        .form-control:focus, .form-select:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-        
-        /* Badges */
-        .badge {
-            font-weight: 500;
-            padding: 0.5rem 0.75rem;
-            border-radius: 6px;
-        }
-        
-        .badge-status-pending { background: #fef3c7; color: #92400e; }
-        .badge-status-confirmed { background: #d1fae5; color: #065f46; }
-        .badge-status-cancelled { background: #fee2e2; color: #991b1b; }
-        .badge-status-progress { background: #dbeafe; color: #1e40af; }
-        .badge-status-delivered { background: #d1fae5; color: #065f46; }
-        .badge-status-delayed { background: #fce7f3; color: #9d174d; }
-        
-        /* Stats Cards */
-        .stat-card {
-            border-radius: 12px;
-            padding: 1.5rem;
-            color: #fff;
-        }
-        
-        .stat-card.primary { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
-        .stat-card.success { background: linear-gradient(135deg, #10b981, #059669); }
-        .stat-card.warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
-        .stat-card.danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
-        .stat-card.info { background: linear-gradient(135deg, #06b6d4, #0891b2); }
-        
-        .stat-card .stat-icon {
-            font-size: 2.5rem;
-            opacity: 0.8;
-        }
-        
-        .stat-card .stat-value {
             font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+
+        .page-header p {
+            margin: 0.5rem 0 0;
+            color: var(--slate-500);
+        }
+
+        .card {
+            border: 0;
+            border-radius: 18px;
+            box-shadow: 0 20px 40px -32px rgba(15, 23, 42, 0.45);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--slate-200);
+            padding: 1.1rem 1.25rem;
+        }
+
+        .card-body {
+            padding: 1.25rem;
+        }
+
+        .card-footer {
+            background: var(--surface);
+            border-top: 1px solid var(--slate-200);
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+
+        .stat-card {
+            padding: 1.25rem;
+            border-radius: 18px;
+            background: var(--surface);
+            border: 1px solid rgba(148, 163, 184, 0.14);
+        }
+
+        .stat-label {
+            font-size: 0.82rem;
             font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--slate-500);
         }
-        
-        .stat-card .stat-label {
-            font-size: 0.875rem;
-            opacity: 0.9;
+
+        .stat-value {
+            margin-top: 0.5rem;
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.04em;
         }
-        
-        /* Star Rating */
-        .star-rating {
-            color: #fbbf24;
-            font-size: 1.25rem;
+
+        .stat-note {
+            margin-top: 0.3rem;
+            color: var(--slate-500);
+            font-size: 0.9rem;
         }
-        
-        /* Alerts */
-        .alert {
-            border: none;
-            border-radius: 10px;
+
+        .flash-stack {
+            display: grid;
+            gap: 0.9rem;
+            margin-bottom: 1.25rem;
         }
-        
-        /* Login/Register Pages */
+
+        .flash-message {
+            border-radius: 14px;
+            padding: 0.95rem 1.1rem;
+            font-weight: 500;
+        }
+
+        .flash-success {
+            background: var(--success-soft);
+            color: #166534;
+        }
+
+        .flash-error {
+            background: var(--danger-soft);
+            color: #991b1b;
+        }
+
+        .role-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .role-pill-admin {
+            background: rgba(37, 99, 235, 0.12);
+            color: var(--primary-dark);
+        }
+
+        .role-pill-front {
+            background: var(--front-accent-soft);
+            color: var(--front-accent);
+        }
+
+        .user-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary-color), #7c3aed);
+            color: #fff;
+            flex-shrink: 0;
+        }
+
         .auth-container {
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2rem 1rem;
+            background:
+                radial-gradient(circle at top left, rgba(37, 99, 235, 0.2), transparent 30%),
+                radial-gradient(circle at bottom right, rgba(15, 118, 110, 0.22), transparent 30%),
+                linear-gradient(135deg, #e2e8f0, #f8fafc 58%, #dbeafe);
         }
-        
+
         .auth-card {
-            background: #fff;
-            border-radius: 16px;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-            padding: 3rem;
             width: 100%;
-            max-width: 420px;
+            max-width: 440px;
+            padding: 3rem;
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 40px 70px -40px rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.7);
         }
-        
+
         .auth-logo {
-            font-size: 3rem;
             text-align: center;
+            font-size: 3rem;
+            font-weight: 800;
             margin-bottom: 1rem;
         }
-        
-        /* Action Buttons Group */
-        .action-buttons .btn {
-            margin-right: 0.25rem;
+
+        .admin-shell {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
         }
-        
-        /* Responsive */
-        @media (max-width: 991.98px) {
-            .sidebar {
+
+        .admin-sidebar {
+            padding: 1.75rem 1.2rem;
+            background: linear-gradient(180deg, var(--slate-950), var(--slate-900));
+            color: #fff;
+        }
+
+        .admin-brand {
+            display: block;
+            text-decoration: none;
+            color: #fff;
+            margin-bottom: 1.5rem;
+        }
+
+        .admin-brand span {
+            display: block;
+        }
+
+        .admin-brand-title {
+            font-size: 1.45rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+
+        .admin-brand-note {
+            color: rgba(226, 232, 240, 0.7);
+            margin-top: 0.35rem;
+            font-size: 0.92rem;
+        }
+
+        .admin-nav-section {
+            margin: 1.4rem 0 0.55rem;
+            padding: 0 0.8rem;
+            color: rgba(226, 232, 240, 0.56);
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .admin-nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.85rem 0.95rem;
+            border-radius: 14px;
+            color: rgba(226, 232, 240, 0.82);
+            text-decoration: none;
+            margin-bottom: 0.35rem;
+            font-weight: 500;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .admin-nav-link:hover,
+        .admin-nav-link.active {
+            background: rgba(59, 130, 246, 0.16);
+            color: #fff;
+        }
+
+        .admin-main {
+            min-width: 0;
+        }
+
+        .admin-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1.35rem 2rem;
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+        }
+
+        .admin-account,
+        .front-account {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+        }
+
+        .account-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 0.1rem;
+        }
+
+        .account-meta strong {
+            font-size: 0.95rem;
+        }
+
+        .account-meta span {
+            color: var(--slate-500);
+            font-size: 0.85rem;
+        }
+
+        .front-shell {
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at top left, rgba(15, 118, 110, 0.1), transparent 28%),
+                radial-gradient(circle at top right, rgba(37, 99, 235, 0.1), transparent 24%),
+                #f8fafc;
+        }
+
+        .front-header {
+            border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+            background: rgba(255, 255, 255, 0.92);
+        }
+
+        .front-header-inner {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 1.2rem 1.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .front-brand {
+            text-decoration: none;
+            font-size: 1.45rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: var(--slate-900);
+        }
+
+        .front-nav {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            flex-wrap: wrap;
+        }
+
+        .front-nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.7rem 0.95rem;
+            border-radius: 999px;
+            text-decoration: none;
+            color: var(--slate-700);
+            font-weight: 600;
+        }
+
+        .front-nav-link:hover,
+        .front-nav-link.active {
+            background: rgba(15, 118, 110, 0.12);
+            color: var(--front-accent);
+        }
+
+        .front-main {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 2rem 1.4rem 3rem;
+        }
+
+        .front-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1.2rem 1.35rem;
+            border-radius: 22px;
+            background: linear-gradient(135deg, #ffffff, #ecfeff);
+            border: 1px solid rgba(15, 118, 110, 0.12);
+            margin-bottom: 1.5rem;
+        }
+
+        .front-banner h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 800;
+        }
+
+        .front-banner p {
+            margin: 0.35rem 0 0;
+            color: var(--slate-500);
+        }
+
+        .table thead th {
+            background: #f8fafc;
+            color: var(--slate-500);
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-weight: 700;
+            border-bottom: 1px solid var(--slate-200);
+        }
+
+        .table tbody td {
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .breadcrumb {
+            margin: 0;
+        }
+
+        .breadcrumb-item a {
+            color: var(--slate-500);
+            text-decoration: none;
+        }
+
+        .breadcrumb-item.active {
+            color: var(--slate-900);
+            font-weight: 600;
+        }
+
+        @media (max-width: 1100px) {
+            .admin-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .admin-sidebar {
+                padding-bottom: 0.75rem;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .admin-topbar,
+            .front-header-inner,
+            .front-banner {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .admin-account,
+            .front-account {
                 width: 100%;
-                height: auto;
-                position: relative;
+                justify-content: space-between;
             }
-            
-            .main-content {
-                margin-left: 0;
+
+            .page-content,
+            .front-main {
+                padding-left: 1rem;
+                padding-right: 1rem;
             }
-            
-            .sidebar-nav .nav-section,
-            .sidebar-nav .nav-item {
-                display: inline-block;
+        }
+
+        @media (max-width: 640px) {
+            .auth-card {
+                padding: 2rem 1.4rem;
             }
-            
-            .sidebar-nav .nav-link {
-                padding: 0.75rem 1rem;
+
+            .page-header h1 {
+                font-size: 1.55rem;
             }
         }
     </style>
     {% endblock %}
 </head>
 <body>
+    {% set renderedBreadcrumb %}{% block breadcrumb %}{% endblock %}{% endset %}
+    {% set renderedBody %}{% block body %}{% endblock %}{% endset %}
+    {% set renderedAuthContent %}{% block auth_content %}{% endblock %}{% endset %}
+
+    {% set currentRoute = app.request.attributes.get('_route') %}
     {% if app.user %}
-    <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="sidebar-brand">
-            <h2><i class="bi bi-bag-check-fill"></i> Marketplace</h2>
+        {% set dashboardRoute = is_granted('ROLE_ADMIN') ? 'app_admin_dashboard' : 'app_front_dashboard' %}
+        {% set roleCode = app.user.roleCode %}
+
+        {% if is_granted('ROLE_ADMIN') %}
+        <div class="admin-shell">
+            <aside class="admin-sidebar">
+                <a href="{{ path('app_admin_dashboard') }}" class="admin-brand">
+                    <span class="admin-brand-title">Marketplace</span>
+                    <span class="admin-brand-note">Admin backend</span>
+                </a>
+
+                <div class="admin-nav-section">Overview</div>
+                <a href="{{ path('app_admin_dashboard') }}" class="admin-nav-link {% if currentRoute == 'app_admin_dashboard' %}active{% endif %}">
+                    <i class="bi bi-speedometer2"></i>
+                    Dashboard
+                </a>
+
+                <div class="admin-nav-section">Operations</div>
+                <a href="{{ path('app_produit_index') }}" class="admin-nav-link {% if 'produit' in currentRoute %}active{% endif %}">
+                    <i class="bi bi-box-seam"></i>
+                    Products
+                </a>
+                <a href="{{ path('app_categorie_index') }}" class="admin-nav-link {% if 'categorie' in currentRoute %}active{% endif %}">
+                    <i class="bi bi-tags"></i>
+                    Categories
+                </a>
+                <a href="{{ path('app_commande_index') }}" class="admin-nav-link {% if 'commande' in currentRoute %}active{% endif %}">
+                    <i class="bi bi-cart3"></i>
+                    Orders
+                </a>
+                <a href="{{ path('app_livraison_index') }}" class="admin-nav-link {% if 'livraison' in currentRoute %}active{% endif %}">
+                    <i class="bi bi-truck"></i>
+                    Deliveries
+                </a>
+                <a href="{{ path('app_feedback_index') }}" class="admin-nav-link {% if 'feedback' in currentRoute or 'reponse' in currentRoute %}active{% endif %}">
+                    <i class="bi bi-chat-left-text"></i>
+                    Feedback
+                </a>
+
+                <div class="admin-nav-section">Administration</div>
+                <a href="{{ path('app_user_index') }}" class="admin-nav-link {% if 'user' in currentRoute %}active{% endif %}">
+                    <i class="bi bi-people"></i>
+                    Users
+                </a>
+                <a href="{{ path('app_role_index') }}" class="admin-nav-link {% if 'role' in currentRoute %}active{% endif %}">
+                    <i class="bi bi-shield-lock"></i>
+                    Roles
+                </a>
+            </aside>
+
+            <div class="admin-main">
+                <header class="admin-topbar">
+                    <div>
+                        <div class="role-pill role-pill-admin">
+                            <i class="bi bi-shield-check"></i>
+                            Admin Space
+                        </div>
+                        <nav aria-label="breadcrumb" class="mt-3">
+                            <ol class="breadcrumb">
+                                <li class="breadcrumb-item"><a href="{{ path('app_admin_dashboard') }}">Dashboard</a></li>
+                                {{ renderedBreadcrumb|raw }}
+                            </ol>
+                        </nav>
+                    </div>
+
+                    <div class="admin-account">
+                        <div class="user-avatar">{{ app.user.prenom|first }}{{ app.user.nom|first }}</div>
+                        <div class="account-meta">
+                            <strong>{{ app.user.nomComplet }}</strong>
+                            <span>{{ app.user.roleDisplayName }}</span>
+                        </div>
+                        <a href="{{ path('app_logout') }}" class="btn btn-outline-danger btn-sm">Logout</a>
+                    </div>
+                </header>
+
+                <main class="page-content">
+                    <div class="flash-stack">
+                        {% for message in app.flashes('success') %}
+                        <div class="flash-message flash-success">{{ message }}</div>
+                        {% endfor %}
+
+                        {% for message in app.flashes('error') %}
+                        <div class="flash-message flash-error">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+
+                    {{ renderedBody|raw }}
+                </main>
+            </div>
         </div>
-        
-        <nav class="sidebar-nav">
-            <div class="nav-section">Main</div>
-            <div class="nav-item">
-                <a href="{{ path('app_home') }}" class="nav-link {% if app.request.attributes.get('_route') == 'app_home' %}active{% endif %}">
-                    <i class="bi bi-house-door"></i> Dashboard
-                </a>
-            </div>
-            
-            <div class="nav-section">Management</div>
-            <div class="nav-item">
-                <a href="{{ path('app_produit_index') }}" class="nav-link {% if 'produit' in app.request.attributes.get('_route') %}active{% endif %}">
-                    <i class="bi bi-box-seam"></i> Products
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="{{ path('app_commande_index') }}" class="nav-link {% if 'commande' in app.request.attributes.get('_route') %}active{% endif %}">
-                    <i class="bi bi-cart3"></i> Orders
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="{{ path('app_livraison_index') }}" class="nav-link {% if 'livraison' in app.request.attributes.get('_route') %}active{% endif %}">
-                    <i class="bi bi-truck"></i> Deliveries
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="{{ path('app_feedback_index') }}" class="nav-link {% if 'feedback' in app.request.attributes.get('_route') %}active{% endif %}">
-                    <i class="bi bi-chat-dots"></i> Feedbacks
-                </a>
-            </div>
-            
-            {% if is_granted('ROLE_ADMIN') %}
-            <div class="nav-section">Administration</div>
-            <div class="nav-item">
-                <a href="{{ path('app_user_index') }}" class="nav-link {% if 'user' in app.request.attributes.get('_route') %}active{% endif %}">
-                    <i class="bi bi-people"></i> Users
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="{{ path('app_role_index') }}" class="nav-link {% if 'role' in app.request.attributes.get('_route') %}active{% endif %}">
-                    <i class="bi bi-shield-lock"></i> Roles
-                </a>
-            </div>
-            {% endif %}
-        </nav>
-    </aside>
-    
-    <!-- Main Content -->
-    <main class="main-content">
-        <!-- Top Navbar -->
-        <header class="top-navbar">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ path('app_home') }}"><i class="bi bi-house-door"></i> Home</a></li>
-                    {% block breadcrumb %}{% endblock %}
-                </ol>
-            </nav>
-            
-            <div class="dropdown user-dropdown">
-                <button class="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <div class="user-avatar">{{ app.user.prenom|first }}{{ app.user.nom|first }}</div>
-                    <span>{{ app.user.prenom }} {{ app.user.nom }}</span>
-                    <i class="bi bi-chevron-down ms-1"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end shadow">
-                    <li><span class="dropdown-item-text text-muted small">{{ app.user.role.nomRole }}</span></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i> Profile</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i> Settings</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" href="{{ path('app_logout') }}"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
-                </ul>
-            </div>
-        </header>
-        
-        <!-- Page Content -->
-        <div class="page-content">
-            {% for message in app.flashes('success') %}
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="bi bi-check-circle-fill me-2"></i> {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-            {% endfor %}
-            
-            {% for message in app.flashes('error') %}
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-            {% endfor %}
-            
-            {% block body %}{% endblock %}
+        {% else %}
+        <div class="front-shell">
+            <header class="front-header">
+                <div class="front-header-inner">
+                    <a href="{{ path('app_front_dashboard') }}" class="front-brand">Marketplace</a>
+
+                    <nav class="front-nav">
+                        <a href="{{ path('app_front_dashboard') }}" class="front-nav-link {% if currentRoute == 'app_front_dashboard' %}active{% endif %}">
+                            <i class="bi bi-house-door"></i>
+                            Home
+                        </a>
+                        <a href="{{ path('app_produit_index') }}" class="front-nav-link {% if 'produit' in currentRoute %}active{% endif %}">
+                            <i class="bi bi-grid"></i>
+                            Products
+                        </a>
+                        {% if roleCode in ['client', 'fournisseur'] %}
+                        <a href="{{ path('app_commande_index') }}" class="front-nav-link {% if 'commande' in currentRoute %}active{% endif %}">
+                            <i class="bi bi-bag-check"></i>
+                            Orders
+                        </a>
+                        {% endif %}
+                        {% if roleCode in ['client', 'fournisseur'] %}
+                        <a href="{{ path('app_livraison_index') }}" class="front-nav-link {% if 'livraison' in currentRoute %}active{% endif %}">
+                            <i class="bi bi-truck"></i>
+                            Deliveries
+                        </a>
+                        {% endif %}
+                        {% if roleCode == 'fournisseur' %}
+                        <a href="{{ path('app_categorie_index') }}" class="front-nav-link {% if 'categorie' in currentRoute %}active{% endif %}">
+                            <i class="bi bi-tags"></i>
+                            Categories
+                        </a>
+                        {% endif %}
+                        <a href="{{ path('app_feedback_index') }}" class="front-nav-link {% if 'feedback' in currentRoute or 'reponse' in currentRoute %}active{% endif %}">
+                            <i class="bi bi-chat-left-quote"></i>
+                            Feedback
+                        </a>
+                    </nav>
+
+                    <div class="front-account">
+                        <div class="user-avatar">{{ app.user.prenom|first }}{{ app.user.nom|first }}</div>
+                        <div class="account-meta">
+                            <strong>{{ app.user.nomComplet }}</strong>
+                            <span>{{ app.user.roleDisplayName }} Space</span>
+                        </div>
+                        <a href="{{ path('app_logout') }}" class="btn btn-outline-danger btn-sm">Logout</a>
+                    </div>
+                </div>
+            </header>
+
+            <main class="front-main">
+                <section class="front-banner">
+                    <div>
+                        <div class="role-pill role-pill-front">
+                            <i class="bi bi-shop-window"></i>
+                            {{ app.user.roleDisplayName }} Interface
+                        </div>
+                        <h2 class="mt-3">
+                            {% if roleCode == 'fournisseur' %}
+                            Manage your catalog, receive client orders, assign deliveries, and answer customer conversations.
+                            {% else %}
+                            Discover products, place orders, and share real feedback.
+                            {% endif %}
+                        </h2>
+                        <p>
+                            {% if roleCode == 'fournisseur' %}
+                            Your tools focus on publishing products, tracking buyer orders, and assigning delivery drivers.
+                            {% else %}
+                            Your tools focus on browsing, buying, and reviewing products.
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{{ path(dashboardRoute) }}">Home</a></li>
+                            {{ renderedBreadcrumb|raw }}
+                        </ol>
+                    </nav>
+                </section>
+
+                <div class="flash-stack">
+                    {% for message in app.flashes('success') %}
+                    <div class="flash-message flash-success">{{ message }}</div>
+                    {% endfor %}
+
+                {% for message in app.flashes('error') %}
+                    <div class="flash-message flash-error">{{ message }}</div>
+                    {% endfor %}
+                </div>
+
+                {{ renderedBody|raw }}
+            </main>
         </div>
-    </main>
+        {% endif %}
     {% else %}
-    <!-- Non-authenticated pages (login, register) -->
-    {% block auth_content %}{% endblock %}
+        {{ renderedAuthContent|raw }}
     {% endif %}
-    
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
     {% block javascripts %}{% endblock %}
 </body>
 </html>

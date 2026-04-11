@@ -24,6 +24,10 @@ class Reponse
     #[ORM\JoinColumn(name: 'feedback_id', referencedColumnName: 'id')]
     private ?Feedback $feedback = null;
 
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(name: 'auteur_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    private ?User $auteur = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -59,6 +63,17 @@ class Reponse
     public function setFeedback(?Feedback $feedback): static
     {
         $this->feedback = $feedback;
+        return $this;
+    }
+
+    public function getAuteur(): ?User
+    {
+        return $this->auteur;
+    }
+
+    public function setAuteur(?User $auteur): static
+    {
+        $this->auteur = $auteur;
         return $this;
     }
 }

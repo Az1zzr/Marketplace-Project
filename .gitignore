@@ -57,6 +57,9 @@ var/
 bin/
 composer.lock
 migrations/
+!web/migrations/
+!web/migrations/.gitignore
+!web/migrations/*.php
 uploads/
 
 # PHPUnit

@@ -11,7 +11,7 @@
 {% block body %}
 <div class="page-header">
     <h1><i class="bi bi-pencil me-2"></i>Edit Order</h1>
-    <p>Update order <strong>#{{ commande.numeroCommande }}</strong></p>
+    <p>Update the delivery details and status for <strong>#{{ commande.numeroCommande }}</strong></p>
 </div>
 
 <div class="row justify-content-center">
@@ -21,34 +21,35 @@
                 <h5 class="mb-0"><i class="bi bi-cart3 me-2"></i>Order Information</h5>
             </div>
             <div class="card-body">
-                <form method="post">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="client" class="form-label">Client Name <span class="text-danger">*</span></label>
-                            <input type="text" name="client" id="client" class="form-control" value="{{ commande.client }}" required>
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="montantTotal" class="form-label">Total Amount (TND) <span class="text-danger">*</span></label>
-                            <div class="input-group">
-                                <span class="input-group-text">TND</span>
-                                <input type="number" name="montantTotal" id="montantTotal" class="form-control" step="0.01" min="0" value="{{ commande.montantTotal }}" required>
-                            </div>
-                        </div>
+                <form method="post" novalidate>
+                    <div class="mb-3">
+                        <div class="text-muted small">Client</div>
+                        <div class="fw-semibold">{{ commande.clientDisplayName }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="text-muted small">Total Amount</div>
+                        <div class="fw-semibold">{{ commande.montantTotal|number_format(2, '.', ',') }} TND</div>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="adresseLivraison" class="form-label">Delivery Address <span class="text-danger">*</span></label>
-                        <textarea name="adresseLivraison" id="adresseLivraison" class="form-control" rows="3" required>{{ commande.adresseLivraison }}</textarea>
+                        <label for="adresseLivraison" class="form-label">Delivery Address</label>
+                        <textarea name="adresseLivraison" id="adresseLivraison" class="form-control {% if errors['adresseLivraison'] is defined %}is-invalid{% endif %}" rows="3">{{ app.request.request.get('adresseLivraison', commande.adresseLivraison) }}</textarea>
+                        {% if errors['adresseLivraison'] is defined %}
+                        <div class="invalid-feedback d-block">{{ errors['adresseLivraison'] }}</div>
+                        {% endif %}
                     </div>
                     
                     <div class="mb-4">
                         <label for="statut" class="form-label">Status</label>
                         <select name="statut" id="statut" class="form-select">
-                            <option value="En attente" {% if commande.statut == 'En attente' %}selected{% endif %}>En attente</option>
-                            <option value="Confirmee" {% if commande.statut == 'Confirmee' %}selected{% endif %}>Confirmee</option>
-                            <option value="Annulee" {% if commande.statut == 'Annulee' %}selected{% endif %}>Annulee</option>
+                            <option value="En attente" {% if app.request.request.get('statut', commande.statut) == 'En attente' %}selected{% endif %}>En attente</option>
+                            <option value="Confirmee" {% if app.request.request.get('statut', commande.statut) == 'Confirmee' %}selected{% endif %}>Confirmee</option>
+                            <option value="Annulee" {% if app.request.request.get('statut', commande.statut) == 'Annulee' %}selected{% endif %}>Annulee</option>
                         </select>
+                        {% if errors['statut'] is defined %}
+                        <div class="invalid-feedback d-block">{{ errors['statut'] }}</div>
+                        {% endif %}
                     </div>
                     
                     <hr class="my-4">

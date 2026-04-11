@@ -4,6 +4,11 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Form\RegisterType;
+use App\Repository\CategorieRepository;
+use App\Repository\CommandeRepository;
+use App\Repository\FeedbackRepository;
+use App\Repository\ProduitRepository;
+use App\Repository\UserRepository;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -19,7 +24,74 @@ class SecurityController extends AbstractController
     #[Route('/', name: 'app_home')]
     public function home(): Response
     {
-        return $this->render('home.html.twig');
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->redirectToRoute('app_login');
+        }
+
+        if ($this->isGranted('ROLE_ADMIN')) {
+            return $this->redirectToRoute('app_admin_dashboard');
+        }
+
+        return $this->redirectToRoute('app_front_dashboard');
+    }
+
+    #[Route('/admin', name: 'app_admin_dashboard')]
+    public function adminDashboard(
+        ProduitRepository $produitRepository,
+        CommandeRepository $commandeRepository,
+        FeedbackRepository $feedbackRepository,
+        UserRepository $userRepository
+    ): Response {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
+        return $this->render('dashboard/admin.html.twig', [
+            'stats' => [
+                'products' => $produitRepository->count([]),
+                'orders' => $commandeRepository->count([]),
+                'feedbacks' => $feedbackRepository->count([]),
+                'users' => $userRepository->count([]),
+            ],
+        ]);
+    }
+
+    #[Route('/front', name: 'app_front_dashboard')]
+    public function frontDashboard(
+        CategorieRepository $categorieRepository,
+        ProduitRepository $produitRepository,
+        CommandeRepository $commandeRepository,
+        FeedbackRepository $feedbackRepository
+    ): Response {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->redirectToRoute('app_login');
+        }
+
+        if ($this->isGranted('ROLE_ADMIN')) {
+            return $this->redirectToRoute('app_admin_dashboard');
+        }
+
+        $productsCount = $produitRepository->count([]);
+        $ordersCount = $commandeRepository->count([]);
+        $feedbackCount = $feedbackRepository->count([]);
+
+        if ($user->hasRoleCode(User::ROLE_CODE_FOURNISSEUR)) {
+            $productsCount = count($produitRepository->findBySearchAndSort('', 'nomProduit', 'asc', null, $user));
+            $ordersCount = count($commandeRepository->findBySearchAndSortForUser($user, '', 'dateCommande', 'desc', null));
+            $feedbackCount = count($feedbackRepository->findBySearchAndSort('', 'dateStatut', 'desc', $user));
+        } elseif ($user->hasRoleCode(User::ROLE_CODE_CLIENT)) {
+            $ordersCount = count($commandeRepository->findBySearchAndSortForUser($user, '', 'dateCommande', 'desc', null));
+        }
+
+        return $this->render('dashboard/front.html.twig', [
+            'stats' => [
+                'products' => $productsCount,
+                'orders' => $ordersCount,
+                'feedbacks' => $feedbackCount,
+                'categories' => $categorieRepository->count([]),
+            ],
+            'roleCode' => $user->getRoleCode(),
+        ]);
     }
 
     #[Route('/login', name: 'app_login')]

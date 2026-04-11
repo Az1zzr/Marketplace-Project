@@ -13,7 +13,7 @@ class AISentimentService
     public function __construct(HttpClientInterface $httpClient, string $huggingfaceApiKey = '')
     {
         $this->httpClient = $httpClient;
-        $this->apiKey = $huggingfaceApiKey ?: 'hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+        $this->apiKey = $huggingfaceApiKey ?: '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';
     }
 
     public function analyze(string $text): array

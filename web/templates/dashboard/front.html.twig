@@ -1,0 +1,116 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Marketplace Home{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <h1>
+        {% if roleCode == 'fournisseur' %}
+        Fournisseur Dashboard
+        {% else %}
+        Client Dashboard
+        {% endif %}
+    </h1>
+    <p>
+        {% if roleCode == 'fournisseur' %}
+        Publish products, sort them into categories, receive client orders, and assign delivery drivers.
+        {% else %}
+        Browse products, place orders, follow deliveries, and share your buying experience.
+        {% endif %}
+    </p>
+</div>
+
+<div class="stat-grid mb-4">
+    <div class="stat-card">
+        <div class="stat-label">Products</div>
+        <div class="stat-value">{{ stats.products }}</div>
+        <div class="stat-note">Products currently visible in the marketplace</div>
+    </div>
+    {% if roleCode == 'fournisseur' %}
+    <div class="stat-card">
+        <div class="stat-label">Categories</div>
+        <div class="stat-value">{{ stats.categories }}</div>
+        <div class="stat-note">Product groups available to organize your catalog</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Feedback Threads</div>
+        <div class="stat-value">{{ stats.feedbacks }}</div>
+        <div class="stat-note">Customer conversations you can answer</div>
+    </div>
+    {% else %}
+    <div class="stat-card">
+        <div class="stat-label">Orders</div>
+        <div class="stat-value">{{ stats.orders }}</div>
+        <div class="stat-note">Orders currently tracked by the platform</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Feedbacks</div>
+        <div class="stat-value">{{ stats.feedbacks }}</div>
+        <div class="stat-note">Community reviews and discussion threads</div>
+    </div>
+    {% endif %}
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Your Main Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <a href="{{ path('app_produit_index') }}" class="btn btn-outline-primary w-100 py-3">Browse Products</a>
+                    </div>
+                    {% if roleCode == 'fournisseur' %}
+                    <div class="col-md-6">
+                        <a href="{{ path('app_produit_new') }}" class="btn btn-outline-primary w-100 py-3">Add Product</a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="{{ path('app_categorie_index') }}" class="btn btn-outline-secondary w-100 py-3">Manage Categories</a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="{{ path('app_commande_index') }}" class="btn btn-outline-secondary w-100 py-3">Client Orders</a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="{{ path('app_livraison_index') }}" class="btn btn-outline-secondary w-100 py-3">Manage Deliveries</a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="{{ path('app_feedback_index') }}" class="btn btn-outline-secondary w-100 py-3">Reply to Feedback</a>
+                    </div>
+                    {% else %}
+                    <div class="col-md-6">
+                        <a href="{{ path('app_commande_index') }}" class="btn btn-outline-primary w-100 py-3">My Orders</a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="{{ path('app_livraison_index') }}" class="btn btn-outline-secondary w-100 py-3">Track Deliveries</a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="{{ path('app_feedback_index') }}" class="btn btn-outline-secondary w-100 py-3">Write Feedback</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Role Summary</h5>
+            </div>
+            <div class="card-body">
+                {% if roleCode == 'fournisseur' %}
+                <p class="text-muted mb-0">You are in supplier mode. You can manage products and categories, receive client orders for your catalog, and assign deliveries.</p>
+                {% else %}
+                <p class="text-muted mb-0">You are in client mode. You can browse the marketplace, create orders, follow deliveries, and publish feedback.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
