@@ -7,18 +7,22 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 class AISentimentService
 {
     private HttpClientInterface $httpClient;
-    private string $apiUrl = 'https://api-inference.huggingface.co/models/nlptown/bert-base-multilingual-uncased-sentiment';
+    private string $apiUrl = 'https://router.huggingface.co/hf-inference/models/nlptown/bert-base-multilingual-uncased-sentiment';
     private string $apiKey;
 
     public function __construct(HttpClientInterface $httpClient, string $huggingfaceApiKey = '')
     {
         $this->httpClient = $httpClient;
-        $this->apiKey = $huggingfaceApiKey ?: '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';
+        $this->apiKey = trim($huggingfaceApiKey);
     }
 
     public function analyze(string $text): array
     {
         if (empty(trim($text))) {
+            return $this->localFallback($text);
+        }
+
+        if ('' === $this->apiKey) {
             return $this->localFallback($text);
         }
 
@@ -35,17 +39,18 @@ class AISentimentService
             ]);
 
             $statusCode = $response->getStatusCode();
-            
+
             if ($statusCode === 200) {
-                $data = $response->toArray();
+                $data = $response->toArray(false);
+                if (isset($data['error'])) {
+                    return $this->localFallback($text);
+                }
+
                 return $this->parseHuggingFaceResponse($data);
             }
-            
-            // API rate limited or error, use fallback
+
             return $this->localFallback($text);
-            
         } catch (\Exception $e) {
-            // Fallback to local analysis if API fails
             return $this->localFallback($text);
         }
     }
@@ -80,6 +85,7 @@ class AISentimentService
                 'sentiment' => $sentiment,
                 'confidence' => $topScore * 100,
                 'source' => 'AI_API',
+                'sourceLabel' => 'Hugging Face API',
                 'all_scores' => $scores,
             ];
         }
@@ -161,6 +167,7 @@ class AISentimentService
                 ? abs($positiveScore - $negativeScore) / max(1, $positiveScore + $negativeScore) * 100 
                 : 50,
             'source' => 'LOCAL_FALLBACK',
+            'sourceLabel' => 'Analyse locale',
         ];
     }
 

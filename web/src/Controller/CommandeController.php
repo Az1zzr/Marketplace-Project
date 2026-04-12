@@ -63,10 +63,17 @@ class CommandeController extends AbstractController
             }
 
             $address = (string) $request->request->get('adresseLivraison', '');
-            $addressValidation = $validationService->validateDeliveryAddress($address);
-            if (!$addressValidation['valid']) {
-                $errors['adresseLivraison'] = $addressValidation['message'];
-            }
+            $governorate = (string) $request->request->get('gouvernorat', '');
+            $deliveryPhone = (string) $request->request->get('telephoneLivraison', '');
+            $deliveryComment = (string) $request->request->get('commentaireLivraison', '');
+
+            $errors = $this->validateOrderDetails(
+                $validationService,
+                $address,
+                $governorate,
+                $deliveryPhone,
+                $deliveryComment
+            );
 
             foreach ($cart->getLignesCommande() as $ligneCommande) {
                 $produit = $ligneCommande->getProduit();
@@ -82,6 +89,24 @@ class CommandeController extends AbstractController
             }
 
             if (empty($errors)) {
+                $cart
+                    ->setNumeroCommande($this->generateOrderNumber('CMD'))
+                    ->setClient($currentUser->getNomComplet())
+                    ->setClientUser($currentUser)
+                    ->setDateCommande(new \DateTime('today'))
+                    ->recalculateMontantTotal();
+
+                $this->fillOrderDeliveryDetails(
+                    $cart,
+                    $validationService,
+                    $address,
+                    $governorate,
+                    $deliveryPhone,
+                    $deliveryComment
+                );
+            }
+
+            if (empty($errors)) {
                 foreach ($cart->getLignesCommande() as $ligneCommande) {
                     $produit = $ligneCommande->getProduit();
                     if (!$produit) {
@@ -92,11 +117,6 @@ class CommandeController extends AbstractController
                 }
 
                 $cart
-                    ->setNumeroCommande($this->generateOrderNumber('CMD'))
-                    ->setClient($currentUser->getNomComplet())
-                    ->setClientUser($currentUser)
-                    ->setDateCommande(new \DateTime('today'))
-                    ->setAdresseLivraison($address)
                     ->setStatut(Commande::STATUS_PENDING)
                     ->recalculateMontantTotal();
 
@@ -110,6 +130,7 @@ class CommandeController extends AbstractController
         return $this->render('commande/new.html.twig', [
             'cart' => $cart,
             'errors' => $errors,
+            'governorates' => Commande::getTunisiaGovernorates(),
         ]);
     }
 
@@ -169,12 +190,18 @@ class CommandeController extends AbstractController
 
         if ($request->isMethod('POST')) {
             $address = (string) $request->request->get('adresseLivraison', '');
+            $governorate = (string) $request->request->get('gouvernorat', '');
+            $deliveryPhone = (string) $request->request->get('telephoneLivraison', '');
+            $deliveryComment = (string) $request->request->get('commentaireLivraison', '');
             $status = (string) $request->request->get('statut', Commande::STATUS_PENDING);
 
-            $addressValidation = $validationService->validateDeliveryAddress($address);
-            if (!$addressValidation['valid']) {
-                $errors['adresseLivraison'] = $addressValidation['message'];
-            }
+            $errors = $this->validateOrderDetails(
+                $validationService,
+                $address,
+                $governorate,
+                $deliveryPhone,
+                $deliveryComment
+            );
 
             if (!in_array($status, [Commande::STATUS_PENDING, 'Confirmee', 'Annulee'], true)) {
                 $errors['statut'] = 'Invalid order status.';
@@ -182,9 +209,17 @@ class CommandeController extends AbstractController
 
             if (empty($errors)) {
                 $commande
-                    ->setAdresseLivraison($address)
                     ->setStatut($status)
                     ->recalculateMontantTotal();
+
+                $this->fillOrderDeliveryDetails(
+                    $commande,
+                    $validationService,
+                    $address,
+                    $governorate,
+                    $deliveryPhone,
+                    $deliveryComment
+                );
 
                 $entityManager->flush();
 
@@ -196,6 +231,7 @@ class CommandeController extends AbstractController
         return $this->render('commande/edit.html.twig', [
             'commande' => $commande,
             'errors' => $errors,
+            'governorates' => Commande::getTunisiaGovernorates(),
         ]);
     }
 
@@ -309,5 +345,46 @@ class CommandeController extends AbstractController
     private function generateOrderNumber(string $prefix): string
     {
         return sprintf('%s-%s-%04d', $prefix, date('Ymd'), random_int(1, 9999));
+    }
+
+    private function validateOrderDetails(
+        InputValidationService $validationService,
+        string $address,
+        string $governorate,
+        string $deliveryPhone,
+        string $deliveryComment
+    ): array
+    {
+        $errors = [];
+        $validations = [
+            'adresseLivraison' => $validationService->validateDeliveryAddress($address),
+            'gouvernorat' => $validationService->validateTunisianGovernorate($governorate),
+            'telephoneLivraison' => $validationService->validateRequiredTunisianPhone($deliveryPhone, 'Delivery phone number'),
+            'commentaireLivraison' => $validationService->validateDeliveryComment($deliveryComment),
+        ];
+
+        foreach ($validations as $field => $result) {
+            if (!$result['valid']) {
+                $errors[$field] = $result['message'];
+            }
+        }
+
+        return $errors;
+    }
+
+    private function fillOrderDeliveryDetails(
+        Commande $commande,
+        InputValidationService $validationService,
+        string $address,
+        string $governorate,
+        string $deliveryPhone,
+        string $deliveryComment
+    ): void
+    {
+        $commande
+            ->setAdresseLivraison($address)
+            ->setGouvernorat($governorate)
+            ->setTelephoneLivraison($validationService->normalizePhone($deliveryPhone))
+            ->setCommentaireLivraison($deliveryComment);
     }
 }

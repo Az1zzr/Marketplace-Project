@@ -125,6 +125,12 @@
                             <i class="bi bi-shield-exclamation me-1"></i>{{ errors['profanity'] }}
                         </div>
                         {% endif %}
+                        <div class="mt-3 d-flex align-items-center gap-2 flex-wrap">
+                            <button type="button" class="btn btn-outline-primary btn-sm" data-spellcheck-target="#commentaire" data-spellcheck-result="#feedback-spellcheck-result">
+                                <i class="bi bi-spellcheck me-1"></i> Verifier l'orthographe
+                            </button>
+                        </div>
+                        <div id="feedback-spellcheck-result" hidden></div>
                     </div>
                     
                     <div class="d-flex gap-2">
@@ -140,4 +146,9 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+{% include 'feedback/_spellcheck_script.html.twig' %}
 {% endblock %}

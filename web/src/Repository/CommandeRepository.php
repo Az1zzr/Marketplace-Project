@@ -68,7 +68,7 @@ class CommandeRepository extends ServiceEntityRepository
         $qb = $this->createQueryBuilder('c');
 
         if (!empty($search)) {
-            $qb->andWhere('c.client LIKE :search OR c.numeroCommande LIKE :search OR c.adresseLivraison LIKE :search')
+            $qb->andWhere('c.client LIKE :search OR c.numeroCommande LIKE :search OR c.adresseLivraison LIKE :search OR c.gouvernorat LIKE :search OR c.telephoneLivraison LIKE :search OR c.commentaireLivraison LIKE :search')
                ->setParameter('search', '%' . $search . '%');
         }
 
@@ -113,7 +113,7 @@ class CommandeRepository extends ServiceEntityRepository
             ->setParameter('cartStatus', Commande::STATUS_CART);
 
         if (!empty($search)) {
-            $qb->andWhere('c.client LIKE :search OR c.numeroCommande LIKE :search OR c.adresseLivraison LIKE :search OR produit.nomProduit LIKE :search')
+            $qb->andWhere('c.client LIKE :search OR c.numeroCommande LIKE :search OR c.adresseLivraison LIKE :search OR c.gouvernorat LIKE :search OR c.telephoneLivraison LIKE :search OR c.commentaireLivraison LIKE :search OR produit.nomProduit LIKE :search')
                ->setParameter('search', '%' . $search . '%');
         }
 

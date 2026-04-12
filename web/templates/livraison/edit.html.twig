@@ -36,6 +36,20 @@
                         {% endif %}
                     </div>
                 </div>
+                {% if livraison.commande %}
+                <div class="mb-3">
+                    <span class="text-muted small">Governorate</span>
+                    <div class="fw-medium">{{ livraison.commande.gouvernorat ?? '-' }}</div>
+                </div>
+                <div class="mb-3">
+                    <span class="text-muted small">Delivery Phone</span>
+                    <div class="fw-medium">{{ livraison.commande.telephoneLivraison ?? '-' }}</div>
+                </div>
+                <div>
+                    <span class="text-muted small">Delivery Comment</span>
+                    <div class="fw-medium">{{ livraison.commande.commentaireLivraison ? livraison.commande.commentaireLivraison|nl2br : '-' }}</div>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>

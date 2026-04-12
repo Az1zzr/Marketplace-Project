@@ -10,7 +10,7 @@
 {% block body %}
 <div class="page-header">
     <h1><i class="bi bi-bag-check me-2"></i>Checkout Current Order</h1>
-    <p>Review the products you selected and confirm your delivery address.</p>
+    <p>Review the products you selected, choose how you want to pay, and confirm your delivery details in Tunisia.</p>
 </div>
 
 {% if not cart or cart.lignesCommande is empty %}
@@ -80,6 +80,10 @@
                 <h5 class="mb-0">Confirm Order</h5>
             </div>
             <div class="card-body">
+                {% set selectedGovernorate = app.request.request.get('gouvernorat', cart.gouvernorat ?? '') %}
+                {% set deliveryPhone = app.request.request.get('telephoneLivraison', cart.telephoneLivraison ?? app.user.telephone ?? '') %}
+                {% set deliveryAddress = app.request.request.get('adresseLivraison', cart.adresseLivraison ?? '') %}
+                {% set deliveryComment = app.request.request.get('commentaireLivraison', cart.commentaireLivraison ?? '') %}
                 <div class="mb-3">
                     <div class="text-muted small">Buyer</div>
                     <div class="fw-semibold">{{ app.user.nomComplet }}</div>
@@ -95,10 +99,39 @@
 
                 <form method="post" novalidate>
                     <div class="mb-3">
-                        <label for="adresseLivraison" class="form-label">Delivery Address</label>
-                        <textarea name="adresseLivraison" id="adresseLivraison" class="form-control {% if errors['adresseLivraison'] is defined %}is-invalid{% endif %}" rows="4" placeholder="Enter the full address where the order should be delivered">{{ app.request.request.get('adresseLivraison') }}</textarea>
+                        <label for="gouvernorat" class="form-label">Governorate In Tunisia</label>
+                        <select name="gouvernorat" id="gouvernorat" class="form-select {% if errors['gouvernorat'] is defined %}is-invalid{% endif %}">
+                            <option value="">Choose your governorate</option>
+                            {% for governorate in governorates %}
+                            <option value="{{ governorate }}" {% if selectedGovernorate == governorate %}selected{% endif %}>{{ governorate }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if errors['gouvernorat'] is defined %}
+                        <div class="invalid-feedback d-block">{{ errors['gouvernorat'] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="telephoneLivraison" class="form-label">Delivery Phone Number</label>
+                        <input type="text" name="telephoneLivraison" id="telephoneLivraison" class="form-control {% if errors['telephoneLivraison'] is defined %}is-invalid{% endif %}" value="{{ deliveryPhone }}" placeholder="8 digits starting with 2, 5, or 9">
+                        {% if errors['telephoneLivraison'] is defined %}
+                        <div class="invalid-feedback d-block">{{ errors['telephoneLivraison'] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="adresseLivraison" class="form-label">Full Delivery Address</label>
+                        <textarea name="adresseLivraison" id="adresseLivraison" class="form-control {% if errors['adresseLivraison'] is defined %}is-invalid{% endif %}" rows="3" placeholder="Street, area, building, floor, or any full address details">{{ deliveryAddress }}</textarea>
                         {% if errors['adresseLivraison'] is defined %}
                         <div class="invalid-feedback d-block">{{ errors['adresseLivraison'] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="commentaireLivraison" class="form-label">Delivery Comment</label>
+                        <textarea name="commentaireLivraison" id="commentaireLivraison" class="form-control {% if errors['commentaireLivraison'] is defined %}is-invalid{% endif %}" rows="3" placeholder="Tell the delivery person exactly where to find you">{{ deliveryComment }}</textarea>
+                        {% if errors['commentaireLivraison'] is defined %}
+                        <div class="invalid-feedback d-block">{{ errors['commentaireLivraison'] }}</div>
                         {% endif %}
                     </div>
 

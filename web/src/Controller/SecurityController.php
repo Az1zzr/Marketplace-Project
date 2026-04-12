@@ -9,6 +9,8 @@ use App\Repository\CommandeRepository;
 use App\Repository\FeedbackRepository;
 use App\Repository\ProduitRepository;
 use App\Repository\UserRepository;
+use App\Service\AISentimentService;
+use App\Service\FeedbackInsightService;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -41,9 +43,17 @@ class SecurityController extends AbstractController
         ProduitRepository $produitRepository,
         CommandeRepository $commandeRepository,
         FeedbackRepository $feedbackRepository,
-        UserRepository $userRepository
+        UserRepository $userRepository,
+        AISentimentService $sentimentAnalyzer,
+        FeedbackInsightService $feedbackInsightService
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
+        $feedbackInsights = $this->buildFeedbackInsightsSummary(
+            $feedbackRepository->findBySearchAndSort('', 'dateStatut', 'desc'),
+            $sentimentAnalyzer,
+            $feedbackInsightService
+        );
 
         return $this->render('dashboard/admin.html.twig', [
             'stats' => [
@@ -52,6 +62,7 @@ class SecurityController extends AbstractController
                 'feedbacks' => $feedbackRepository->count([]),
                 'users' => $userRepository->count([]),
             ],
+            'feedbackInsights' => $feedbackInsights,
         ]);
     }
 
@@ -60,7 +71,9 @@ class SecurityController extends AbstractController
         CategorieRepository $categorieRepository,
         ProduitRepository $produitRepository,
         CommandeRepository $commandeRepository,
-        FeedbackRepository $feedbackRepository
+        FeedbackRepository $feedbackRepository,
+        AISentimentService $sentimentAnalyzer,
+        FeedbackInsightService $feedbackInsightService
     ): Response {
         $user = $this->getUser();
         if (!$user instanceof User) {
@@ -74,11 +87,14 @@ class SecurityController extends AbstractController
         $productsCount = $produitRepository->count([]);
         $ordersCount = $commandeRepository->count([]);
         $feedbackCount = $feedbackRepository->count([]);
+        $feedbackInsights = null;
 
         if ($user->hasRoleCode(User::ROLE_CODE_FOURNISSEUR)) {
             $productsCount = count($produitRepository->findBySearchAndSort('', 'nomProduit', 'asc', null, $user));
             $ordersCount = count($commandeRepository->findBySearchAndSortForUser($user, '', 'dateCommande', 'desc', null));
-            $feedbackCount = count($feedbackRepository->findBySearchAndSort('', 'dateStatut', 'desc', $user));
+            $supplierFeedbacks = $feedbackRepository->findBySearchAndSort('', 'dateStatut', 'desc', $user);
+            $feedbackCount = count($supplierFeedbacks);
+            $feedbackInsights = $this->buildFeedbackInsightsSummary($supplierFeedbacks, $sentimentAnalyzer, $feedbackInsightService);
         } elseif ($user->hasRoleCode(User::ROLE_CODE_CLIENT)) {
             $ordersCount = count($commandeRepository->findBySearchAndSortForUser($user, '', 'dateCommande', 'desc', null));
         }
@@ -90,8 +106,28 @@ class SecurityController extends AbstractController
                 'feedbacks' => $feedbackCount,
                 'categories' => $categorieRepository->count([]),
             ],
+            'feedbackInsights' => $feedbackInsights,
             'roleCode' => $user->getRoleCode(),
         ]);
+    }
+
+    private function buildFeedbackInsightsSummary(
+        array $feedbacks,
+        AISentimentService $sentimentAnalyzer,
+        FeedbackInsightService $feedbackInsightService
+    ): array {
+        $feedbacksWithInsights = [];
+
+        foreach ($feedbacks as $feedback) {
+            $sentiment = $sentimentAnalyzer->analyze($feedback->getCommentaire());
+            $feedbacksWithInsights[] = [
+                'feedback' => $feedback,
+                'sentiment' => $sentiment,
+                'insight' => $feedbackInsightService->analyze($feedback, $sentiment),
+            ];
+        }
+
+        return $feedbackInsightService->summarize($feedbacksWithInsights);
     }
 
     #[Route('/login', name: 'app_login')]

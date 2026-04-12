@@ -10,7 +10,7 @@
 {% block body %}
 {% set feedbackAuthorName = feedback.auteur ? feedback.auteur.nomComplet : 'Deleted user' %}
 {% set canManageFeedback = is_granted('ROLE_ADMIN') or (feedback.auteur and app.user and app.user.id == feedback.auteur.id) %}
-{% set canReplyToFeedback = is_granted('ROLE_ADMIN') or (is_granted('ROLE_FOURNISSEUR') and app.user and ((feedback.produit and feedback.produit.fournisseur and feedback.produit.fournisseur.id == app.user.id) or (feedback.livraison and feedback.livraison.commande and feedback.livraison.commande.lignesCommande|filter(ligne => ligne.produit and ligne.produit.fournisseur and ligne.produit.fournisseur.id == app.user.id)|length > 0))) %}
+{% set canReplyToFeedback = is_granted('ROLE_USER') %}
 {% set moodEmoji = feedback.ambiance == 'love' ? '😍' : (feedback.ambiance == 'happy' ? '😊' : (feedback.ambiance == 'neutral' ? '😐' : (feedback.ambiance == 'sad' ? '😕' : (feedback.ambiance == 'angry' ? '😡' : '💬')))) %}
 <div class="page-header d-flex justify-content-between align-items-center">
     <div>
@@ -76,6 +76,7 @@
                                 {{ sentiment.sentiment }}
                             </span>
                             <small class="text-muted ms-2">Confidence: {{ sentiment.confidence|round(1) }}%</small>
+                            <small class="text-muted ms-2">Source: {{ sentiment.sourceLabel ?? sentiment.source ?? 'Unknown' }}</small>
                         </div>
                         {% endif %}
                         {% if feedback.recommande is not null %}
@@ -170,6 +171,41 @@
     </div>
     
     <div class="col-lg-4">
+        {% if canSeeInsights and insight %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Analyse</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <span class="text-muted small">Sujet</span>
+                    <div class="mt-1"><span class="badge {{ insight.topicBadgeClass }}">{{ insight.topicLabel }}</span></div>
+                </div>
+                <div class="mb-3">
+                    <span class="text-muted small">Priorite</span>
+                    <div class="mt-1"><span class="badge {{ insight.priorityBadgeClass }}">{{ insight.priorityLabel }}</span></div>
+                </div>
+                <div class="mb-3">
+                    <span class="text-muted small">Statut</span>
+                    <div class="mt-1 d-flex flex-wrap gap-2">
+                        {% if insight.needsAttention %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">A traiter</span>
+                        {% endif %}
+                        {% if insight.isUnanswered %}
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Sans reponse</span>
+                        {% else %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Avec reponse</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div>
+                    <span class="text-muted small">Reponses</span>
+                    <div class="fw-medium">{{ insight.responseCount }}</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">Quick Actions</h5>

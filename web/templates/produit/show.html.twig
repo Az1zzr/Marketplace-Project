@@ -38,6 +38,20 @@
             </div>
             {% endif %}
         </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-qr-code me-2"></i>QR Code Produit</h5>
+            </div>
+            <div class="card-body text-center">
+                <img src="{{ path('app_produit_qr_code', {'id': produit.id}) }}" alt="QR code for {{ produit.nomProduit }}" class="img-fluid border rounded-4 p-3 bg-white" style="max-width: 240px;">
+                <p class="text-muted mt-3 mb-2">Scannez ce QR code pour ouvrir directement la fiche de ce produit.</p>
+                <div class="small text-muted mb-3">{{ productUrl }}</div>
+                <a href="{{ path('app_produit_qr_code', {'id': produit.id, 'download': 1}) }}" class="btn btn-outline-dark btn-sm">
+                    <i class="bi bi-download me-1"></i> Telecharger le QR code SVG
+                </a>
+            </div>
+        </div>
     </div>
     
     <div class="col-lg-7 mb-4">
@@ -64,6 +78,21 @@
                     <div class="col-sm-4 text-muted">Price</div>
                     <div class="col-sm-8">
                         <span class="h4 text-primary mb-0">{{ produit.prix|number_format(2, '.', ',') }} TND</span>
+                        {% if convertedPrices.available %}
+                        <div class="mt-2 d-flex flex-wrap gap-2">
+                            {% for currency in convertedPrices.currencies %}
+                            <span class="badge bg-light text-dark border">{{ currency.label }}: {{ currency.amount|number_format(2, '.', ',') }} {{ currency.code }}</span>
+                            {% endfor %}
+                        </div>
+                        <div class="small text-muted mt-2">
+                            Conversion approximative depuis le dinar tunisien via {{ convertedPrices.sourceLabel }}
+                            {% if convertedPrices.updatedAt %}
+                            (maj {{ convertedPrices.updatedAt|date('Y-m-d H:i') }})
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="small text-muted mt-2">Conversion EUR/USD indisponible pour le moment.</div>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="row mb-3">

@@ -12,12 +12,16 @@ use App\Repository\LivraisonRepository;
 use App\Repository\ReponseRepository;
 use App\Service\ProfanityFilterService;
 use App\Service\AISentimentService;
+use App\Service\FeedbackInsightService;
 use App\Service\InputValidationService;
 use App\Service\SpellCheckerService;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -28,46 +32,68 @@ class FeedbackController extends AbstractController
         Request $request,
         FeedbackRepository $feedbackRepository,
         AISentimentService $sentimentAnalyzer,
+        FeedbackInsightService $feedbackInsightService,
         LigneCommandeRepository $ligneCommandeRepository
     ): Response {
         $currentUser = $this->getUser();
-        $search = $request->query->get('search', '');
-        $sort = $request->query->get('sort', 'dateStatut');
-        $order = $request->query->get('order', 'desc');
-        $sentimentFilter = $request->query->get('sentiment', '');
-        $ratingFilter = $request->query->get('rating', '');
-
-        $validSorts = ['dateStatut', 'note', 'commentaire', 'titre'];
-        $sort = in_array($sort, $validSorts) ? $sort : 'dateStatut';
-        $order = in_array($order, ['asc', 'desc']) ? $order : 'desc';
-
-        $feedbacks = $feedbackRepository->findBySearchAndSort($search, $sort, $order, $currentUser instanceof User ? $currentUser : null);
-
-        $feedbacksWithSentiment = [];
-        foreach ($feedbacks as $feedback) {
-            $sentiment = $sentimentAnalyzer->analyze($feedback->getCommentaire());
-            
-            if ($sentimentFilter && $sentiment['sentiment'] !== $sentimentFilter) {
-                continue;
-            }
-            if ($ratingFilter && $feedback->getNote() != (int)$ratingFilter) {
-                continue;
-            }
-            
-            $feedbacksWithSentiment[] = [
-                'feedback' => $feedback,
-                'sentiment' => $sentiment,
-            ];
-        }
+        $listing = $this->buildFeedbackListingViewModel(
+            $request,
+            $currentUser instanceof User ? $currentUser : null,
+            $feedbackRepository,
+            $sentimentAnalyzer,
+            $feedbackInsightService
+        );
 
         return $this->render('feedback/index.html.twig', [
-            'feedbacksWithSentiment' => $feedbacksWithSentiment,
-            'search' => $search,
-            'sort' => $sort,
-            'order' => $order,
-            'sentimentFilter' => $sentimentFilter,
-            'ratingFilter' => $ratingFilter,
+            ...$listing,
             'hasEligibleProductFeedback' => $currentUser instanceof User && [] !== $ligneCommandeRepository->findEligibleFeedbackItemsForUser($currentUser),
+        ]);
+    }
+
+    #[Route('/feedback/export/pdf', name: 'app_feedback_export_pdf', methods: ['GET'])]
+    public function exportPdf(
+        Request $request,
+        FeedbackRepository $feedbackRepository,
+        AISentimentService $sentimentAnalyzer,
+        FeedbackInsightService $feedbackInsightService
+    ): Response {
+        $currentUser = $this->requireCurrentUser();
+        if (!$this->canCurrentUserSeeFeedbackAnalysis($currentUser)) {
+            throw $this->createAccessDeniedException('Only admin and fournisseur can export feedback analysis.');
+        }
+
+        $listing = $this->buildFeedbackListingViewModel(
+            $request,
+            $currentUser,
+            $feedbackRepository,
+            $sentimentAnalyzer,
+            $feedbackInsightService
+        );
+
+        $html = $this->renderView('feedback/export_pdf.html.twig', [
+            ...$listing,
+            'viewer' => $currentUser,
+            'generatedAt' => new \DateTimeImmutable(),
+        ]);
+
+        $options = new Options();
+        $options->set('isRemoteEnabled', false);
+        $options->set('isHtml5ParserEnabled', true);
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html, 'UTF-8');
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $filename = sprintf(
+            'feedbacks-%s-%s.pdf',
+            $currentUser->hasRoleCode(User::ROLE_CODE_ADMIN) ? 'admin' : 'fournisseur',
+            (new \DateTimeImmutable())->format('Ymd-His')
+        );
+
+        return new Response($dompdf->output(), Response::HTTP_OK, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => HeaderUtils::makeDisposition(HeaderUtils::DISPOSITION_ATTACHMENT, $filename),
         ]);
     }
 
@@ -282,7 +308,8 @@ class FeedbackController extends AbstractController
         int $id,
         FeedbackRepository $feedbackRepository,
         ReponseRepository $reponseRepository,
-        AISentimentService $sentimentAnalyzer
+        AISentimentService $sentimentAnalyzer,
+        FeedbackInsightService $feedbackInsightService
     ): Response {
         $feedback = $feedbackRepository->find($id);
 
@@ -292,11 +319,15 @@ class FeedbackController extends AbstractController
 
         $reponses = $reponseRepository->findByFeedback($id);
         $sentiment = $sentimentAnalyzer->analyze($feedback->getCommentaire());
+        $currentUser = $this->getUser();
+        $canSeeInsights = $currentUser instanceof User && $this->canCurrentUserSeeFeedbackAnalysis($currentUser);
 
         return $this->render('feedback/show.html.twig', [
             'feedback' => $feedback,
             'reponses' => $reponses,
             'sentiment' => $sentiment,
+            'insight' => $canSeeInsights ? $feedbackInsightService->analyze($feedback, $sentiment) : null,
+            'canSeeInsights' => $canSeeInsights,
         ]);
     }
 
@@ -309,15 +340,13 @@ class FeedbackController extends AbstractController
         ProfanityFilterService $profanityFilter,
         InputValidationService $validationService
     ): Response {
-        $this->denyUnlessSupplierOrAdmin();
+        $currentUser = $this->requireCurrentUser();
 
         $feedback = $feedbackRepository->find($id);
 
         if (!$feedback) {
             throw $this->createNotFoundException('Feedback not found');
         }
-
-        $this->denyUnlessCanReplyToFeedback($feedback);
 
         $errors = [];
 
@@ -337,11 +366,6 @@ class FeedbackController extends AbstractController
             }
 
             if (empty($errors)) {
-                $currentUser = $this->getUser();
-                if (!$currentUser instanceof User) {
-                    throw $this->createAccessDeniedException('You must be signed in to respond to feedback.');
-                }
-
                 $reponse = new Reponse();
                 $reponse->setContenu($contenu);
                 $reponse->setDateReponse(new \DateTime());
@@ -401,39 +425,6 @@ class FeedbackController extends AbstractController
         throw $this->createAccessDeniedException('Only clients can create feedback.');
     }
 
-    private function denyUnlessSupplierOrAdmin(): void
-    {
-        if ($this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_FOURNISSEUR')) {
-            return;
-        }
-
-        throw $this->createAccessDeniedException('Only admins and fournisseurs can reply to feedback.');
-    }
-
-    private function denyUnlessCanReplyToFeedback(Feedback $feedback): void
-    {
-        if ($this->isGranted('ROLE_ADMIN')) {
-            return;
-        }
-
-        $currentUser = $this->getUser();
-        if ($currentUser instanceof User) {
-            if ($feedback->getProduit()?->getFournisseur()?->getId() === $currentUser->getId()) {
-                return;
-            }
-
-            if ($feedback->getLivraison()) {
-                foreach ($feedback->getLivraison()->getCommande()?->getLignesCommande() ?? [] as $ligneCommande) {
-                    if ($ligneCommande->getProduit()?->getFournisseur()?->getId() === $currentUser->getId()) {
-                        return;
-                    }
-                }
-            }
-        }
-
-        throw $this->createAccessDeniedException('You can only reply to feedback related to your own delivered orders or products.');
-    }
-
     private function denyUnlessFeedbackAuthorOrAdmin(Feedback $feedback): void
     {
         if ($this->isGranted('ROLE_ADMIN')) {
@@ -460,6 +451,76 @@ class FeedbackController extends AbstractController
         }
 
         throw $this->createAccessDeniedException('You can only delete your own responses.');
+    }
+
+    private function canCurrentUserSeeFeedbackAnalysis(User $currentUser): bool
+    {
+        return $currentUser->hasRoleCode(User::ROLE_CODE_ADMIN)
+            || $currentUser->hasRoleCode(User::ROLE_CODE_FOURNISSEUR);
+    }
+
+    private function buildFeedbackListingViewModel(
+        Request $request,
+        ?User $currentUser,
+        FeedbackRepository $feedbackRepository,
+        AISentimentService $sentimentAnalyzer,
+        FeedbackInsightService $feedbackInsightService
+    ): array {
+        $canSeeInsights = $currentUser instanceof User && $this->canCurrentUserSeeFeedbackAnalysis($currentUser);
+        $search = (string) $request->query->get('search', '');
+        $sort = (string) $request->query->get('sort', 'dateStatut');
+        $order = (string) $request->query->get('order', 'desc');
+        $sentimentFilter = (string) $request->query->get('sentiment', '');
+        $ratingFilter = (string) $request->query->get('rating', '');
+        $topicFilter = $canSeeInsights ? (string) $request->query->get('topic', '') : '';
+        $priorityFilter = $canSeeInsights ? (string) $request->query->get('priority', '') : '';
+        $attentionFilter = $canSeeInsights ? (string) $request->query->get('attention', '') : '';
+
+        $validSorts = ['dateStatut', 'note', 'commentaire', 'titre'];
+        $sort = in_array($sort, $validSorts, true) ? $sort : 'dateStatut';
+        $order = in_array($order, ['asc', 'desc'], true) ? $order : 'desc';
+
+        $feedbacks = $feedbackRepository->findBySearchAndSort($search, $sort, $order, $currentUser);
+        $feedbacksWithSentiment = [];
+
+        foreach ($feedbacks as $feedback) {
+            $sentiment = $sentimentAnalyzer->analyze($feedback->getCommentaire());
+            $insight = $feedbackInsightService->analyze($feedback, $sentiment);
+
+            if ('' !== $sentimentFilter && $sentiment['sentiment'] !== $sentimentFilter) {
+                continue;
+            }
+
+            if ('' !== $ratingFilter && $feedback->getNote() !== $ratingFilter) {
+                continue;
+            }
+
+            if ($canSeeInsights && !$feedbackInsightService->matchesFilters($insight, $topicFilter, $priorityFilter, $attentionFilter)) {
+                continue;
+            }
+
+            $feedbacksWithSentiment[] = [
+                'feedback' => $feedback,
+                'sentiment' => $sentiment,
+                'insight' => $insight,
+            ];
+        }
+
+        return [
+            'feedbacksWithSentiment' => $feedbacksWithSentiment,
+            'feedbackInsightsSummary' => $canSeeInsights ? $feedbackInsightService->summarize($feedbacksWithSentiment) : null,
+            'search' => $search,
+            'sort' => $sort,
+            'order' => $order,
+            'sentimentFilter' => $sentimentFilter,
+            'ratingFilter' => $ratingFilter,
+            'topicFilter' => $topicFilter,
+            'priorityFilter' => $priorityFilter,
+            'attentionFilter' => $attentionFilter,
+            'topicChoices' => $feedbackInsightService->getTopicChoices(),
+            'priorityChoices' => $feedbackInsightService->getPriorityChoices(),
+            'canSeeInsights' => $canSeeInsights,
+        ];
     }
 
     private function requireCurrentUser(): User
