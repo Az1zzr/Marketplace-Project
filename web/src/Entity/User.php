@@ -67,6 +67,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(name: 'photo_profil', length: 500, nullable: true)]
     private ?string $photoPath = null;
 
+    #[ORM\Column(name: 'reset_password_code_hash', length: 255, nullable: true)]
+    private ?string $resetPasswordCodeHash = null;
+
+    #[ORM\Column(name: 'reset_password_expires_at', type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $resetPasswordExpiresAt = null;
+
     #[ORM\OneToMany(mappedBy: 'fournisseur', targetEntity: Produit::class)]
     private Collection $produits;
 
@@ -166,6 +172,28 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPhotoPath(?string $photoPath): static
     {
         $this->photoPath = $photoPath;
+        return $this;
+    }
+
+    public function getResetPasswordCodeHash(): ?string
+    {
+        return $this->resetPasswordCodeHash;
+    }
+
+    public function setResetPasswordCodeHash(?string $resetPasswordCodeHash): static
+    {
+        $this->resetPasswordCodeHash = $resetPasswordCodeHash;
+        return $this;
+    }
+
+    public function getResetPasswordExpiresAt(): ?\DateTimeInterface
+    {
+        return $this->resetPasswordExpiresAt;
+    }
+
+    public function setResetPasswordExpiresAt(?\DateTimeInterface $resetPasswordExpiresAt): static
+    {
+        $this->resetPasswordExpiresAt = $resetPasswordExpiresAt;
         return $this;
     }
 

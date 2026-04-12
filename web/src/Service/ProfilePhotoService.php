@@ -1,0 +1,110 @@
+<?php
+
+namespace App\Service;
+
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+
+class ProfilePhotoService
+{
+    private const IMAGE_MODERATION_API_URL = 'https://router.huggingface.co/hf-inference/models/Falconsai/nsfw_image_detection';
+
+    public function __construct(
+        private readonly string $projectDir,
+        private readonly InputValidationService $inputValidationService,
+        private readonly \Symfony\Contracts\HttpClient\HttpClientInterface $httpClient,
+        private readonly string $huggingfaceApiKey = ''
+    ) {
+    }
+
+    public function processUploadedPhoto(UploadedFile $uploadedFile, ?string $currentPhotoPath = null): string
+    {
+        $validation = $this->inputValidationService->validateImageUpload($uploadedFile->getMimeType(), $uploadedFile->getSize());
+        if (!$validation['valid']) {
+            throw new \RuntimeException($validation['message']);
+        }
+
+        $moderation = $this->verifyImageSafety($uploadedFile);
+        if (!$moderation['valid']) {
+            throw new \RuntimeException($moderation['message']);
+        }
+
+        $targetDirectory = $this->projectDir . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'profile';
+        if (!is_dir($targetDirectory) && !mkdir($targetDirectory, 0777, true) && !is_dir($targetDirectory)) {
+            throw new \RuntimeException('Unable to create the profile upload directory.');
+        }
+
+        $extension = strtolower($uploadedFile->guessExtension() ?: $uploadedFile->getClientOriginalExtension() ?: 'jpg');
+        $filename = sprintf('profile-%s.%s', bin2hex(random_bytes(12)), $extension);
+        $uploadedFile->move($targetDirectory, $filename);
+
+        if (null !== $currentPhotoPath) {
+            $this->deleteStoredPhoto($currentPhotoPath);
+        }
+
+        return '/uploads/profile/' . $filename;
+    }
+
+    public function deleteStoredPhoto(?string $photoPath): void
+    {
+        if (null === $photoPath || '' === trim($photoPath)) {
+            return;
+        }
+
+        $relativePath = ltrim($photoPath, '/\\');
+        $absolutePath = $this->projectDir . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $relativePath);
+
+        if (is_file($absolutePath)) {
+            @unlink($absolutePath);
+        }
+    }
+
+    private function verifyImageSafety(UploadedFile $uploadedFile): array
+    {
+        if ('' === trim($this->huggingfaceApiKey)) {
+            return ['valid' => false, 'message' => 'Image moderation API is not configured right now.'];
+        }
+
+        try {
+            $response = $this->httpClient->request('POST', self::IMAGE_MODERATION_API_URL, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $this->huggingfaceApiKey,
+                    'Content-Type' => $uploadedFile->getMimeType() ?: 'application/octet-stream',
+                ],
+                'body' => fopen($uploadedFile->getPathname(), 'rb'),
+                'timeout' => 20,
+            ]);
+
+            $data = $response->toArray(false);
+        } catch (\Throwable) {
+            return ['valid' => false, 'message' => 'Unable to verify whether the selected profile image is sensitive. Please try again.'];
+        }
+
+        if (isset($data['error'])) {
+            return ['valid' => false, 'message' => 'Sensitive-image verification is temporarily unavailable.'];
+        }
+
+        $predictions = $data;
+        if (isset($data[0]) && is_array($data[0]) && isset($data[0][0])) {
+            $predictions = $data[0];
+        }
+
+        if (!is_array($predictions)) {
+            return ['valid' => false, 'message' => 'Unexpected response from the image moderation API.'];
+        }
+
+        foreach ($predictions as $prediction) {
+            if (!is_array($prediction)) {
+                continue;
+            }
+
+            $label = strtolower((string) ($prediction['label'] ?? ''));
+            $score = (float) ($prediction['score'] ?? 0);
+
+            if ($score >= 0.35 && preg_match('/nsfw|sexual|explicit|porn|hentai|sexy/', $label)) {
+                return ['valid' => false, 'message' => 'The selected image looks sensitive or inappropriate for a profile photo.'];
+            }
+        }
+
+        return ['valid' => true, 'message' => ''];
+    }
+}

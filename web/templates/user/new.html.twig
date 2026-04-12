@@ -20,51 +20,63 @@
                 <h5 class="mb-0"><i class="bi bi-person me-2"></i>User Information</h5>
             </div>
             <div class="card-body">
+                {% if errors is not empty %}
+                <div class="alert alert-danger">
+                    Please correct the highlighted fields before creating the user.
+                </div>
+                {% endif %}
                 <form method="post" novalidate>
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="nom" class="form-label">Last Name <span class="text-danger">*</span></label>
-                            <input type="text" name="nom" id="nom" class="form-control" required placeholder="Enter last name">
+                            <input type="text" name="nom" id="nom" class="form-control {% if errors.nom is defined %}is-invalid{% endif %}" value="{{ app.request.request.get('nom') }}" placeholder="Enter last name">
+                            {% if errors.nom is defined %}<div class="invalid-feedback d-block">{{ errors.nom }}</div>{% endif %}
                         </div>
                         
                         <div class="col-md-6 mb-3">
                             <label for="prenom" class="form-label">First Name <span class="text-danger">*</span></label>
-                            <input type="text" name="prenom" id="prenom" class="form-control" required placeholder="Enter first name">
+                            <input type="text" name="prenom" id="prenom" class="form-control {% if errors.prenom is defined %}is-invalid{% endif %}" value="{{ app.request.request.get('prenom') }}" placeholder="Enter first name">
+                            {% if errors.prenom is defined %}<div class="invalid-feedback d-block">{{ errors.prenom }}</div>{% endif %}
                         </div>
                     </div>
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
-                            <input type="email" name="email" id="email" class="form-control" required placeholder="user@example.com">
+                            <input type="text" name="email" id="email" class="form-control {% if errors.email is defined %}is-invalid{% endif %}" value="{{ app.request.request.get('email') }}" placeholder="user@gmail.com">
+                            {% if errors.email is defined %}<div class="invalid-feedback d-block">{{ errors.email }}</div>{% endif %}
                         </div>
                         
                         <div class="col-md-6 mb-3">
                             <label for="telephone" class="form-label">Phone</label>
-                            <input type="text" name="telephone" id="telephone" class="form-control" placeholder="+216 XX XXX XXX">
+                            <input type="text" name="telephone" id="telephone" class="form-control {% if errors.telephone is defined %}is-invalid{% endif %}" value="{{ app.request.request.get('telephone') }}" placeholder="91234567">
+                            {% if errors.telephone is defined %}<div class="invalid-feedback d-block">{{ errors.telephone }}</div>{% endif %}
                         </div>
                     </div>
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="motDePasse" class="form-label">Password <span class="text-danger">*</span></label>
-                            <input type="password" name="motDePasse" id="motDePasse" class="form-control" required placeholder="Enter password">
+                            <input type="password" name="motDePasse" id="motDePasse" class="form-control {% if errors.motDePasse is defined %}is-invalid{% endif %}" placeholder="Enter password">
+                            {% if errors.motDePasse is defined %}<div class="invalid-feedback d-block">{{ errors.motDePasse }}</div>{% endif %}
                         </div>
                         
                         <div class="col-md-6 mb-3">
                             <label for="dateNaissance" class="form-label">Birth Date</label>
-                            <input type="date" name="dateNaissance" id="dateNaissance" class="form-control">
+                            <input type="date" name="dateNaissance" id="dateNaissance" class="form-control {% if errors.dateNaissance is defined %}is-invalid{% endif %}" value="{{ app.request.request.get('dateNaissance') }}">
+                            {% if errors.dateNaissance is defined %}<div class="invalid-feedback d-block">{{ errors.dateNaissance }}</div>{% endif %}
                         </div>
                     </div>
                     
                     <div class="mb-4">
                         <label for="role" class="form-label">Role</label>
-                        <select name="role" id="role" class="form-select">
+                        <select name="role" id="role" class="form-select {% if errors.role is defined %}is-invalid{% endif %}">
                             <option value="">-- Select Role --</option>
                             {% for role in roles %}
-                            <option value="{{ role.idRole }}">{{ role.nomRole }}</option>
+                            <option value="{{ role.idRole }}" {% if app.request.request.get('role') == role.idRole %}selected{% endif %}>{{ role.nomRole }}</option>
                             {% endfor %}
                         </select>
+                        {% if errors.role is defined %}<div class="invalid-feedback d-block">{{ errors.role }}</div>{% endif %}
                     </div>
                     
                     <hr class="my-4">

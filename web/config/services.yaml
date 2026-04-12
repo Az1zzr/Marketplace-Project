@@ -12,6 +12,13 @@ services:
         autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
         bind:
             $httpClient: '@http_client'
+            $projectDir: '%kernel.project_dir%'
+            $appSecret: '%env(APP_SECRET)%'
+            $mailerDsn: '%env(MAILER_DSN)%'
+            $mailerFromAddress: '%env(MAILER_FROM_ADDRESS)%'
+            $twilioAccountSid: '%env(TWILIO_ACCOUNT_SID)%'
+            $twilioAuthToken: '%env(TWILIO_AUTH_TOKEN)%'
+            $twilioFromNumber: '%env(TWILIO_FROM_NUMBER)%'
             $huggingfaceApiKey: '%env(HUGGINGFACE_API_KEY)%'
 
     # makes classes in src/ available to be used as services
