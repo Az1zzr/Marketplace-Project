@@ -1,0 +1,117 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active" aria-current="page">My Profile</li>
+{% endblock %}
+
+{% block body %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1><i class="bi bi-person-circle me-2"></i>My Profile</h1>
+        <p>Update your account information, password, and profile photo.</p>
+    </div>
+    <a href="{{ path(accountUser.hasRoleCode('admin') ? 'app_admin_dashboard' : 'app_front_dashboard') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Back
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-person me-2"></i>Account Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    <div class="row align-items-center mb-4">
+                        <div class="col-md-3 text-center mb-3 mb-md-0">
+                            {% if accountUser.photoPath %}
+                            <img src="{{ accountUser.photoPath }}" alt="{{ accountUser.nomComplet }}" class="rounded-circle border" style="width: 140px; height: 140px; object-fit: cover;">
+                            {% else %}
+                            <div class="user-avatar mx-auto" style="width: 140px; height: 140px; font-size: 2.8rem;">{{ accountUser.prenom|first }}{{ accountUser.nom|first }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-9">
+                            <label for="photoProfil" class="form-label">Profile Photo</label>
+                            <input type="file" name="photoProfil" id="photoProfil" class="form-control {% if errors.photoProfil is defined %}is-invalid{% endif %}" accept="image/png,image/jpeg,image/webp">
+                            {% if errors.photoProfil is defined %}
+                            <div class="invalid-feedback d-block">{{ errors.photoProfil }}</div>
+                            {% endif %}
+                            <div class="form-text">Only JPG, PNG, and WebP images are allowed. Uploaded images are verified for sensitive content before saving.</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="prenom" class="form-label">First Name</label>
+                            <input type="text" name="prenom" id="prenom" class="form-control {% if errors.prenom is defined %}is-invalid{% endif %}" value="{{ app.request.request.get('prenom', accountUser.prenom) }}">
+                            {% if errors.prenom is defined %}
+                            <div class="invalid-feedback d-block">{{ errors.prenom }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="nom" class="form-label">Last Name</label>
+                            <input type="text" name="nom" id="nom" class="form-control {% if errors.nom is defined %}is-invalid{% endif %}" value="{{ app.request.request.get('nom', accountUser.nom) }}">
+                            {% if errors.nom is defined %}
+                            <div class="invalid-feedback d-block">{{ errors.nom }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="text" name="email" id="email" class="form-control {% if errors.email is defined %}is-invalid{% endif %}" value="{{ app.request.request.get('email', accountUser.email) }}">
+                            {% if errors.email is defined %}
+                            <div class="invalid-feedback d-block">{{ errors.email }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="telephone" class="form-label">Phone</label>
+                            <input type="text" name="telephone" id="telephone" class="form-control {% if errors.telephone is defined %}is-invalid{% endif %}" value="{{ app.request.request.get('telephone', accountUser.telephone) }}">
+                            {% if errors.telephone is defined %}
+                            <div class="invalid-feedback d-block">{{ errors.telephone }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="dateNaissance" class="form-label">Birth Date</label>
+                        <input type="date" name="dateNaissance" id="dateNaissance" class="form-control {% if errors.dateNaissance is defined %}is-invalid{% endif %}" value="{{ app.request.request.get('dateNaissance', accountUser.dateNaissance ? accountUser.dateNaissance|date('Y-m-d') : '') }}">
+                        {% if errors.dateNaissance is defined %}
+                        <div class="invalid-feedback d-block">{{ errors.dateNaissance }}</div>
+                        {% endif %}
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="motDePasse" class="form-label">New Password</label>
+                            <input type="password" name="motDePasse" id="motDePasse" class="form-control {% if errors.motDePasse is defined %}is-invalid{% endif %}" placeholder="Leave empty to keep current password">
+                            {% if errors.motDePasse is defined %}
+                            <div class="invalid-feedback d-block">{{ errors.motDePasse }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="confirmMotDePasse" class="form-label">Confirm New Password</label>
+                            <input type="password" name="confirmMotDePasse" id="confirmMotDePasse" class="form-control {% if errors.confirmMotDePasse is defined %}is-invalid{% endif %}" placeholder="Repeat the new password">
+                            {% if errors.confirmMotDePasse is defined %}
+                            <div class="invalid-feedback d-block">{{ errors.confirmMotDePasse }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

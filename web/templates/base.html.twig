@@ -194,6 +194,16 @@
             flex-shrink: 0;
         }
 
+        .user-avatar-image {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+            border: 2px solid rgba(255, 255, 255, 0.65);
+            box-shadow: 0 8px 20px -14px rgba(15, 23, 42, 0.85);
+        }
+
         .auth-container {
             min-height: 100vh;
             display: flex;
@@ -553,11 +563,16 @@
                     </div>
 
                     <div class="admin-account">
+                        {% if app.user.photoPath %}
+                        <img src="{{ app.user.photoPath }}" alt="{{ app.user.nomComplet }}" class="user-avatar-image">
+                        {% else %}
                         <div class="user-avatar">{{ app.user.prenom|first }}{{ app.user.nom|first }}</div>
+                        {% endif %}
                         <div class="account-meta">
                             <strong>{{ app.user.nomComplet }}</strong>
                             <span>{{ app.user.roleDisplayName }}</span>
                         </div>
+                        <a href="{{ path('app_account_profile') }}" class="btn btn-outline-secondary btn-sm">Profile</a>
                         <a href="{{ path('app_logout') }}" class="btn btn-outline-danger btn-sm">Logout</a>
                     </div>
                 </header>
@@ -617,11 +632,16 @@
                     </nav>
 
                     <div class="front-account">
+                        {% if app.user.photoPath %}
+                        <img src="{{ app.user.photoPath }}" alt="{{ app.user.nomComplet }}" class="user-avatar-image">
+                        {% else %}
                         <div class="user-avatar">{{ app.user.prenom|first }}{{ app.user.nom|first }}</div>
+                        {% endif %}
                         <div class="account-meta">
                             <strong>{{ app.user.nomComplet }}</strong>
                             <span>{{ app.user.roleDisplayName }} Space</span>
                         </div>
+                        <a href="{{ path('app_account_profile') }}" class="btn btn-outline-secondary btn-sm">Profile</a>
                         <a href="{{ path('app_logout') }}" class="btn btn-outline-danger btn-sm">Logout</a>
                     </div>
                 </div>

@@ -6,6 +6,8 @@ use App\Entity\Commande;
 
 class InputValidationService
 {
+    private const ALLOWED_EMAIL_DOMAIN_PREFIXES = ['gmail', 'outlook', 'esprit'];
+
     public function validateEmail(string $email): array
     {
         $pattern = '/^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/';
@@ -16,6 +18,16 @@ class InputValidationService
         
         if (!preg_match($pattern, $email)) {
             return ['valid' => false, 'message' => 'Invalid email format'];
+        }
+
+        $domain = strtolower((string) substr(strrchr($email, '@') ?: '', 1));
+        if ('' === $domain) {
+            return ['valid' => false, 'message' => 'Invalid email domain'];
+        }
+
+        $domainPrefix = strtolower((string) strtok($domain, '.'));
+        if (!in_array($domainPrefix, self::ALLOWED_EMAIL_DOMAIN_PREFIXES, true)) {
+            return ['valid' => false, 'message' => 'Email must use a Gmail, Outlook, or Esprit address'];
         }
         
         return ['valid' => true, 'message' => ''];
@@ -101,6 +113,90 @@ class InputValidationService
             return ['valid' => false, 'message' => 'You must be at least 16 years old'];
         }
         
+        return ['valid' => true, 'message' => ''];
+    }
+
+    public function validateRequiredBirthDate(?\DateTimeInterface $date): array
+    {
+        if ($date === null) {
+            return ['valid' => false, 'message' => 'Birth date is required'];
+        }
+
+        return $this->validateBirthDate($date);
+    }
+
+    public function validateBirthDateInput(?string $date, bool $required = false): array
+    {
+        if (null === $date || '' === trim($date)) {
+            return $required
+                ? ['valid' => false, 'message' => 'Birth date is required']
+                : ['valid' => true, 'message' => ''];
+        }
+
+        $parsedDate = $this->parseDate($date);
+        if (null === $parsedDate) {
+            return ['valid' => false, 'message' => 'Invalid birth date'];
+        }
+
+        return $this->validateBirthDate($parsedDate);
+    }
+
+    public function parseDate(?string $date): ?\DateTimeImmutable
+    {
+        if (null === $date || '' === trim($date)) {
+            return null;
+        }
+
+        try {
+            return new \DateTimeImmutable(trim($date));
+        } catch (\Exception) {
+            return null;
+        }
+    }
+
+    public function validateVerificationCode(?string $code): array
+    {
+        if ($code === null || '' === trim($code)) {
+            return ['valid' => false, 'message' => 'Verification code is required'];
+        }
+
+        $code = trim($code);
+        if (!preg_match('/^[0-9]{6}$/', $code)) {
+            return ['valid' => false, 'message' => 'Verification code must contain exactly 6 digits'];
+        }
+
+        return ['valid' => true, 'message' => ''];
+    }
+
+    public function validateResetChannel(?string $channel): array
+    {
+        if ($channel === null || '' === trim($channel)) {
+            return ['valid' => false, 'message' => 'Please choose whether to send the code by email or SMS'];
+        }
+
+        if (!in_array($channel, ['email', 'sms'], true)) {
+            return ['valid' => false, 'message' => 'Invalid verification channel'];
+        }
+
+        return ['valid' => true, 'message' => ''];
+    }
+
+    public function validateImageUpload(?string $mimeType, ?int $size): array
+    {
+        $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+
+        if (null === $mimeType || '' === $mimeType) {
+            return ['valid' => false, 'message' => 'Invalid image type'];
+        }
+
+        if (!in_array(strtolower($mimeType), $allowedMimeTypes, true)) {
+            return ['valid' => false, 'message' => 'Profile photo must be a JPG, PNG, or WebP image'];
+        }
+
+        if (null !== $size && $size > 5 * 1024 * 1024) {
+            return ['valid' => false, 'message' => 'Profile photo cannot be larger than 5 MB'];
+        }
+
         return ['valid' => true, 'message' => ''];
     }
 
@@ -204,20 +300,6 @@ class InputValidationService
         $governorate = trim($governorate);
         if (!in_array($governorate, Commande::getTunisiaGovernorates(), true)) {
             return ['valid' => false, 'message' => 'Invalid governorate selected'];
-        }
-
-        return ['valid' => true, 'message' => ''];
-    }
-
-    public function validateOrderPaymentMethod(?string $paymentMethod): array
-    {
-        if ($paymentMethod === null || '' === trim($paymentMethod)) {
-            return ['valid' => false, 'message' => 'Please choose how you want to pay'];
-        }
-
-        $paymentMethod = trim($paymentMethod);
-        if (!array_key_exists($paymentMethod, Commande::getPaymentMethodChoices())) {
-            return ['valid' => false, 'message' => 'Invalid payment method selected'];
         }
 
         return ['valid' => true, 'message' => ''];
