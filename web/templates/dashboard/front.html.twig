@@ -55,6 +55,31 @@
     {% endif %}
 </div>
 
+{% if roleCode == 'fournisseur' and feedbackInsights %}
+<div class="stat-grid mb-4">
+    <div class="stat-card">
+        <div class="stat-label">Feedbacks Urgents</div>
+        <div class="stat-value">{{ feedbackInsights.urgentCount }}</div>
+        <div class="stat-note">Feedbacks prioritaires concernant vos produits ou livraisons</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">A Traiter</div>
+        <div class="stat-value">{{ feedbackInsights.attentionCount }}</div>
+        <div class="stat-note">Feedbacks a revoir rapidement</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Sans Reponse</div>
+        <div class="stat-value">{{ feedbackInsights.unansweredCount }}</div>
+        <div class="stat-note">Clients qui attendent encore une reponse</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Sujet Principal</div>
+        <div class="stat-value fs-3">{{ feedbackInsights.topTopicLabel }}</div>
+        <div class="stat-note">Theme le plus frequent dans les feedbacks recus</div>
+    </div>
+</div>
+{% endif %}
+
 <div class="row g-4">
     <div class="col-lg-8">
         <div class="card h-100">
@@ -81,6 +106,9 @@
                     </div>
                     <div class="col-md-6">
                         <a href="{{ path('app_feedback_index') }}" class="btn btn-outline-secondary w-100 py-3">Reply to Feedback</a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="{{ path('app_feedback_export_pdf') }}" class="btn btn-outline-dark w-100 py-3">Exporter Feedback PDF</a>
                     </div>
                     {% else %}
                     <div class="col-md-6">

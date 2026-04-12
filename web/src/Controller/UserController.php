@@ -46,7 +46,7 @@ class UserController extends AbstractController
             }
 
             $roleId = $request->request->get('role');
-            if ($roleId) {
+            if (null !== $roleId && '' !== trim((string) $roleId)) {
                 $role = $roleRepository->find($roleId);
                 $user->setRole($role);
             }
@@ -91,7 +91,7 @@ class UserController extends AbstractController
             }
 
             $roleId = $request->request->get('role');
-            if ($roleId) {
+            if (null !== $roleId && '' !== trim((string) $roleId)) {
                 $role = $roleRepository->find($roleId);
                 $user->setRole($role);
             }

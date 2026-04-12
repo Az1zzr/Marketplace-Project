@@ -12,12 +12,16 @@ use App\Repository\CommandeRepository;
 use App\Repository\FeedbackRepository;
 use App\Repository\LigneCommandeRepository;
 use App\Repository\ProduitRepository;
+use App\Service\CurrencyConversionService;
 use App\Service\InputValidationService;
+use App\Service\ProductQrCodeService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class ProduitController extends AbstractController
 {
@@ -218,7 +222,8 @@ class ProduitController extends AbstractController
         ProduitRepository $produitRepository,
         FeedbackRepository $feedbackRepository,
         LigneCommandeRepository $ligneCommandeRepository,
-        CommandeRepository $commandeRepository
+        CommandeRepository $commandeRepository,
+        CurrencyConversionService $currencyConversionService
     ): Response
     {
         $produit = $produitRepository->find($id);
@@ -236,6 +241,8 @@ class ProduitController extends AbstractController
             $hasDraftCart = null !== $commandeRepository->findDraftCartForUser($currentUser);
         }
 
+        $productUrl = $this->generateUrl('app_produit_show', ['id' => $produit->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
+
         return $this->render('produit/show.html.twig', [
             'produit' => $produit,
             'feedbacks' => $feedbackRepository->findByProduit($produit),
@@ -243,7 +250,40 @@ class ProduitController extends AbstractController
             'canBuy' => $currentUser instanceof User && $this->isBuyer(),
             'eligibleFeedbackLine' => $eligibleFeedbackLine,
             'hasDraftCart' => $hasDraftCart,
+            'convertedPrices' => $currencyConversionService->getPriceConversions((float) $produit->getPrix()),
+            'productUrl' => $productUrl,
         ]);
+    }
+
+    #[Route('/produit/{id}/qr-code', name: 'app_produit_qr_code', methods: ['GET'])]
+    public function qrCode(
+        int $id,
+        Request $request,
+        ProduitRepository $produitRepository,
+        ProductQrCodeService $productQrCodeService
+    ): Response {
+        $produit = $produitRepository->find($id);
+
+        if (!$produit) {
+            throw $this->createNotFoundException('Product not found');
+        }
+
+        $productUrl = $this->generateUrl('app_produit_show', ['id' => $produit->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
+        $svg = $productQrCodeService->generateSvgString($productUrl);
+
+        $headers = [
+            'Content-Type' => 'image/svg+xml',
+            'Cache-Control' => 'public, max-age=3600',
+        ];
+
+        if ($request->query->getBoolean('download')) {
+            $headers['Content-Disposition'] = HeaderUtils::makeDisposition(
+                HeaderUtils::DISPOSITION_ATTACHMENT,
+                sprintf('product-%d-qr-code.svg', $produit->getId())
+            );
+        }
+
+        return new Response($svg, Response::HTTP_OK, $headers);
     }
 
     private function denyUnlessCatalogManager(): void

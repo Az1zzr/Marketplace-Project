@@ -13,12 +13,53 @@
         <h1>Feedbacks</h1>
         <p class="mb-0">Explore product reviews, delivery-driver reviews, and ongoing discussions</p>
     </div>
-    {% if canCreateFeedback %}
-    <a href="{{ path('app_feedback_new') }}" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-1"></i> Add Product Feedback
-    </a>
-    {% endif %}
+    <div class="d-flex gap-2">
+        {% if canSeeInsights %}
+        <a href="{{ path('app_feedback_export_pdf', {
+            search: search,
+            sort: sort,
+            order: order,
+            sentiment: sentimentFilter,
+            rating: ratingFilter,
+            topic: topicFilter,
+            priority: priorityFilter,
+            attention: attentionFilter
+        }) }}" class="btn btn-outline-dark">
+            <i class="bi bi-file-earmark-pdf me-1"></i> Exporter PDF
+        </a>
+        {% endif %}
+        {% if canCreateFeedback %}
+        <a href="{{ path('app_feedback_new') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Add Product Feedback
+        </a>
+        {% endif %}
+    </div>
 </div>
+
+{% if canSeeInsights and feedbackInsightsSummary %}
+<div class="stat-grid mb-4">
+    <div class="stat-card">
+        <div class="stat-label">Feedbacks Urgents</div>
+        <div class="stat-value">{{ feedbackInsightsSummary.urgentCount }}</div>
+        <div class="stat-note">Retours prioritaires qui demandent une reaction rapide</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">A Traiter</div>
+        <div class="stat-value">{{ feedbackInsightsSummary.attentionCount }}</div>
+        <div class="stat-note">Feedbacks critiques ou moyens qui attendent encore une action</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Sans Reponse</div>
+        <div class="stat-value">{{ feedbackInsightsSummary.unansweredCount }}</div>
+        <div class="stat-note">Feedbacks qui n'ont encore recu aucune reponse</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Sujet Principal</div>
+        <div class="stat-value fs-3">{{ feedbackInsightsSummary.topTopicLabel }}</div>
+        <div class="stat-note">Theme le plus frequent dans les feedbacks visibles</div>
+    </div>
+</div>
+{% endif %}
 
 <div class="card mb-4">
     <div class="card-body">
@@ -47,6 +88,34 @@
                     <option value="1" {% if ratingFilter == '1' %}selected{% endif %}>1 Star</option>
                 </select>
             </div>
+            {% if canSeeInsights %}
+            <div class="col-md-2">
+                <label for="topic" class="form-label">Sujet</label>
+                <select name="topic" id="topic" class="form-select">
+                    <option value="">Tous</option>
+                    {% for value, label in topicChoices %}
+                    <option value="{{ value }}" {% if topicFilter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="priority" class="form-label">Priorite</label>
+                <select name="priority" id="priority" class="form-select">
+                    <option value="">Toutes</option>
+                    {% for value, label in priorityChoices %}
+                    <option value="{{ value }}" {% if priorityFilter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="attention" class="form-label">Suivi</label>
+                <select name="attention" id="attention" class="form-select">
+                    <option value="">Tous</option>
+                    <option value="attention" {% if attentionFilter == 'attention' %}selected{% endif %}>A traiter</option>
+                    <option value="unanswered" {% if attentionFilter == 'unanswered' %}selected{% endif %}>Sans reponse</option>
+                </select>
+            </div>
+            {% endif %}
             <div class="col-md-2">
                 <label for="sort" class="form-label">Sort by</label>
                 <select name="sort" id="sort" class="form-select">
@@ -79,7 +148,7 @@
     <div class="card-body text-center py-5">
         <i class="bi bi-chat-dots fs-1 text-muted mb-3"></i>
         <h4 class="text-muted">No feedbacks found</h4>
-        {% if search or sentimentFilter or ratingFilter %}
+        {% if search or sentimentFilter or ratingFilter or topicFilter or priorityFilter or attentionFilter %}
         <p class="text-muted mb-4">No feedbacks match your search criteria.</p>
         {% else %}
         <p class="text-muted mb-4">Your product and delivery reviews will appear here once you receive an order.</p>
@@ -96,6 +165,7 @@
 {% for item in feedbacksWithSentiment %}
 {% set feedback = item.feedback %}
 {% set sentiment = item.sentiment %}
+{% set insight = item.insight %}
 {% set authorName = feedback.auteur ? feedback.auteur.nomComplet : 'Deleted user' %}
 {% set canManageFeedback = is_granted('ROLE_ADMIN') or (feedback.auteur and app.user and app.user.id == feedback.auteur.id) %}
 {% set isDeliveryFeedback = feedback.isDeliveryFeedback %}
@@ -119,6 +189,7 @@
                     <i class="bi {{ sentiment.sentiment == 'POSITIF' ? 'bi-emoji-smile' : (sentiment.sentiment == 'NEGATIF' ? 'bi-emoji-frown' : 'bi-emoji-neutral') }} me-1"></i>
                     {{ sentiment.sentiment }}
                 </span>
+                <span class="badge bg-light text-dark border">{{ sentiment.sourceLabel ?? sentiment.source ?? 'Unknown' }}</span>
                 <span class="badge bg-primary">#{{ feedback.id }}</span>
             </div>
         </div>
@@ -159,9 +230,21 @@
                 </a>
             </div>
             {% endif %}
-            {% if feedback.recommande is not null %}
-            <div class="mb-2">
-                <span class="badge {{ feedback.recommande ? 'bg-success' : 'bg-danger' }}">{{ feedback.recommande ? 'Recommended' : 'Not recommended' }}</span>
+                {% if feedback.recommande is not null %}
+                <div class="mb-2">
+                    <span class="badge {{ feedback.recommande ? 'bg-success' : 'bg-danger' }}">{{ feedback.recommande ? 'Recommended' : 'Not recommended' }}</span>
+                </div>
+                {% endif %}
+            {% if canSeeInsights %}
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <span class="badge {{ insight.topicBadgeClass }}">Sujet: {{ insight.topicLabel }}</span>
+                <span class="badge {{ insight.priorityBadgeClass }}">Priorite: {{ insight.priorityLabel }}</span>
+                {% if insight.needsAttention %}
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">A traiter</span>
+                {% endif %}
+                {% if insight.isUnanswered %}
+                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Sans reponse</span>
+                {% endif %}
             </div>
             {% endif %}
             <p class="mb-3">{{ feedback.commentaire|slice(0, 200) }}{% if feedback.commentaire|length > 200 %}...{% endif %}</p>

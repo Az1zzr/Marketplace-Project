@@ -2,6 +2,8 @@
 
 namespace App\Service;
 
+use App\Entity\Commande;
+
 class InputValidationService
 {
     public function validateEmail(string $email): array
@@ -25,15 +27,35 @@ class InputValidationService
             return ['valid' => true, 'message' => ''];
         }
 
-        $phone = preg_replace('/[^0-9]/', '', $phone);
+        $phone = $this->normalizeDigits($phone);
         
-        $pattern = '/^[2459][0-9]{7}$/';
+        $pattern = '/^[259][0-9]{7}$/';
         
         if (!preg_match($pattern, $phone)) {
-            return ['valid' => false, 'message' => 'Invalid Tunisian phone number (must be 8 digits starting with 2, 4, 5, or 9)'];
+            return ['valid' => false, 'message' => 'Invalid Tunisian phone number (must be 8 digits starting with 2, 5, or 9)'];
         }
         
         return ['valid' => true, 'message' => ''];
+    }
+
+    public function validateRequiredTunisianPhone(?string $phone, string $fieldName = 'Phone number'): array
+    {
+        if ($phone === null || '' === trim($phone)) {
+            return ['valid' => false, 'message' => $fieldName . ' is required'];
+        }
+
+        return $this->validateTunisianPhone($phone);
+    }
+
+    public function normalizePhone(?string $phone): ?string
+    {
+        if ($phone === null) {
+            return null;
+        }
+
+        $phone = $this->normalizeDigits($phone);
+
+        return '' === $phone ? null : $phone;
     }
 
     public function validatePassword(string $password): array
@@ -160,8 +182,60 @@ class InputValidationService
             return ['valid' => false, 'message' => 'Delivery address is required'];
         }
 
-        if (mb_strlen(trim($address)) < 10) {
+        $address = trim($address);
+
+        if (mb_strlen($address) < 10) {
             return ['valid' => false, 'message' => 'Delivery address must contain enough detail'];
+        }
+
+        if (mb_strlen($address) > 255) {
+            return ['valid' => false, 'message' => 'Delivery address cannot be longer than 255 characters'];
+        }
+
+        return ['valid' => true, 'message' => ''];
+    }
+
+    public function validateTunisianGovernorate(?string $governorate): array
+    {
+        if ($governorate === null || '' === trim($governorate)) {
+            return ['valid' => false, 'message' => 'Please select your governorate in Tunisia'];
+        }
+
+        $governorate = trim($governorate);
+        if (!in_array($governorate, Commande::getTunisiaGovernorates(), true)) {
+            return ['valid' => false, 'message' => 'Invalid governorate selected'];
+        }
+
+        return ['valid' => true, 'message' => ''];
+    }
+
+    public function validateOrderPaymentMethod(?string $paymentMethod): array
+    {
+        if ($paymentMethod === null || '' === trim($paymentMethod)) {
+            return ['valid' => false, 'message' => 'Please choose how you want to pay'];
+        }
+
+        $paymentMethod = trim($paymentMethod);
+        if (!array_key_exists($paymentMethod, Commande::getPaymentMethodChoices())) {
+            return ['valid' => false, 'message' => 'Invalid payment method selected'];
+        }
+
+        return ['valid' => true, 'message' => ''];
+    }
+
+    public function validateDeliveryComment(?string $comment): array
+    {
+        if ($comment === null || '' === trim($comment)) {
+            return ['valid' => false, 'message' => 'Please add a short delivery comment explaining exactly where you are'];
+        }
+
+        $comment = trim($comment);
+        if (mb_strlen($comment) < 5) {
+            return ['valid' => false, 'message' => 'Delivery comment must be at least 5 characters long'];
+        }
+
+        if (mb_strlen($comment) > 500) {
+            return ['valid' => false, 'message' => 'Delivery comment cannot be longer than 500 characters'];
         }
 
         return ['valid' => true, 'message' => ''];
@@ -244,5 +318,10 @@ class InputValidationService
         }
 
         return $errors;
+    }
+
+    private function normalizeDigits(string $value): string
+    {
+        return preg_replace('/[^0-9]/', '', $value) ?? '';
     }
 }
