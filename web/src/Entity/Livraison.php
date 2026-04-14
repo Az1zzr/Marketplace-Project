@@ -13,6 +13,15 @@ class Livraison
     public const STATUS_DELIVERED = 'Livree';
     public const STATUS_DELAYED = 'Retardee';
 
+    public static function getAvailableStatuses(): array
+    {
+        return [
+            self::STATUS_IN_PROGRESS,
+            self::STATUS_DELIVERED,
+            self::STATUS_DELAYED,
+        ];
+    }
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(name: 'idLivraison')]
@@ -80,7 +89,7 @@ class Livraison
 
     public function setDateLivraison(\DateTimeInterface $dateLivraison): static
     {
-        $this->dateLivraison = $dateLivraison;
+        $this->dateLivraison = \DateTime::createFromInterface($dateLivraison);
         return $this;
     }
 
@@ -113,7 +122,8 @@ class Livraison
 
     public function setNoteDelivery(?string $noteDelivery): static
     {
-        $this->noteDelivery = $noteDelivery;
+        $noteDelivery = null === $noteDelivery ? null : trim($noteDelivery);
+        $this->noteDelivery = '' === $noteDelivery ? null : $noteDelivery;
         return $this;
     }
 

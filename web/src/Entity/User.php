@@ -149,7 +149,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function setDateNaissance(?\DateTimeInterface $dateNaissance): static
     {
-        $this->dateNaissance = $dateNaissance;
+        $this->dateNaissance = null === $dateNaissance ? null : \DateTime::createFromInterface($dateNaissance);
         return $this;
     }
 

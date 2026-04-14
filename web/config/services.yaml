@@ -14,6 +14,7 @@ services:
             $httpClient: '@http_client'
             $projectDir: '%kernel.project_dir%'
             $appSecret: '%env(APP_SECRET)%'
+            $appEnv: '%kernel.environment%'
             $mailerDsn: '%env(MAILER_DSN)%'
             $mailerFromAddress: '%env(MAILER_FROM_ADDRESS)%'
             $twilioAccountSid: '%env(TWILIO_ACCOUNT_SID)%'
