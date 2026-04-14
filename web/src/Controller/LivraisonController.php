@@ -6,6 +6,7 @@ use App\Entity\Livraison;
 use App\Entity\User;
 use App\Repository\LivraisonRepository;
 use App\Repository\CommandeRepository;
+use App\Service\InputValidationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -42,7 +43,14 @@ class LivraisonController extends AbstractController
     }
 
     #[Route('/livraison/new/{commandeId}', name: 'app_livraison_new')]
-    public function new(int $commandeId, Request $request, LivraisonRepository $livraisonRepository, CommandeRepository $commandeRepository, EntityManagerInterface $entityManager): Response
+    public function new(
+        int $commandeId,
+        Request $request,
+        LivraisonRepository $livraisonRepository,
+        CommandeRepository $commandeRepository,
+        InputValidationService $validationService,
+        EntityManagerInterface $entityManager
+    ): Response
     {
         $this->denyUnlessManager();
         $currentUser = $this->requireCurrentUser();
@@ -59,32 +67,59 @@ class LivraisonController extends AbstractController
             return $this->redirectToRoute('app_commande_show', ['id' => $commandeId]);
         }
 
+        $errors = [];
+        $formData = [
+            'dateLivraison' => (new \DateTimeImmutable('today'))->format('Y-m-d'),
+            'livreur' => '',
+            'statutLivraison' => Livraison::STATUS_IN_PROGRESS,
+            'noteDelivery' => '',
+            'latitude' => '',
+            'longitude' => '',
+        ];
+
         if ($request->isMethod('POST')) {
-            $livraison = new Livraison();
-            
-            $numeroBL = 'BL-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
-            $livraison->setCommande($commande);
-            $livraison->setNumeroBL($numeroBL);
-            $livraison->setDateLivraison(new \DateTime($request->request->get('dateLivraison') ?? 'now'));
-            $livraison->setLivreur($request->request->get('livreur'));
-            $livraison->setStatutLivraison($request->request->get('statutLivraison', 'En cours'));
-            $livraison->setNoteDelivery($request->request->get('noteDelivery'));
-            $livraison->setLatitude((float)$request->request->get('latitude', 0));
-            $livraison->setLongitude((float)$request->request->get('longitude', 0));
+            $submission = $this->validateDeliverySubmission($request, $validationService);
+            $errors = $submission['errors'];
+            $formData = $submission['formData'];
 
-            $entityManager->persist($livraison);
-            $entityManager->flush();
+            if (empty($errors)) {
+                $livraison = new Livraison();
 
-            return $this->redirectToRoute('app_commande_show', ['id' => $commandeId]);
+                $numeroBL = 'BL-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+                $livraison->setCommande($commande);
+                $commande->setLivraison($livraison);
+                $livraison->setNumeroBL($numeroBL);
+                $livraison->setDateLivraison($submission['deliveryDate']);
+                $livraison->setLivreur($submission['driver']);
+                $livraison->setStatutLivraison($submission['status']);
+                $livraison->setNoteDelivery($submission['note']);
+                $livraison->setLatitude($submission['latitude']);
+                $livraison->setLongitude($submission['longitude']);
+
+                $entityManager->persist($livraison);
+                $entityManager->flush();
+
+                $this->addFlash('success', 'Delivery created successfully.');
+                return $this->redirectToRoute('app_commande_show', ['id' => $commandeId]);
+            }
         }
 
         return $this->render('livraison/new.html.twig', [
             'commande' => $commande,
+            'errors' => $errors,
+            'formData' => $formData,
+            'statuses' => Livraison::getAvailableStatuses(),
         ]);
     }
 
     #[Route('/livraison/{id}/edit', name: 'app_livraison_edit')]
-    public function edit(int $id, Request $request, LivraisonRepository $livraisonRepository, EntityManagerInterface $entityManager): Response
+    public function edit(
+        int $id,
+        Request $request,
+        LivraisonRepository $livraisonRepository,
+        InputValidationService $validationService,
+        EntityManagerInterface $entityManager
+    ): Response
     {
         $this->denyUnlessManager();
         $currentUser = $this->requireCurrentUser();
@@ -95,21 +130,41 @@ class LivraisonController extends AbstractController
             throw $this->createNotFoundException('Delivery not found');
         }
 
+        $errors = [];
+        $formData = [
+            'dateLivraison' => $livraison->getDateLivraison()?->format('Y-m-d') ?? '',
+            'livreur' => $livraison->getLivreur() ?? '',
+            'statutLivraison' => $livraison->getStatutLivraison() ?? Livraison::STATUS_IN_PROGRESS,
+            'noteDelivery' => $livraison->getNoteDelivery() ?? '',
+            'latitude' => $livraison->hasLocation() ? number_format((float) $livraison->getLatitude(), 6, '.', '') : '',
+            'longitude' => $livraison->hasLocation() ? number_format((float) $livraison->getLongitude(), 6, '.', '') : '',
+        ];
+
         if ($request->isMethod('POST')) {
-            $livraison->setDateLivraison(new \DateTime($request->request->get('dateLivraison')));
-            $livraison->setLivreur($request->request->get('livreur'));
-            $livraison->setStatutLivraison($request->request->get('statutLivraison'));
-            $livraison->setNoteDelivery($request->request->get('noteDelivery'));
-            $livraison->setLatitude((float)$request->request->get('latitude', 0));
-            $livraison->setLongitude((float)$request->request->get('longitude', 0));
+            $submission = $this->validateDeliverySubmission($request, $validationService);
+            $errors = $submission['errors'];
+            $formData = $submission['formData'];
 
-            $entityManager->flush();
+            if (empty($errors)) {
+                $livraison->setDateLivraison($submission['deliveryDate']);
+                $livraison->setLivreur($submission['driver']);
+                $livraison->setStatutLivraison($submission['status']);
+                $livraison->setNoteDelivery($submission['note']);
+                $livraison->setLatitude($submission['latitude']);
+                $livraison->setLongitude($submission['longitude']);
 
-            return $this->redirectToRoute('app_commande_show', ['id' => $livraison->getCommande()->getIdCommande()]);
+                $entityManager->flush();
+
+                $this->addFlash('success', 'Delivery updated successfully.');
+                return $this->redirectToRoute('app_commande_show', ['id' => $livraison->getCommande()->getIdCommande()]);
+            }
         }
 
         return $this->render('livraison/edit.html.twig', [
             'livraison' => $livraison,
+            'errors' => $errors,
+            'formData' => $formData,
+            'statuses' => Livraison::getAvailableStatuses(),
         ]);
     }
 
@@ -126,9 +181,12 @@ class LivraisonController extends AbstractController
         }
 
         $commandeId = $livraison->getCommande()->getIdCommande();
+        $livraison->getCommande()?->setLivraison(null);
 
         $entityManager->remove($livraison);
         $entityManager->flush();
+
+        $this->addFlash('success', 'Delivery deleted successfully.');
 
         return $this->redirectToRoute('app_commande_show', ['id' => $commandeId]);
     }
@@ -159,5 +217,111 @@ class LivraisonController extends AbstractController
         }
 
         return $user;
+    }
+
+    private function validateDeliverySubmission(Request $request, InputValidationService $validationService): array
+    {
+        $formData = [
+            'dateLivraison' => trim((string) $request->request->get('dateLivraison', '')),
+            'livreur' => trim((string) $request->request->get('livreur', '')),
+            'statutLivraison' => trim((string) $request->request->get('statutLivraison', Livraison::STATUS_IN_PROGRESS)),
+            'noteDelivery' => trim((string) $request->request->get('noteDelivery', '')),
+            'latitude' => trim((string) $request->request->get('latitude', '')),
+            'longitude' => trim((string) $request->request->get('longitude', '')),
+        ];
+
+        $errors = [];
+        $deliveryDate = $validationService->parseDate($formData['dateLivraison']);
+        if (!$deliveryDate) {
+            $errors['dateLivraison'] = 'Please choose a valid delivery date.';
+        }
+
+        if ('' === $formData['livreur']) {
+            $errors['livreur'] = 'Driver name is required.';
+        } elseif (mb_strlen($formData['livreur']) < 2 || mb_strlen($formData['livreur']) > 100) {
+            $errors['livreur'] = 'Driver name must contain between 2 and 100 characters.';
+        }
+
+        if (!in_array($formData['statutLivraison'], Livraison::getAvailableStatuses(), true)) {
+            $errors['statutLivraison'] = 'Invalid delivery status.';
+        }
+
+        if (mb_strlen($formData['noteDelivery']) > 255) {
+            $errors['noteDelivery'] = 'Delivery comment cannot be longer than 255 characters.';
+        }
+
+        $coordinates = $this->validateCoordinates($formData['latitude'], $formData['longitude']);
+        if (!$coordinates['valid']) {
+            $errors['coordinates'] = $coordinates['message'];
+        }
+
+        return [
+            'errors' => $errors,
+            'formData' => $formData,
+            'deliveryDate' => $deliveryDate,
+            'driver' => $formData['livreur'],
+            'status' => $formData['statutLivraison'],
+            'note' => '' === $formData['noteDelivery'] ? null : $formData['noteDelivery'],
+            'latitude' => $coordinates['latitude'],
+            'longitude' => $coordinates['longitude'],
+        ];
+    }
+
+    private function validateCoordinates(string $latitudeInput, string $longitudeInput): array
+    {
+        if ('' === $latitudeInput && '' === $longitudeInput) {
+            return [
+                'valid' => true,
+                'message' => '',
+                'latitude' => 0.0,
+                'longitude' => 0.0,
+            ];
+        }
+
+        if ('' === $latitudeInput || '' === $longitudeInput) {
+            return [
+                'valid' => false,
+                'message' => 'Latitude and longitude must both be filled in to pin the delivery on the map.',
+                'latitude' => 0.0,
+                'longitude' => 0.0,
+            ];
+        }
+
+        if (!is_numeric($latitudeInput) || !is_numeric($longitudeInput)) {
+            return [
+                'valid' => false,
+                'message' => 'Latitude and longitude must be valid numeric coordinates.',
+                'latitude' => 0.0,
+                'longitude' => 0.0,
+            ];
+        }
+
+        $latitude = (float) $latitudeInput;
+        $longitude = (float) $longitudeInput;
+
+        if ($latitude < -90 || $latitude > 90) {
+            return [
+                'valid' => false,
+                'message' => 'Latitude must be between -90 and 90.',
+                'latitude' => 0.0,
+                'longitude' => 0.0,
+            ];
+        }
+
+        if ($longitude < -180 || $longitude > 180) {
+            return [
+                'valid' => false,
+                'message' => 'Longitude must be between -180 and 180.',
+                'latitude' => 0.0,
+                'longitude' => 0.0,
+            ];
+        }
+
+        return [
+            'valid' => true,
+            'message' => '',
+            'latitude' => $latitude,
+            'longitude' => $longitude,
+        ];
     }
 }

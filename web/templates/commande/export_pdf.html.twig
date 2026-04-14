@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Order PDF</title>
+    <style>
+        body {
+            font-family: DejaVu Sans, sans-serif;
+            color: #0f172a;
+            font-size: 12px;
+            margin: 0;
+        }
+
+        .page {
+            padding: 28px 32px 36px;
+        }
+
+        .header {
+            border-radius: 18px;
+            padding: 22px 24px;
+            background: linear-gradient(135deg, #0f172a, #1d4ed8);
+            color: #ffffff;
+            margin-bottom: 18px;
+        }
+
+        .header h1 {
+            margin: 0 0 8px;
+            font-size: 28px;
+        }
+
+        .header p {
+            margin: 0;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.88);
+        }
+
+        .meta {
+            margin-top: 14px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.82);
+        }
+
+        .summary-table,
+        .section-table,
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .summary-card {
+            width: 33.33%;
+            padding: 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            background: #f8fafc;
+            vertical-align: top;
+        }
+
+        .summary-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+
+        .summary-value {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .summary-note {
+            color: #475569;
+            font-size: 11px;
+        }
+
+        .section {
+            margin-top: 18px;
+        }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: bold;
+            margin: 0 0 10px;
+        }
+
+        .section-box {
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 16px 18px;
+            background: #ffffff;
+        }
+
+        .section-table td {
+            padding: 7px 0;
+            vertical-align: top;
+        }
+
+        .label {
+            width: 32%;
+            color: #64748b;
+            font-size: 11px;
+        }
+
+        .value {
+            font-weight: bold;
+        }
+
+        .calendar-box {
+            margin-bottom: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            overflow: hidden;
+            width: 120px;
+            text-align: center;
+        }
+
+        .calendar-month {
+            background: #1d4ed8;
+            color: #ffffff;
+            padding: 6px 8px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: bold;
+        }
+
+        .calendar-day {
+            font-size: 30px;
+            font-weight: bold;
+            line-height: 1;
+            padding: 14px 8px 4px;
+        }
+
+        .calendar-year {
+            color: #64748b;
+            font-size: 11px;
+            padding: 0 8px 12px;
+        }
+
+        .comment-grid {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 10px 0;
+            margin: 10px -10px 0;
+        }
+
+        .comment-box {
+            width: 50%;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            background: #f8fafc;
+            padding: 14px;
+            vertical-align: top;
+        }
+
+        .comment-label {
+            color: #64748b;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 8px;
+        }
+
+        .comment-text {
+            line-height: 1.55;
+        }
+
+        .items-table {
+            margin-top: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .items-table th,
+        .items-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+        }
+
+        .items-table th {
+            background: #f8fafc;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #475569;
+        }
+
+        .items-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .right {
+            text-align: right;
+        }
+
+        .muted {
+            color: #64748b;
+        }
+
+        .footer {
+            margin-top: 24px;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 10px;
+        }
+    </style>
+</head>
+<body>
+    {% set openStreetMapUrl = livraison and livraison.hasLocation ? 'https://www.openstreetmap.org/?mlat=' ~ livraison.latitude ~ '&mlon=' ~ livraison.longitude ~ '#map=16/' ~ livraison.latitude ~ '/' ~ livraison.longitude : null %}
+    <div class="page">
+        <div class="header">
+            <h1>Order Report</h1>
+            <p>Order {{ commande.numeroCommande }} with delivery details, comments, and visible line items.</p>
+            <div class="meta">
+                Generated on {{ generatedAt|date('Y-m-d H:i') }} | {{ viewer.nomComplet }}
+            </div>
+        </div>
+
+        <table class="summary-table" cellspacing="10">
+            <tr>
+                <td class="summary-card">
+                    <div class="summary-label">Order total</div>
+                    <div class="summary-value">{{ (isSupplierView ? visibleMontantTotal : commande.montantTotal)|number_format(2, '.', ',') }} TND</div>
+                    <div class="summary-note">{{ isSupplierView ? 'Visible supplier amount' : 'Customer order amount' }}</div>
+                </td>
+                <td class="summary-card">
+                    <div class="summary-label">Items</div>
+                    <div class="summary-value">{{ isSupplierView ? visibleItemsTotal : commande.totalItems }}</div>
+                    <div class="summary-note">{{ isSupplierView ? 'Visible supplier items' : 'Ordered items' }}</div>
+                </td>
+                <td class="summary-card">
+                    <div class="summary-label">Delivery status</div>
+                    <div class="summary-value" style="font-size: 18px;">{{ livraison ? livraison.statutLivraison : 'Not assigned' }}</div>
+                    <div class="summary-note">{{ commande.statut }}</div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="section">
+            <div class="section-title">Order Information</div>
+            <div class="section-box">
+                <table class="section-table">
+                    <tr>
+                        <td class="label">Order number</td>
+                        <td class="value">#{{ commande.numeroCommande }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Client</td>
+                        <td class="value">{{ commande.clientDisplayName }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Order date</td>
+                        <td class="value">{{ commande.dateCommande|date('Y-m-d') }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Governorate</td>
+                        <td class="value">{{ commande.gouvernorat ?? '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Delivery phone</td>
+                        <td class="value">{{ commande.telephoneLivraison ?? '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Delivery address</td>
+                        <td class="value">{{ commande.adresseLivraison }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Delivery Section</div>
+            <div class="section-box">
+                {% if livraison %}
+                <div class="calendar-box">
+                    <div class="calendar-month">{{ livraison.dateLivraison|date('M') }}</div>
+                    <div class="calendar-day">{{ livraison.dateLivraison|date('d') }}</div>
+                    <div class="calendar-year">{{ livraison.dateLivraison|date('Y') }}</div>
+                </div>
+                <table class="section-table">
+                    <tr>
+                        <td class="label">Delivery date</td>
+                        <td class="value">{{ livraison.dateLivraison|date('l, F j, Y') }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">BL number</td>
+                        <td class="value">#{{ livraison.numeroBL }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Driver</td>
+                        <td class="value">{{ livraison.livreur }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Status</td>
+                        <td class="value">{{ livraison.statutLivraison }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Map coordinates</td>
+                        <td class="value">
+                            {% if livraison.hasLocation %}
+                            {{ livraison.latitude }}, {{ livraison.longitude }}
+                            {% else %}
+                            No map pin saved
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="label">OpenStreetMap link</td>
+                        <td class="value">{{ openStreetMapUrl ?: 'No map link available' }}</td>
+                    </tr>
+                </table>
+                {% else %}
+                <div class="muted">No delivery has been assigned to this order yet.</div>
+                {% endif %}
+
+                <table class="comment-grid">
+                    <tr>
+                        <td class="comment-box">
+                            <div class="comment-label">Client instructions</div>
+                            <div class="comment-text">{{ commande.commentaireLivraison ?: 'No delivery instructions added by the client.' }}</div>
+                        </td>
+                        <td class="comment-box">
+                            <div class="comment-label">Driver or team comment</div>
+                            <div class="comment-text">{{ livraison and livraison.noteDelivery ? livraison.noteDelivery : 'No delivery comment added yet by the driver or delivery team.' }}</div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Visible Order Items</div>
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th class="right">Quantity</th>
+                        <th class="right">Unit Price</th>
+                        <th class="right">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ligne in visibleLignesCommande %}
+                    <tr>
+                        <td>{{ ligne.produit.nomProduit }}</td>
+                        <td class="right">{{ ligne.quantite }}</td>
+                        <td class="right">{{ ligne.prixUnitaire|number_format(2, '.', ',') }} TND</td>
+                        <td class="right">{{ ligne.sousTotal|number_format(2, '.', ',') }} TND</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="footer">
+            Marketplace order export generated from the orders module.
+        </div>
+    </div>
+</body>
+</html>

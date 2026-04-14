@@ -2,6 +2,103 @@
 
 {% block title %}Order #{{ commande.numeroCommande }}{% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+    <style>
+        .delivery-schedule-card {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 1rem;
+            align-items: center;
+            padding: 1rem;
+            border: 1px solid var(--slate-200);
+            border-radius: 18px;
+            background: linear-gradient(180deg, #ffffff, #f8fafc);
+        }
+
+        .delivery-calendar {
+            border-radius: 18px;
+            overflow: hidden;
+            border: 1px solid var(--slate-200);
+            background: #ffffff;
+            text-align: center;
+        }
+
+        .delivery-calendar-month {
+            background: var(--primary-color);
+            color: #ffffff;
+            padding: 0.45rem 0.75rem;
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .delivery-calendar-day {
+            padding: 1rem 0.75rem 0.2rem;
+            font-size: 2.4rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .delivery-calendar-year {
+            padding: 0 0.75rem 1rem;
+            color: var(--slate-500);
+            font-size: 0.92rem;
+        }
+
+        .delivery-comments-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+
+        .delivery-comment-panel {
+            border: 1px solid var(--slate-200);
+            border-radius: 18px;
+            background: #f8fafc;
+            padding: 1rem;
+        }
+
+        .delivery-comment-label {
+            color: var(--slate-500);
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .delivery-comment-text {
+            white-space: pre-wrap;
+            color: var(--slate-900);
+            line-height: 1.6;
+        }
+
+        .delivery-map {
+            height: 280px;
+            border-radius: 18px;
+            border: 1px solid var(--slate-200);
+            overflow: hidden;
+        }
+
+        .delivery-map-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.85rem;
+        }
+
+        @media (max-width: 767.98px) {
+            .delivery-schedule-card {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}
+
 {% block breadcrumb %}
 <li class="breadcrumb-item"><a href="{{ path('app_commande_index') }}">Orders</a></li>
 <li class="breadcrumb-item active">Order #{{ commande.numeroCommande }}</li>
@@ -10,25 +107,29 @@
 {% block body %}
 {% set canLeaveFeedback = is_granted('ROLE_CLIENT') and commande.clientUser and app.user and commande.clientUser.id == app.user.id and livraison and livraison.statutLivraison == 'Livree' %}
 {% set canLeaveDeliveryFeedback = canLeaveFeedback and livraison and not livraison.feedback %}
-<div class="page-header d-flex justify-content-between align-items-center">
+{% set openStreetMapUrl = livraison and livraison.hasLocation ? 'https://www.openstreetmap.org/?mlat=' ~ livraison.latitude ~ '&mlon=' ~ livraison.longitude ~ '#map=16/' ~ livraison.latitude ~ '/' ~ livraison.longitude : null %}
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
     <div>
         <h1><i class="bi bi-cart3 me-2"></i>Order #{{ commande.numeroCommande }}</h1>
-        <p>Order details and delivery information</p>
+        <p>Order details, delivery calendar, map, and delivery comments.</p>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap">
         {% if canManageOrder %}
         <a href="{{ path('app_commande_edit', {'id': commande.idCommande}) }}" class="btn btn-primary">
-            <i class="bi bi-pencil me-1"></i> Edit
+            <i class="bi bi-pencil me-1"></i>Edit
         </a>
         {% endif %}
+        <a href="{{ path('app_commande_export_pdf', {'id': commande.idCommande}) }}" class="btn btn-outline-dark">
+            <i class="bi bi-file-earmark-pdf me-1"></i>Export PDF
+        </a>
         <a href="{{ path('app_commande_index') }}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i> Back
+            <i class="bi bi-arrow-left me-1"></i>Back
         </a>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-lg-6 mb-4">
+<div class="row g-4">
+    <div class="col-lg-6">
         <div class="card h-100">
             <div class="card-header">
                 <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>Order Information</h5>
@@ -49,15 +150,11 @@
                 </div>
                 <div class="row mb-3">
                     <div class="col-sm-4 text-muted">Order Date</div>
-                    <div class="col-sm-8 fw-medium">
-                        <i class="bi bi-calendar3 me-1"></i>{{ commande.dateCommande|date('Y-m-d') }}
-                    </div>
+                    <div class="col-sm-8 fw-medium"><i class="bi bi-calendar3 me-1"></i>{{ commande.dateCommande|date('Y-m-d') }}</div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-sm-4 text-muted">{{ isSupplierView ? 'Visible Amount' : 'Total Amount' }}</div>
-                    <div class="col-sm-8">
-                        <span class="h4 text-primary mb-0">{{ (isSupplierView ? visibleMontantTotal : commande.montantTotal)|number_format(2, '.', ',') }} TND</span>
-                    </div>
+                    <div class="col-sm-8"><span class="h4 text-primary mb-0">{{ (isSupplierView ? visibleMontantTotal : commande.montantTotal)|number_format(2, '.', ',') }} TND</span></div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-sm-4 text-muted">{{ isSupplierView ? 'Visible Items' : 'Items' }}</div>
@@ -83,49 +180,55 @@
                     <div class="col-sm-4 text-muted">Delivery Phone</div>
                     <div class="col-sm-8 fw-medium">{{ commande.telephoneLivraison ?? '-' }}</div>
                 </div>
-                <div class="row mb-3">
+                <div class="row mb-0">
                     <div class="col-sm-4 text-muted">Delivery Address</div>
-                    <div class="col-sm-8 fw-medium">
-                        <i class="bi bi-geo-alt text-primary me-1"></i>{{ commande.adresseLivraison }}
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-sm-4 text-muted">Delivery Comment</div>
-                    <div class="col-sm-8 fw-medium">{{ commande.commentaireLivraison ? commande.commentaireLivraison|nl2br : '-' }}</div>
+                    <div class="col-sm-8 fw-medium"><i class="bi bi-geo-alt text-primary me-1"></i>{{ commande.adresseLivraison }}</div>
                 </div>
             </div>
         </div>
     </div>
-    
-    <div class="col-lg-6 mb-4">
+
+    <div class="col-lg-6">
         <div class="card h-100">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="bi bi-truck me-2"></i>Delivery Information</h5>
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h5 class="mb-0"><i class="bi bi-truck me-2"></i>Delivery Section</h5>
                 {% if canManageDelivery and livraison %}
-                {% if livraison %}
                 <a href="{{ path('app_livraison_edit', {'id': livraison.idLivraison}) }}" class="btn btn-sm btn-outline-primary">
-                    <i class="bi bi-pencil me-1"></i> Edit
+                    <i class="bi bi-pencil me-1"></i>Edit
                 </a>
-                {% endif %}
                 {% endif %}
             </div>
             <div class="card-body">
                 {% if livraison %}
+                {% set isOverdue = livraison.statutLivraison != 'Livree' and livraison.dateLivraison|date('U') < 'now'|date('U') %}
+                <div class="delivery-schedule-card mb-4">
+                    <div class="delivery-calendar">
+                        <div class="delivery-calendar-month">{{ livraison.dateLivraison|date('M') }}</div>
+                        <div class="delivery-calendar-day">{{ livraison.dateLivraison|date('d') }}</div>
+                        <div class="delivery-calendar-year">{{ livraison.dateLivraison|date('Y') }}</div>
+                    </div>
+                    <div>
+                        <div class="text-muted small text-uppercase fw-bold">Delivery Calendar</div>
+                        <div class="fw-semibold fs-5">{{ livraison.dateLivraison|date('l, F j, Y') }}</div>
+                        <div class="text-muted mt-2">
+                            {% if livraison.statutLivraison == 'Livree' %}
+                            Delivery completed for this scheduled date.
+                            {% elseif isOverdue %}
+                            The planned delivery date has passed. Check the delivery status and comment.
+                            {% else %}
+                            Delivery is scheduled and ready to track from this section.
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
                 <div class="row mb-3">
                     <div class="col-sm-4 text-muted">BL Number</div>
                     <div class="col-sm-8 fw-medium">#{{ livraison.numeroBL }}</div>
                 </div>
                 <div class="row mb-3">
-                    <div class="col-sm-4 text-muted">Delivery Date</div>
-                    <div class="col-sm-8 fw-medium">
-                        <i class="bi bi-calendar3 me-1"></i>{{ livraison.dateLivraison|date('Y-m-d') }}
-                    </div>
-                </div>
-                <div class="row mb-3">
                     <div class="col-sm-4 text-muted">Driver</div>
-                    <div class="col-sm-8 fw-medium">
-                        <i class="bi bi-person me-1"></i>{{ livraison.livreur }}
-                    </div>
+                    <div class="col-sm-8 fw-medium"><i class="bi bi-person me-1"></i>{{ livraison.livreur }}</div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-sm-4 text-muted">Status</div>
@@ -141,53 +244,70 @@
                         {% endif %}
                     </div>
                 </div>
-                <div class="row mb-3">
-                    <div class="col-sm-4 text-muted">Notes</div>
-                    <div class="col-sm-8">{{ livraison.noteDelivery ?? '-' }}</div>
-                </div>
+
                 {% if livraison.hasLocation %}
-                <div class="row mb-3">
-                    <div class="col-sm-4 text-muted">GPS Location</div>
-                    <div class="col-sm-8">
-                        <i class="bi bi-geo-alt text-primary me-1"></i>{{ livraison.latitude }}, {{ livraison.longitude }}
+                <div class="delivery-map-header mt-4">
+                    <div>
+                        <div class="text-muted small text-uppercase fw-bold">Delivery Map</div>
+                        <div class="fw-semibold">GPS: {{ livraison.latitude }}, {{ livraison.longitude }}</div>
                     </div>
+                    <a href="{{ openStreetMapUrl }}" target="_blank" rel="noopener" class="btn btn-outline-dark btn-sm">
+                        <i class="bi bi-box-arrow-up-right me-1"></i>Open Full Map
+                    </a>
+                </div>
+                <div id="deliveryPreviewMap" class="delivery-map" data-latitude="{{ livraison.latitude }}" data-longitude="{{ livraison.longitude }}"></div>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-truck" style="font-size: 3rem; color: #cbd5e1;"></i>
+                    <p class="text-muted mt-3 mb-3">No delivery assigned yet.</p>
+                    {% if canManageDelivery %}
+                    <a href="{{ path('app_livraison_new', {'commandeId': commande.idCommande}) }}" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i>Add Delivery
+                    </a>
+                    {% endif %}
                 </div>
                 {% endif %}
-                
-                <hr class="my-3">
+
+                <div class="mt-4">
+                    <div class="text-muted small text-uppercase fw-bold mb-3">Delivery Comments</div>
+                    <div class="delivery-comments-grid">
+                        <div class="delivery-comment-panel">
+                            <div class="delivery-comment-label">Client Instructions</div>
+                            <div class="delivery-comment-text">{{ commande.commentaireLivraison ?: 'No delivery instructions added by the client.' }}</div>
+                        </div>
+                        <div class="delivery-comment-panel">
+                            <div class="delivery-comment-label">Driver Or Team Comment</div>
+                            <div class="delivery-comment-text">{{ livraison and livraison.noteDelivery ? livraison.noteDelivery : 'No delivery comment added yet by the driver or delivery team.' }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if livraison %}
+                <hr class="my-4">
 
                 {% if livraison.feedback %}
                 <div class="mb-3">
                     <a href="{{ path('app_feedback_show', {'id': livraison.feedback.id}) }}" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-chat-left-text me-1"></i> View Driver Feedback
+                        <i class="bi bi-chat-left-text me-1"></i>View Driver Feedback
                     </a>
                 </div>
                 {% elseif canLeaveDeliveryFeedback %}
                 <div class="mb-3">
                     <a href="{{ path('app_feedback_delivery_new', {'livraisonId': livraison.idLivraison}) }}" class="btn btn-outline-primary btn-sm">
-                        <i class="bi bi-truck-front me-1"></i> Rate Delivery Driver
+                        <i class="bi bi-truck-front me-1"></i>Rate Delivery Driver
                     </a>
                 </div>
                 {% endif %}
-                 
+
                 {% if canManageDelivery %}
                 <form action="{{ path('app_livraison_delete', {'id': livraison.idLivraison}) }}" method="post" class="d-inline" novalidate>
                     <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ livraison.idLivraison) }}">
                     <button type="submit" class="btn btn-outline-danger btn-sm">
-                        <i class="bi bi-trash me-1"></i> Delete Delivery
+                        <i class="bi bi-trash me-1"></i>Delete Delivery
                     </button>
                 </form>
                 {% endif %}
-                {% else %}
-                <div class="text-center py-4">
-                    <i class="bi bi-truck" style="font-size: 3rem; color: #cbd5e1;"></i>
-                    <p class="text-muted mt-3">No delivery assigned yet.</p>
-                    {% if canManageDelivery %}
-                    <a href="{{ path('app_livraison_new', {'commandeId': commande.idCommande}) }}" class="btn btn-primary">
-                        <i class="bi bi-plus-lg me-1"></i> Add Delivery
-                    </a>
-                    {% endif %}
-                </div>
                 {% endif %}
             </div>
         </div>
@@ -217,9 +337,7 @@
                     {% for ligne in visibleLignesCommande %}
                     <tr>
                         <td>
-                            <a href="{{ path('app_produit_show', {'id': ligne.produit.id}) }}" class="text-decoration-none fw-semibold">
-                                {{ ligne.produit.nomProduit }}
-                            </a>
+                            <a href="{{ path('app_produit_show', {'id': ligne.produit.id}) }}" class="text-decoration-none fw-semibold">{{ ligne.produit.nomProduit }}</a>
                         </td>
                         <td>{{ ligne.quantite }}</td>
                         <td>{{ ligne.prixUnitaire|number_format(2, '.', ',') }} TND</td>
@@ -227,11 +345,11 @@
                         <td>
                             {% if ligne.feedback %}
                             <a href="{{ path('app_feedback_show', {'id': ligne.feedback.id}) }}" class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-eye me-1"></i> View Feedback
+                                <i class="bi bi-eye me-1"></i>View Feedback
                             </a>
                             {% elseif canLeaveFeedback %}
                             <a href="{{ path('app_feedback_new', {'ligneCommandeId': ligne.id}) }}" class="btn btn-outline-primary btn-sm">
-                                <i class="bi bi-chat-heart me-1"></i> Leave Feedback
+                                <i class="bi bi-chat-heart me-1"></i>Leave Feedback
                             </a>
                             {% else %}
                             <span class="text-muted small">Feedback becomes available once the order is marked as delivered.</span>
@@ -255,10 +373,44 @@
         <form action="{{ path('app_commande_delete', {'id': commande.idCommande}) }}" method="post" novalidate>
             <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ commande.idCommande) }}">
             <button type="submit" class="btn btn-outline-danger">
-                <i class="bi bi-trash me-1"></i> Delete Order
+                <i class="bi bi-trash me-1"></i>Delete Order
             </button>
         </form>
     </div>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {% if livraison and livraison.hasLocation %}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script>
+        (() => {
+            const mapElement = document.getElementById('deliveryPreviewMap');
+
+            if (!mapElement || typeof L === 'undefined') {
+                return;
+            }
+
+            const latitude = Number.parseFloat(mapElement.dataset.latitude || '0');
+            const longitude = Number.parseFloat(mapElement.dataset.longitude || '0');
+
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+                return;
+            }
+
+            const map = L.map(mapElement, {
+                scrollWheelZoom: false,
+            }).setView([latitude, longitude], 14);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 19,
+            }).addTo(map);
+
+            L.marker([latitude, longitude]).addTo(map);
+        })();
+    </script>
+    {% endif %}
 {% endblock %}

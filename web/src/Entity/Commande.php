@@ -142,7 +142,7 @@ class Commande
 
     public function setDateCommande(\DateTimeInterface $dateCommande): static
     {
-        $this->dateCommande = $dateCommande;
+        $this->dateCommande = \DateTime::createFromInterface($dateCommande);
         return $this;
     }
 

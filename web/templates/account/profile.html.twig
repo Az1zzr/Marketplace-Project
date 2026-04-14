@@ -39,7 +39,7 @@
                             {% if errors.photoProfil is defined %}
                             <div class="invalid-feedback d-block">{{ errors.photoProfil }}</div>
                             {% endif %}
-                            <div class="form-text">Only JPG, PNG, and WebP images are allowed. Uploaded images are verified for sensitive content before saving.</div>
+                            <div class="form-text">Only JPG, PNG, and WebP images are allowed. Uploaded images are checked for sensitive content when the moderation service is available.</div>
                         </div>
                     </div>
 

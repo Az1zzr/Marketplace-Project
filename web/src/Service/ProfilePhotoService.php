@@ -12,7 +12,8 @@ class ProfilePhotoService
         private readonly string $projectDir,
         private readonly InputValidationService $inputValidationService,
         private readonly \Symfony\Contracts\HttpClient\HttpClientInterface $httpClient,
-        private readonly string $huggingfaceApiKey = ''
+        private readonly string $huggingfaceApiKey = '',
+        private readonly string $appEnv = 'dev'
     ) {
     }
 
@@ -61,7 +62,7 @@ class ProfilePhotoService
     private function verifyImageSafety(UploadedFile $uploadedFile): array
     {
         if ('' === trim($this->huggingfaceApiKey)) {
-            return ['valid' => false, 'message' => 'Image moderation API is not configured right now.'];
+            return $this->handleModerationFailure('Image moderation API is not configured right now.');
         }
 
         try {
@@ -74,13 +75,32 @@ class ProfilePhotoService
                 'timeout' => 20,
             ]);
 
-            $data = $response->toArray(false);
+            $statusCode = $response->getStatusCode();
+
+            if (401 === $statusCode || 403 === $statusCode) {
+                return $this->handleModerationFailure('Image moderation API credentials were rejected.');
+            }
+
+            if ($statusCode >= 500) {
+                return $this->handleModerationFailure('Sensitive-image verification is temporarily unavailable.');
+            }
+
+            $content = trim($response->getContent(false));
         } catch (\Throwable) {
-            return ['valid' => false, 'message' => 'Unable to verify whether the selected profile image is sensitive. Please try again.'];
+            return $this->handleModerationFailure('Unable to verify whether the selected profile image is sensitive. Please try again.');
+        }
+
+        if ('' === $content) {
+            return $this->handleModerationFailure('Unexpected response from the image moderation API.');
+        }
+
+        $data = json_decode($content, true);
+        if (!is_array($data)) {
+            return $this->handleModerationFailure('Unexpected response from the image moderation API.');
         }
 
         if (isset($data['error'])) {
-            return ['valid' => false, 'message' => 'Sensitive-image verification is temporarily unavailable.'];
+            return $this->handleModerationFailure('Sensitive-image verification is temporarily unavailable.');
         }
 
         $predictions = $data;
@@ -106,5 +126,20 @@ class ProfilePhotoService
         }
 
         return ['valid' => true, 'message' => ''];
+    }
+
+    private function handleModerationFailure(string $message): array
+    {
+        if ($this->shouldBypassModerationFailure()) {
+            return ['valid' => true, 'message' => ''];
+        }
+
+        return ['valid' => false, 'message' => $message];
+    }
+
+    private function shouldBypassModerationFailure(): bool
+    {
+        // Keep development and automated tests usable when the external provider is unavailable.
+        return in_array($this->appEnv, ['dev', 'test'], true);
     }
 }

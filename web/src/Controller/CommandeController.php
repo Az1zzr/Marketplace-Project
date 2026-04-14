@@ -7,8 +7,11 @@ use App\Entity\User;
 use App\Repository\CommandeRepository;
 use App\Repository\LigneCommandeRepository;
 use App\Service\InputValidationService;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -253,6 +256,49 @@ class CommandeController extends AbstractController
         return $this->redirectToRoute('app_commande_index');
     }
 
+    #[Route('/commande/{id}/pdf', name: 'app_commande_export_pdf', requirements: ['id' => '\\d+'])]
+    public function exportPdf(int $id, CommandeRepository $commandeRepository): Response
+    {
+        $this->denyUnlessBuyerOrAdmin();
+        $currentUser = $this->requireCurrentUser();
+
+        $commande = $commandeRepository->findOneVisibleForUser($id, $currentUser);
+
+        if (!$commande) {
+            throw $this->createNotFoundException('Order not found');
+        }
+
+        if ($commande->isCart()) {
+            return $this->redirectToRoute('app_commande_new');
+        }
+
+        $orderViewModel = $this->buildVisibleOrderViewModel($commande, $currentUser);
+        $html = $this->renderView('commande/export_pdf.html.twig', [
+            'commande' => $commande,
+            'livraison' => $commande->getLivraison(),
+            'generatedAt' => new \DateTimeImmutable(),
+            'viewer' => $currentUser,
+            ...$orderViewModel,
+        ]);
+
+        $options = new Options();
+        $options->set('isRemoteEnabled', false);
+        $options->set('isHtml5ParserEnabled', true);
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html, 'UTF-8');
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return new Response($dompdf->output(), Response::HTTP_OK, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => HeaderUtils::makeDisposition(
+                HeaderUtils::DISPOSITION_ATTACHMENT,
+                sprintf('order-%s.pdf', $commande->getNumeroCommande())
+            ),
+        ]);
+    }
+
     #[Route('/commande/{id}', name: 'app_commande_show')]
     public function show(int $id, CommandeRepository $commandeRepository): Response
     {
@@ -269,34 +315,14 @@ class CommandeController extends AbstractController
             return $this->redirectToRoute('app_commande_new');
         }
 
-        $visibleLignesCommande = $commande->getLignesCommande()->toArray();
-        if ($currentUser->hasRoleCode(User::ROLE_CODE_FOURNISSEUR)) {
-            $visibleLignesCommande = array_values(array_filter(
-                $visibleLignesCommande,
-                static fn ($ligneCommande): bool => $ligneCommande->getProduit()?->getFournisseur()?->getId() === $currentUser->getId()
-            ));
-        }
-
-        $visibleItemsTotal = array_reduce(
-            $visibleLignesCommande,
-            static fn (int $total, $ligneCommande): int => $total + $ligneCommande->getQuantite(),
-            0
-        );
-        $visibleMontantTotal = array_reduce(
-            $visibleLignesCommande,
-            static fn (float $total, $ligneCommande): float => $total + $ligneCommande->getSousTotal(),
-            0.0
-        );
+        $orderViewModel = $this->buildVisibleOrderViewModel($commande, $currentUser);
 
         return $this->render('commande/show.html.twig', [
             'commande' => $commande,
             'livraison' => $commande->getLivraison(),
             'canManageOrder' => $this->isGranted('ROLE_ADMIN'),
             'canManageDelivery' => $this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_FOURNISSEUR'),
-            'visibleLignesCommande' => $visibleLignesCommande,
-            'visibleItemsTotal' => $visibleItemsTotal,
-            'visibleMontantTotal' => $visibleMontantTotal,
-            'isSupplierView' => $currentUser->hasRoleCode(User::ROLE_CODE_FOURNISSEUR),
+            ...$orderViewModel,
         ]);
     }
 
@@ -386,5 +412,33 @@ class CommandeController extends AbstractController
             ->setGouvernorat($governorate)
             ->setTelephoneLivraison($validationService->normalizePhone($deliveryPhone))
             ->setCommentaireLivraison($deliveryComment);
+    }
+
+    private function buildVisibleOrderViewModel(Commande $commande, User $currentUser): array
+    {
+        $visibleLignesCommande = $commande->getLignesCommande()->toArray();
+        $isSupplierView = $currentUser->hasRoleCode(User::ROLE_CODE_FOURNISSEUR);
+
+        if ($isSupplierView) {
+            $visibleLignesCommande = array_values(array_filter(
+                $visibleLignesCommande,
+                static fn ($ligneCommande): bool => $ligneCommande->getProduit()?->getFournisseur()?->getId() === $currentUser->getId()
+            ));
+        }
+
+        return [
+            'visibleLignesCommande' => $visibleLignesCommande,
+            'visibleItemsTotal' => array_reduce(
+                $visibleLignesCommande,
+                static fn (int $total, $ligneCommande): int => $total + $ligneCommande->getQuantite(),
+                0
+            ),
+            'visibleMontantTotal' => array_reduce(
+                $visibleLignesCommande,
+                static fn (float $total, $ligneCommande): float => $total + $ligneCommande->getSousTotal(),
+                0.0
+            ),
+            'isSupplierView' => $isSupplierView,
+        ];
     }
 }

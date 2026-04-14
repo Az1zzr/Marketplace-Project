@@ -2,20 +2,87 @@
 
 {% block title %}Edit Delivery{% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+    <style>
+        .delivery-map {
+            height: 320px;
+            border-radius: 18px;
+            border: 1px solid var(--slate-200);
+        }
+
+        .calendar-preview {
+            display: grid;
+            place-items: center;
+            min-height: 100%;
+            border: 1px solid var(--slate-200);
+            border-radius: 18px;
+            background: linear-gradient(180deg, #ffffff, #f8fafc);
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .calendar-preview-month {
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--primary-color);
+        }
+
+        .calendar-preview-day {
+            font-size: 2.2rem;
+            font-weight: 800;
+            line-height: 1;
+            margin: 0.4rem 0 0.3rem;
+        }
+
+        .calendar-preview-note {
+            color: var(--slate-500);
+            font-size: 0.9rem;
+        }
+
+        .map-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .map-status {
+            margin-top: 0.85rem;
+            color: var(--slate-500);
+            font-size: 0.9rem;
+        }
+
+        .delivery-comment-preview {
+            border-radius: 16px;
+            background: #f8fafc;
+            border: 1px solid var(--slate-200);
+            padding: 0.9rem 1rem;
+            white-space: pre-wrap;
+        }
+    </style>
+{% endblock %}
+
 {% block breadcrumb %}
 <li class="breadcrumb-item"><a href="{{ path('app_livraison_index') }}">Deliveries</a></li>
 <li class="breadcrumb-item active">Edit #{{ livraison.numeroBL }}</li>
 {% endblock %}
 
 {% block body %}
+{% set commande = livraison.commande %}
+{% set deliveryDateValue = formData.dateLivraison ?? livraison.dateLivraison|date('Y-m-d') %}
+{% set hasPreviewDate = deliveryDateValue matches '/^\\d{4}-\\d{2}-\\d{2}$/' %}
 <div class="page-header">
     <h1><i class="bi bi-pencil me-2"></i>Edit Delivery</h1>
-    <p>Update the assigned driver and tracking information for <strong>#{{ livraison.numeroBL }}</strong></p>
+    <p>Update the schedule, map position, and delivery comment for <strong>#{{ livraison.numeroBL }}</strong>.</p>
 </div>
 
-<div class="row">
-    <div class="col-lg-4 mb-4">
-        <div class="card">
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card h-100">
             <div class="card-header">
                 <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Delivery Info</h5>
             </div>
@@ -27,98 +94,147 @@
                 <div class="mb-3">
                     <span class="text-muted small">Order</span>
                     <div class="fw-medium">
-                        {% if livraison.commande %}
-                        <a href="{{ path('app_commande_show', {'id': livraison.commande.idCommande}) }}" class="text-decoration-none">
-                            #{{ livraison.commande.numeroCommande }}
-                        </a>
+                        {% if commande %}
+                        <a href="{{ path('app_commande_show', {'id': commande.idCommande}) }}" class="text-decoration-none">#{{ commande.numeroCommande }}</a>
                         {% else %}
                         <span class="text-muted">-</span>
                         {% endif %}
                     </div>
                 </div>
-                {% if livraison.commande %}
+                {% if commande %}
                 <div class="mb-3">
                     <span class="text-muted small">Governorate</span>
-                    <div class="fw-medium">{{ livraison.commande.gouvernorat ?? '-' }}</div>
+                    <div class="fw-medium">{{ commande.gouvernorat ?? '-' }}</div>
                 </div>
                 <div class="mb-3">
                     <span class="text-muted small">Delivery Phone</span>
-                    <div class="fw-medium">{{ livraison.commande.telephoneLivraison ?? '-' }}</div>
+                    <div class="fw-medium">{{ commande.telephoneLivraison ?? '-' }}</div>
+                </div>
+                <div class="mb-3">
+                    <span class="text-muted small">Delivery Address</span>
+                    <div class="fw-medium"><i class="bi bi-geo-alt text-primary me-1"></i>{{ commande.adresseLivraison }}</div>
                 </div>
                 <div>
-                    <span class="text-muted small">Delivery Comment</span>
-                    <div class="fw-medium">{{ livraison.commande.commentaireLivraison ? livraison.commande.commentaireLivraison|nl2br : '-' }}</div>
+                    <span class="text-muted small">Client Delivery Comment</span>
+                    <div class="delivery-comment-preview">{{ commande.commentaireLivraison ?: 'No client instructions provided yet.' }}</div>
                 </div>
                 {% endif %}
             </div>
         </div>
     </div>
-    
-    <div class="col-lg-8 mb-4">
+
+    <div class="col-lg-8">
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0"><i class="bi bi-truck me-2"></i>Delivery Details</h5>
             </div>
             <div class="card-body">
                 <form method="post" novalidate>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
+                    <div class="row g-3 align-items-stretch">
+                        <div class="col-md-6">
                             <label for="dateLivraison" class="form-label">Delivery Date <span class="text-danger">*</span></label>
-                            <input type="date" name="dateLivraison" id="dateLivraison" class="form-control" value="{{ livraison.dateLivraison|date('Y-m-d') }}" required>
+                            <input type="date" name="dateLivraison" id="dateLivraison" class="form-control {% if errors['dateLivraison'] is defined %}is-invalid{% endif %}" value="{{ deliveryDateValue }}" required>
+                            {% if errors['dateLivraison'] is defined %}
+                            <div class="invalid-feedback d-block">{{ errors['dateLivraison'] }}</div>
+                            {% endif %}
                         </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="livreur" class="form-label">Driver Name <span class="text-danger">*</span></label>
-                            <input type="text" name="livreur" id="livreur" class="form-control" value="{{ livraison.livreur }}" required>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="statutLivraison" class="form-label">Status</label>
-                        <select name="statutLivraison" id="statutLivraison" class="form-select">
-                            <option value="En cours" {% if livraison.statutLivraison == 'En cours' %}selected{% endif %}>En cours</option>
-                            <option value="Livree" {% if livraison.statutLivraison == 'Livree' %}selected{% endif %}>Livree</option>
-                            <option value="Retardee" {% if livraison.statutLivraison == 'Retardee' %}selected{% endif %}>Retardee</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="noteDelivery" class="form-label">Notes <span class="text-muted small">(Optional)</span></label>
-                        <textarea name="noteDelivery" id="noteDelivery" class="form-control" rows="2">{{ livraison.noteDelivery ?? '' }}</textarea>
-                    </div>
-                    
-                    <div class="card mb-3">
-                        <div class="card-header py-2">
-                            <h6 class="mb-0"><i class="bi bi-geo-alt me-2"></i>GPS Location <span class="text-muted small">(Optional)</span></h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6 mb-2">
-                                    <label for="latitude" class="form-label">Latitude</label>
-                                    <input type="number" name="latitude" id="latitude" class="form-control" step="0.000001" value="{{ livraison.latitude ?? '' }}" placeholder="36.8065">
-                                </div>
-                                
-                                <div class="col-md-6 mb-2">
-                                    <label for="longitude" class="form-label">Longitude</label>
-                                    <input type="number" name="longitude" id="longitude" class="form-control" step="0.000001" value="{{ livraison.longitude ?? '' }}" placeholder="10.1815">
-                                </div>
+
+                        <div class="col-md-6">
+                            <div class="calendar-preview">
+                                <div class="calendar-preview-month">{{ hasPreviewDate ? deliveryDateValue|date('M') : 'DATE' }}</div>
+                                <div class="calendar-preview-day">{{ hasPreviewDate ? deliveryDateValue|date('d') : '--' }}</div>
+                                <div class="calendar-preview-note">{{ hasPreviewDate ? deliveryDateValue|date('l, F j, Y') : 'Choose a delivery day' }}</div>
                             </div>
                         </div>
+
+                        <div class="col-md-6">
+                            <label for="livreur" class="form-label">Driver Name <span class="text-danger">*</span></label>
+                            <input type="text" name="livreur" id="livreur" class="form-control {% if errors['livreur'] is defined %}is-invalid{% endif %}" value="{{ formData.livreur ?? '' }}" required>
+                            {% if errors['livreur'] is defined %}
+                            <div class="invalid-feedback d-block">{{ errors['livreur'] }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="statutLivraison" class="form-label">Status</label>
+                            <select name="statutLivraison" id="statutLivraison" class="form-select {% if errors['statutLivraison'] is defined %}is-invalid{% endif %}">
+                                {% for status in statuses %}
+                                <option value="{{ status }}" {% if (formData.statutLivraison ?? '') == status %}selected{% endif %}>{{ status }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if errors['statutLivraison'] is defined %}
+                            <div class="invalid-feedback d-block">{{ errors['statutLivraison'] }}</div>
+                            {% endif %}
+                        </div>
                     </div>
-                    
+
+                    <div class="mt-3">
+                        <label for="noteDelivery" class="form-label">Delivery Comment <span class="text-muted small">(Optional)</span></label>
+                        <textarea name="noteDelivery" id="noteDelivery" class="form-control {% if errors['noteDelivery'] is defined %}is-invalid{% endif %}" rows="3" placeholder="Add instructions for the driver or delivery team">{{ formData.noteDelivery ?? '' }}</textarea>
+                        {% if errors['noteDelivery'] is defined %}
+                        <div class="invalid-feedback d-block">{{ errors['noteDelivery'] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="card mt-4">
+                        <div class="card-header py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <h6 class="mb-0"><i class="bi bi-map me-2"></i>Delivery Map</h6>
+                            <span class="text-muted small">Powered by OpenStreetMap</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="map-toolbar">
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="locateDeliveryAddress">
+                                    <i class="bi bi-search me-1"></i>Locate From Order Address
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="clearDeliveryPin">
+                                    <i class="bi bi-eraser me-1"></i>Clear Pin
+                                </button>
+                                <a href="https://www.openstreetmap.org" target="_blank" rel="noopener" class="btn btn-outline-dark btn-sm" id="openMapLocation">
+                                    <i class="bi bi-box-arrow-up-right me-1"></i>Open Map
+                                </a>
+                            </div>
+
+                            <div id="deliveryMap"
+                                 class="delivery-map"
+                                 data-address="{{ commande ? (commande.adresseLivraison|e('html_attr')) : '' }}"
+                                 data-governorate="{{ commande and commande.gouvernorat ? (commande.gouvernorat|e('html_attr')) : '' }}"
+                                 data-default-latitude="36.8065"
+                                 data-default-longitude="10.1815"></div>
+
+                            <div class="map-status" id="deliveryMapStatus" aria-live="polite">
+                                Click on the map to move the delivery pin, or use the order address search.
+                            </div>
+
+                            <div class="row g-3 mt-1">
+                                <div class="col-md-6">
+                                    <label for="latitude" class="form-label">Latitude</label>
+                                    <input type="number" name="latitude" id="latitude" class="form-control {% if errors['coordinates'] is defined %}is-invalid{% endif %}" step="0.000001" value="{{ formData.latitude ?? '' }}" placeholder="36.8065">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="longitude" class="form-label">Longitude</label>
+                                    <input type="number" name="longitude" id="longitude" class="form-control {% if errors['coordinates'] is defined %}is-invalid{% endif %}" step="0.000001" value="{{ formData.longitude ?? '' }}" placeholder="10.1815">
+                                </div>
+                            </div>
+                            {% if errors['coordinates'] is defined %}
+                            <div class="invalid-feedback d-block">{{ errors['coordinates'] }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
                     <hr class="my-4">
-                    
-                    <div class="d-flex gap-2">
+
+                    <div class="d-flex gap-2 flex-wrap">
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-lg me-1"></i> Update Delivery
+                            <i class="bi bi-check-lg me-1"></i>Update Delivery
                         </button>
-                        {% if livraison.commande %}
-                        <a href="{{ path('app_commande_show', {'id': livraison.commande.idCommande}) }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-x-lg me-1"></i> Cancel
+                        {% if commande %}
+                        <a href="{{ path('app_commande_show', {'id': commande.idCommande}) }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg me-1"></i>Cancel
                         </a>
                         {% else %}
                         <a href="{{ path('app_livraison_index') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-x-lg me-1"></i> Cancel
+                            <i class="bi bi-x-lg me-1"></i>Cancel
                         </a>
                         {% endif %}
                     </div>
@@ -127,4 +243,149 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script>
+        (() => {
+            const mapElement = document.getElementById('deliveryMap');
+            const latitudeInput = document.getElementById('latitude');
+            const longitudeInput = document.getElementById('longitude');
+            const locateButton = document.getElementById('locateDeliveryAddress');
+            const clearButton = document.getElementById('clearDeliveryPin');
+            const statusElement = document.getElementById('deliveryMapStatus');
+            const openMapLink = document.getElementById('openMapLocation');
+
+            if (!mapElement || !latitudeInput || !longitudeInput || typeof L === 'undefined') {
+                return;
+            }
+
+            const fallbackCoordinates = [
+                Number.parseFloat(mapElement.dataset.defaultLatitude || '36.8065'),
+                Number.parseFloat(mapElement.dataset.defaultLongitude || '10.1815'),
+            ];
+
+            const parseCoordinate = (value) => {
+                const parsed = Number.parseFloat(value);
+                return Number.isFinite(parsed) ? parsed : null;
+            };
+
+            const initialLatitude = parseCoordinate(latitudeInput.value);
+            const initialLongitude = parseCoordinate(longitudeInput.value);
+            const initialCoordinates = initialLatitude !== null && initialLongitude !== null
+                ? [initialLatitude, initialLongitude]
+                : fallbackCoordinates;
+
+            const map = L.map(mapElement, { scrollWheelZoom: false }).setView(
+                initialCoordinates,
+                initialLatitude !== null && initialLongitude !== null ? 14 : 7
+            );
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 19,
+            }).addTo(map);
+
+            let marker = null;
+
+            const setOpenMapLink = (latitude, longitude) => {
+                if (latitude === null || longitude === null) {
+                    openMapLink.href = 'https://www.openstreetmap.org';
+                    return;
+                }
+
+                openMapLink.href = `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=16/${latitude}/${longitude}`;
+            };
+
+            const clearMarker = () => {
+                if (marker) {
+                    map.removeLayer(marker);
+                    marker = null;
+                }
+
+                latitudeInput.value = '';
+                longitudeInput.value = '';
+                setOpenMapLink(null, null);
+                statusElement.textContent = 'Map pin cleared. Click on the map or search the address to set it again.';
+                map.setView(fallbackCoordinates, 7);
+            };
+
+            const setMarker = (latitude, longitude, message, zoomLevel = 14) => {
+                if (!marker) {
+                    marker = L.marker([latitude, longitude]).addTo(map);
+                } else {
+                    marker.setLatLng([latitude, longitude]);
+                }
+
+                latitudeInput.value = latitude.toFixed(6);
+                longitudeInput.value = longitude.toFixed(6);
+                map.setView([latitude, longitude], zoomLevel);
+                setOpenMapLink(latitude.toFixed(6), longitude.toFixed(6));
+
+                if (message) {
+                    statusElement.textContent = message;
+                }
+            };
+
+            if (initialLatitude !== null && initialLongitude !== null) {
+                setMarker(initialLatitude, initialLongitude, 'Existing delivery location loaded from the saved coordinates.', 14);
+            } else {
+                setOpenMapLink(null, null);
+            }
+
+            map.on('click', (event) => {
+                setMarker(event.latlng.lat, event.latlng.lng, 'Delivery location updated from the map.');
+            });
+
+            const syncManualCoordinates = () => {
+                const latitude = parseCoordinate(latitudeInput.value);
+                const longitude = parseCoordinate(longitudeInput.value);
+
+                if (latitude === null || longitude === null) {
+                    return;
+                }
+
+                setMarker(latitude, longitude, 'Delivery location updated from the coordinate fields.');
+            };
+
+            latitudeInput.addEventListener('change', syncManualCoordinates);
+            longitudeInput.addEventListener('change', syncManualCoordinates);
+
+            clearButton.addEventListener('click', clearMarker);
+
+            locateButton.addEventListener('click', async () => {
+                const queryParts = [mapElement.dataset.address || '', mapElement.dataset.governorate || '', 'Tunisia']
+                    .map((part) => part.trim())
+                    .filter(Boolean);
+
+                if (queryParts.length === 0) {
+                    statusElement.textContent = 'No delivery address is available on the order yet.';
+                    return;
+                }
+
+                statusElement.textContent = 'Searching the order address on OpenStreetMap...';
+
+                try {
+                    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(queryParts.join(', '))}`);
+                    if (!response.ok) {
+                        throw new Error('Search request failed.');
+                    }
+
+                    const results = await response.json();
+                    if (!Array.isArray(results) || results.length === 0) {
+                        statusElement.textContent = 'No map match found for the delivery address. You can still click on the map manually.';
+                        return;
+                    }
+
+                    const latitude = Number.parseFloat(results[0].lat);
+                    const longitude = Number.parseFloat(results[0].lon);
+                    setMarker(latitude, longitude, 'Delivery address located successfully from OpenStreetMap.', 15);
+                } catch (error) {
+                    statusElement.textContent = 'Address lookup failed. Please click on the map or type the coordinates manually.';
+                }
+            });
+        })();
+    </script>
 {% endblock %}
