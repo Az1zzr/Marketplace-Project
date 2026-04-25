@@ -12,6 +12,18 @@
     <p>{% if is_granted('ROLE_ADMIN') %}Manage all delivery assignments{% elseif canManageLivraisons %}Assign and follow deliveries for orders containing your products{% else %}Track the current state of your deliveries{% endif %}</p>
 </div>
 
+<div class="alert alert-info d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+    <div>
+        <div class="fw-semibold"><i class="bi bi-layers me-1"></i>Bundle Features On Deliveries</div>
+        <div>KnpPaginatorBundle powers this searchable delivery list, and the AI assistant highlights risky deliveries from status, notes, and timing.</div>
+    </div>
+    <div class="small text-muted">
+        {% if livraisons.getTotalItemCount is defined %}
+        {{ livraisons.getTotalItemCount }} tracked delivery item(s)
+        {% endif %}
+    </div>
+</div>
+
 <div class="card mb-4">
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end" novalidate>
@@ -55,7 +67,7 @@
     </div>
 </div>
 
-{% if livraisons is empty %}
+{% if livraisons|length == 0 %}
 <div class="card">
     <div class="card-body text-center py-5">
         <i class="bi bi-truck" style="font-size: 3rem; color: #94a3b8;"></i>
@@ -82,12 +94,14 @@
                         <th>Date</th>
                         <th>Driver</th>
                         <th>Status</th>
+                        <th>AI Risk</th>
                         <th>GPS</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                 {% for livraison in livraisons %}
+                    {% set deliveryInsight = deliveryInsights[livraison.idLivraison] ?? null %}
                     <tr>
                         <td><strong>#{{ livraison.numeroBL }}</strong></td>
                         <td>
@@ -115,6 +129,17 @@
                             <span class="badge badge-status-delayed"><i class="bi bi-exclamation-triangle me-1"></i>{{ livraison.statutLivraison }}</span>
                             {% else %}
                             <span class="badge bg-secondary">{{ livraison.statutLivraison }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if deliveryInsight %}
+                            <span class="badge {{ deliveryInsight.badgeClass }}">{{ deliveryInsight.label }}</span>
+                            <div class="small text-muted mt-1">{{ deliveryInsight.summary }}</div>
+                            {% if deliveryInsight.noteSentiment %}
+                            <div class="small text-muted">AI note sentiment: {{ deliveryInsight.noteSentiment.sentiment }}</div>
+                            {% endif %}
+                            {% else %}
+                            <span class="text-muted">-</span>
                             {% endif %}
                         </td>
                         <td>
@@ -152,6 +177,10 @@
                 </tbody>
             </table>
         </div>
+    </div>
+    <div class="card-footer bg-white d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div class="small text-muted">Showing {{ livraisons|length }} delivery item(s) on this page, {{ livraisons.getTotalItemCount }} in total.</div>
+        {{ knp_pagination_render(livraisons) }}
     </div>
 </div>
 {% endif %}

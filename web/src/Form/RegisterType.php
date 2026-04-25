@@ -51,11 +51,11 @@ class RegisterType extends AbstractType
             ])
             ->add('telephone', TelType::class, [
                 'label' => 'Phone',
-                'required' => false,
+                'required' => true,
                 'attr' => [
                     'autocomplete' => 'tel',
                     'maxlength' => 20,
-                    'placeholder' => '+216 XX XXX XXX',
+                    'placeholder' => '8 digits starting with 2, 5, or 9',
                 ],
             ])
             ->add('dateNaissance', DateType::class, [

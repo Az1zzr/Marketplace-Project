@@ -45,6 +45,9 @@ build/
 /.env.local
 /.env.local.php
 /.env.*.local
+/web/.env.local
+/web/.env.local.php
+/web/.env.*.local
 /config/secrets/prod/prod.decrypt.private.php
 /public/bundles/
 /var/

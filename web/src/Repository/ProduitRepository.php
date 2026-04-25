@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\Produit;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 class ProduitRepository extends ServiceEntityRepository
@@ -58,6 +59,13 @@ class ProduitRepository extends ServiceEntityRepository
 
     public function findBySearchAndSort(string $search, string $sort, string $order, ?int $categorieId = null, ?User $viewer = null): array
     {
+        return $this->createSearchQueryBuilder($search, $sort, $order, $categorieId, $viewer)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function createSearchQueryBuilder(string $search, string $sort, string $order, ?int $categorieId = null, ?User $viewer = null): QueryBuilder
+    {
         $qb = $this->createQueryBuilder('p')
             ->leftJoin('p.categorie', 'c')
             ->addSelect('c')
@@ -66,8 +74,8 @@ class ProduitRepository extends ServiceEntityRepository
 
         if (!empty($search)) {
             $qb->andWhere('p.nomProduit LIKE :search OR p.adresse LIKE :search OR c.nom LIKE :search OR CONCAT(fournisseur.prenom, :space, fournisseur.nom) LIKE :search')
-               ->setParameter('search', '%' . $search . '%');
-            $qb->setParameter('space', ' ');
+                ->setParameter('search', '%' . $search . '%')
+                ->setParameter('space', ' ');
         }
 
         if (null !== $categorieId) {
@@ -80,8 +88,6 @@ class ProduitRepository extends ServiceEntityRepository
                 ->setParameter('viewer', $viewer);
         }
 
-        $qb->orderBy('p.' . $sort, strtoupper($order));
-
-        return $qb->getQuery()->getResult();
+        return $qb->orderBy('p.' . $sort, strtoupper($order));
     }
 }

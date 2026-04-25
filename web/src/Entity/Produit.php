@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\ProduitRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Gedmo\Mapping\Annotation as Gedmo;
 
 #[ORM\Entity(repositoryClass: ProduitRepository::class)]
 #[ORM\Table(name: 'produit')]
@@ -28,6 +29,10 @@ class Produit
 
     #[ORM\Column(name: 'image_url', length: 500, nullable: true)]
     private ?string $imageURL = null;
+
+    #[Gedmo\Slug(fields: ['nomProduit'])]
+    #[ORM\Column(length: 255, unique: true)]
+    private ?string $slug = null;
 
     #[ORM\ManyToOne(inversedBy: 'produits')]
     #[ORM\JoinColumn(name: 'categorie_id', referencedColumnName: 'id', nullable: false)]
@@ -105,6 +110,17 @@ class Produit
     public function setImageURL(?string $imageURL): static
     {
         $this->imageURL = $imageURL;
+        return $this;
+    }
+
+    public function getSlug(): ?string
+    {
+        return $this->slug;
+    }
+
+    public function setSlug(?string $slug): static
+    {
+        $this->slug = $slug;
         return $this;
     }
 
