@@ -28,11 +28,15 @@
         "type": "js"
     },
     "app": {
-        "path": "\/assets\/app-ecb9b55849781102e2cc6e9b140fd37a.js",
+        "path": "\/assets\/app-f757ba8e7ac98c0a72217fd435cacb6f.js",
         "type": "js"
     },
     "\/assets\/bootstrap.js": {
         "path": "\/assets\/bootstrap-8bfda22055030864ad0d52712b80ef59.js",
+        "type": "js"
+    },
+    "\/assets\/messaging_emoji.js": {
+        "path": "\/assets\/messaging_emoji-c70ff64d5155c72ab72ec356ee776b68.js",
         "type": "js"
     },
     "@hotwired\/turbo": {

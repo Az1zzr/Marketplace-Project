@@ -364,6 +364,20 @@ class InputValidationService
         return ['valid' => true, 'message' => ''];
     }
 
+    public function validateMessageContent(?string $content): array
+    {
+        if ($content === null || trim($content) === '') {
+            return ['valid' => false, 'message' => 'Message content is required'];
+        }
+
+        $content = trim($content);
+        if (mb_strlen($content) > 2000) {
+            return ['valid' => false, 'message' => 'A message cannot be longer than 2000 characters'];
+        }
+
+        return ['valid' => true, 'message' => ''];
+    }
+
     public function validateAll(array $data): array
     {
         $errors = [];
