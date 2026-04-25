@@ -27,4 +27,18 @@ class InputValidationServiceTest extends TestCase
 
         self::assertSame('55123456', $service->normalizePhone('+216 55 123 456'));
     }
+
+    public function testValidateMessageContentRejectsBlankMessages(): void
+    {
+        $service = new InputValidationService();
+
+        self::assertFalse($service->validateMessageContent('   ')['valid']);
+    }
+
+    public function testValidateMessageContentAcceptsRegularMessages(): void
+    {
+        $service = new InputValidationService();
+
+        self::assertTrue($service->validateMessageContent('Hello fournisseur, I need more details.')['valid']);
+    }
 }

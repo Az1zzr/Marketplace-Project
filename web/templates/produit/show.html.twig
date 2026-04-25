@@ -107,6 +107,14 @@
                         <span class="badge bg-light text-dark"><i class="bi bi-tag me-1"></i>{{ produit.categorie.nom }}</span>
                     </div>
                 </div>
+                {% if produit.fournisseur %}
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Supplier</div>
+                    <div class="col-sm-8 fw-medium">
+                        <i class="bi bi-person-badge text-primary me-1"></i>{{ produit.fournisseur.nomComplet }}
+                    </div>
+                </div>
+                {% endif %}
                 <div class="row mb-3">
                     <div class="col-sm-4 text-muted">Quantity Available</div>
                     <div class="col-sm-8">
@@ -155,6 +163,15 @@
                 {% endif %}
 
                 <hr class="my-4">
+
+                {% if produit.fournisseur and app.user and app.user.id != produit.fournisseur.id %}
+                <form action="{{ path('app_messaging_start', {'fournisseurId': produit.fournisseur.id}) }}" method="post" class="d-inline-block mb-3" novalidate>
+                    <input type="hidden" name="produitId" value="{{ produit.id }}">
+                    <button type="submit" class="btn btn-outline-secondary">
+                        <i class="bi bi-chat-dots me-1"></i>Message Supplier
+                    </button>
+                </form>
+                {% endif %}
 
                 {% if canReviewPurchasedProduct %}
                 <a href="{{ path('app_feedback_new', {'ligneCommandeId': eligibleFeedbackLine.id}) }}" class="btn btn-outline-success">

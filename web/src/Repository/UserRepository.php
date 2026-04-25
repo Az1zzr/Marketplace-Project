@@ -47,4 +47,28 @@ class UserRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function findMarketplaceSuppliers(?User $excludeUser = null, string $search = ''): array
+    {
+        $qb = $this->createQueryBuilder('u')
+            ->distinct()
+            ->leftJoin('u.role', 'role')
+            ->addSelect('role')
+            ->innerJoin('u.produits', 'produit')
+            ->orderBy('u.prenom', 'ASC')
+            ->addOrderBy('u.nom', 'ASC');
+
+        if ($excludeUser instanceof User) {
+            $qb->andWhere('u.id != :excludeUserId')
+                ->setParameter('excludeUserId', $excludeUser->getId());
+        }
+
+        $search = trim($search);
+        if ('' !== $search) {
+            $qb->andWhere('u.prenom LIKE :search OR u.nom LIKE :search OR u.email LIKE :search')
+                ->setParameter('search', '%' . $search . '%');
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 }
