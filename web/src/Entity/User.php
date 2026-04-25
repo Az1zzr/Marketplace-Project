@@ -7,13 +7,16 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
+use Vich\UploaderBundle\Mapping\Annotation as Vich;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: 'user')]
 #[UniqueEntity(fields: ['email'], message: 'An account with this email already exists.')]
+#[Vich\Uploadable]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     public const ROLE_CODE_ADMIN = 'admin';
@@ -66,6 +69,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(name: 'photo_profil', length: 500, nullable: true)]
     private ?string $photoPath = null;
+
+    #[ORM\Column(name: 'photo_updated_at', type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $photoUpdatedAt = null;
+
+    #[Vich\UploadableField(mapping: 'profile_photos', fileNameProperty: 'photoPath')]
+    private ?File $photoFile = null;
 
     #[ORM\Column(name: 'reset_password_code_hash', length: 255, nullable: true)]
     private ?string $resetPasswordCodeHash = null;
@@ -166,13 +175,54 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getPhotoPath(): ?string
     {
-        return $this->photoPath;
+        if (null === $this->photoPath || '' === trim($this->photoPath)) {
+            return null;
+        }
+
+        if (str_starts_with($this->photoPath, '/')) {
+            return $this->photoPath;
+        }
+
+        return '/uploads/profile/' . ltrim($this->photoPath, '/');
     }
 
     public function setPhotoPath(?string $photoPath): static
     {
-        $this->photoPath = $photoPath;
+        if (null === $photoPath) {
+            $this->photoPath = null;
+
+            return $this;
+        }
+
+        $normalizedPath = ltrim(str_replace('\\', '/', trim($photoPath)), '/');
+        if (str_starts_with($normalizedPath, 'uploads/profile/')) {
+            $normalizedPath = substr($normalizedPath, strlen('uploads/profile/'));
+        }
+
+        $this->photoPath = '' === $normalizedPath ? null : $normalizedPath;
+
         return $this;
+    }
+
+    public function getPhotoFile(): ?File
+    {
+        return $this->photoFile;
+    }
+
+    public function setPhotoFile(?File $photoFile = null): static
+    {
+        $this->photoFile = $photoFile;
+
+        if (null !== $photoFile) {
+            $this->photoUpdatedAt = new \DateTime();
+        }
+
+        return $this;
+    }
+
+    public function getPhotoUpdatedAt(): ?\DateTimeInterface
+    {
+        return $this->photoUpdatedAt;
     }
 
     public function getResetPasswordCodeHash(): ?string

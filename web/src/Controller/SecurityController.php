@@ -13,6 +13,7 @@ use App\Service\AISentimentService;
 use App\Service\FeedbackInsightService;
 use App\Service\InputValidationService;
 use App\Service\PasswordResetService;
+use App\Service\WelcomeSmsService;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -21,6 +22,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 
 class SecurityController extends AbstractController
@@ -160,7 +162,8 @@ class SecurityController extends AbstractController
         EntityManagerInterface $entityManager,
         UserPasswordHasherInterface $passwordHasher,
         InputValidationService $inputValidationService,
-        UserRepository $userRepository
+        UserRepository $userRepository,
+        WelcomeSmsService $welcomeSmsService
     ): Response
     {
         if ($this->getUser()) {
@@ -176,6 +179,7 @@ class SecurityController extends AbstractController
         }
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $user->setTelephone($inputValidationService->normalizePhone($user->getTelephone()));
             $user->setMotDePasse($passwordHasher->hashPassword($user, $form->get('plainPassword')->getData()));
 
             try {
@@ -186,6 +190,12 @@ class SecurityController extends AbstractController
             }
 
             if ($form->isValid()) {
+                try {
+                    $welcomeSmsService->sendWelcomeMessage($user);
+                } catch (\Throwable) {
+                    $this->addFlash('error', 'Your account was created, but the welcome SMS could not be sent right now.');
+                }
+
                 $this->addFlash('success', 'Your account has been created. You can now sign in.');
 
                 return $this->redirectToRoute('app_login');
@@ -201,7 +211,6 @@ class SecurityController extends AbstractController
     public function forgotPassword(
         Request $request,
         UserRepository $userRepository,
-        InputValidationService $inputValidationService,
         PasswordResetService $passwordResetService,
         EntityManagerInterface $entityManager
     ): Response {
@@ -210,61 +219,58 @@ class SecurityController extends AbstractController
         }
 
         $errors = [];
-        $identifier = trim((string) $request->request->get('identifier', ''));
-        $channel = (string) $request->request->get('channel', 'email');
+        $identifier = strtolower(trim((string) $request->request->get('identifier', '')));
 
         if ($request->isMethod('POST')) {
-            $channelValidation = $inputValidationService->validateResetChannel($channel);
-            if (!$channelValidation['valid']) {
-                $errors['channel'] = $channelValidation['message'];
-            }
-
             if ('' === $identifier) {
-                $errors['identifier'] = 'Email or phone number is required.';
+                $errors['identifier'] = 'Email address is required.';
+            } elseif (false === filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+                $errors['identifier'] = 'Please enter a valid email address.';
             }
 
-            $user = empty($errors)
-                ? $this->findUserByResetIdentifier($identifier, $userRepository, $inputValidationService)
-                : null;
+            $user = empty($errors) ? $userRepository->findByEmail($identifier) : null;
 
             if (!$user instanceof User && empty($errors)) {
-                $errors['identifier'] = 'No account matches the provided email or phone number.';
+                $errors['identifier'] = 'No account matches the provided email address.';
             }
 
             if ($user instanceof User && empty($errors)) {
                 try {
-                    $code = $passwordResetService->issueResetCode($user);
+                    $token = $passwordResetService->issueResetToken($user);
                     $entityManager->flush();
-                    $passwordResetService->sendResetCode($user, $channel, $code);
+
+                    $passwordResetService->sendResetLink(
+                        $user,
+                        $this->generateUrl('app_reset_password', [
+                            'id' => $user->getId(),
+                            'token' => $token,
+                        ], UrlGeneratorInterface::ABSOLUTE_URL)
+                    );
                 } catch (\RuntimeException $exception) {
-                    $passwordResetService->clearResetCode($user);
+                    $passwordResetService->clearResetToken($user);
                     $entityManager->flush();
                     $errors['delivery'] = $exception->getMessage();
                 }
             }
 
             if ($user instanceof User && empty($errors)) {
-                $session = $request->getSession();
-                $session->set('password_reset_user_id', $user->getId());
-                $session->set('password_reset_channel', $channel);
-                $session->set('password_reset_target', $passwordResetService->maskContact($user, $channel));
+                $this->addFlash('success', 'We sent you a password reset link. Check your email to continue.');
 
-                $this->addFlash('success', 'Verification code sent successfully.');
-
-                return $this->redirectToRoute('app_reset_password_verify');
+                return $this->redirectToRoute('app_login');
             }
         }
 
         return $this->render('security/forgot_password.html.twig', [
             'errors' => $errors,
             'identifier' => $identifier,
-            'channel' => $channel,
         ]);
     }
 
-    #[Route('/reset-password/verify', name: 'app_reset_password_verify')]
-    public function verifyResetPassword(
+    #[Route('/reset-password/{id}/{token}', name: 'app_reset_password', requirements: ['id' => '\\d+'])]
+    public function resetPassword(
         Request $request,
+        int $id,
+        string $token,
         UserRepository $userRepository,
         PasswordResetService $passwordResetService,
         InputValidationService $inputValidationService,
@@ -275,30 +281,18 @@ class SecurityController extends AbstractController
             return $this->redirectToRoute('app_home');
         }
 
-        $session = $request->getSession();
-        $userId = $session->get('password_reset_user_id');
-        if (!is_int($userId) && !ctype_digit((string) $userId)) {
-            return $this->redirectToRoute('app_forgot_password');
-        }
-
-        $user = $userRepository->find((int) $userId);
-        if (!$user instanceof User) {
-            $this->clearPasswordResetSession($request);
+        $user = $userRepository->find($id);
+        if (!$user instanceof User || !$passwordResetService->isResetTokenValid($user, $token)) {
+            $this->addFlash('error', 'This password reset link is invalid or has expired.');
 
             return $this->redirectToRoute('app_forgot_password');
         }
 
         $errors = [];
-        $code = trim((string) $request->request->get('code', ''));
 
         if ($request->isMethod('POST')) {
             $password = (string) $request->request->get('password', '');
             $confirmPassword = (string) $request->request->get('confirmPassword', '');
-
-            $codeValidation = $inputValidationService->validateVerificationCode($code);
-            if (!$codeValidation['valid']) {
-                $errors['code'] = $codeValidation['message'];
-            }
 
             $passwordValidation = $inputValidationService->validatePassword($password);
             if (!$passwordValidation['valid']) {
@@ -309,15 +303,14 @@ class SecurityController extends AbstractController
                 $errors['confirmPassword'] = 'Password confirmation does not match.';
             }
 
-            if (empty($errors) && !$passwordResetService->isResetCodeValid($user, $code)) {
-                $errors['code'] = 'Invalid or expired verification code.';
+            if (empty($errors) && !$passwordResetService->isResetTokenValid($user, $token)) {
+                $errors['password'] = 'This password reset link is no longer valid.';
             }
 
             if (empty($errors)) {
                 $user->setMotDePasse($passwordHasher->hashPassword($user, $password));
-                $passwordResetService->clearResetCode($user);
+                $passwordResetService->clearResetToken($user);
                 $entityManager->flush();
-                $this->clearPasswordResetSession($request);
 
                 $this->addFlash('success', 'Your password has been reset successfully.');
 
@@ -327,9 +320,6 @@ class SecurityController extends AbstractController
 
         return $this->render('security/reset_password_verify.html.twig', [
             'errors' => $errors,
-            'maskedTarget' => (string) $session->get('password_reset_target', ''),
-            'channel' => (string) $session->get('password_reset_channel', 'email'),
-            'code' => $code,
         ]);
     }
 
@@ -349,7 +339,7 @@ class SecurityController extends AbstractController
             $form->get('dateNaissance')->addError(new FormError($birthDateValidation['message']));
         }
 
-        $phoneValidation = $inputValidationService->validateTunisianPhone($user->getTelephone());
+        $phoneValidation = $inputValidationService->validateRequiredTunisianPhone($user->getTelephone(), 'Phone number');
         if (!$phoneValidation['valid']) {
             $form->get('telephone')->addError(new FormError($phoneValidation['message']));
         }
@@ -365,29 +355,4 @@ class SecurityController extends AbstractController
         }
     }
 
-    private function findUserByResetIdentifier(
-        string $identifier,
-        UserRepository $userRepository,
-        InputValidationService $inputValidationService
-    ): ?User {
-        $identifier = trim($identifier);
-        if (false !== filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
-            return $userRepository->findByEmail(strtolower($identifier));
-        }
-
-        $phone = $inputValidationService->normalizePhone($identifier);
-        if (null === $phone) {
-            return null;
-        }
-
-        return $userRepository->findOneBy(['telephone' => $phone]);
-    }
-
-    private function clearPasswordResetSession(Request $request): void
-    {
-        $session = $request->getSession();
-        $session->remove('password_reset_user_id');
-        $session->remove('password_reset_channel');
-        $session->remove('password_reset_target');
-    }
 }

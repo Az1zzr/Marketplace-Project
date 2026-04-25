@@ -40,6 +40,9 @@ class InputValidationService
         }
 
         $phone = $this->normalizeDigits($phone);
+        if (str_starts_with($phone, '216') && 11 === strlen($phone)) {
+            $phone = substr($phone, 3);
+        }
         
         $pattern = '/^[259][0-9]{7}$/';
         
@@ -66,6 +69,9 @@ class InputValidationService
         }
 
         $phone = $this->normalizeDigits($phone);
+        if (str_starts_with($phone, '216') && 11 === strlen($phone)) {
+            $phone = substr($phone, 3);
+        }
 
         return '' === $phone ? null : $phone;
     }
@@ -228,6 +234,10 @@ class InputValidationService
             return ['valid' => false, 'message' => 'Feedback title cannot be longer than 120 characters'];
         }
 
+        if (!preg_match('/^[\p{L}\s\-\'\.,!?]+$/u', $title)) {
+            return ['valid' => false, 'message' => 'Feedback title must contain words only. Numbers are not allowed.'];
+        }
+
         return ['valid' => true, 'message' => ''];
     }
 
@@ -280,8 +290,12 @@ class InputValidationService
 
         $address = trim($address);
 
-        if (mb_strlen($address) < 10) {
-            return ['valid' => false, 'message' => 'Delivery address must contain enough detail'];
+        if (mb_strlen($address) < 20) {
+            return ['valid' => false, 'message' => 'Delivery address must be at least 20 characters long'];
+        }
+
+        if (!preg_match('/\p{L}/u', $address)) {
+            return ['valid' => false, 'message' => 'Delivery address must include real address details, not only numbers'];
         }
 
         if (mb_strlen($address) > 255) {
@@ -340,7 +354,7 @@ class InputValidationService
 
         $comment = trim($comment);
         if (mb_strlen($comment) < 20) {
-            return ['valid' => false, 'message' => 'Feedback comment must be at least 20 characters long'];
+            return ['valid' => false, 'message' => 'This feedback must contain at least 20 characters.'];
         }
 
         if (mb_strlen($comment) > 1500) {

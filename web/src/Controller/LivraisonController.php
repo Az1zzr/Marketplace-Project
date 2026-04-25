@@ -6,8 +6,10 @@ use App\Entity\Livraison;
 use App\Entity\User;
 use App\Repository\LivraisonRepository;
 use App\Repository\CommandeRepository;
+use App\Service\DeliveryRiskAiService;
 use App\Service\InputValidationService;
 use Doctrine\ORM\EntityManagerInterface;
+use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,7 +18,12 @@ use Symfony\Component\Routing\Annotation\Route;
 class LivraisonController extends AbstractController
 {
     #[Route('/livraison', name: 'app_livraison_index')]
-    public function index(Request $request, LivraisonRepository $livraisonRepository): Response
+    public function index(
+        Request $request,
+        LivraisonRepository $livraisonRepository,
+        PaginatorInterface $paginator,
+        DeliveryRiskAiService $deliveryRiskAiService
+    ): Response
     {
         $this->denyUnlessBuyerOrAdmin();
         $currentUser = $this->requireCurrentUser();
@@ -30,10 +37,21 @@ class LivraisonController extends AbstractController
         $sort = in_array($sort, $validSorts) ? $sort : 'dateLivraison';
         $order = in_array($order, ['asc', 'desc']) ? $order : 'desc';
 
-        $livraisons = $livraisonRepository->findBySearchAndSortForUser($currentUser, $search, $sort, $order, $statut);
+        $livraisons = $paginator->paginate(
+            $livraisonRepository->createSearchQueryBuilderForUser($currentUser, $search, $sort, $order, $statut),
+            max(1, $request->query->getInt('page', 1)),
+            6,
+            ['distinct' => true]
+        );
+
+        $deliveryInsights = [];
+        foreach ($livraisons as $livraison) {
+            $deliveryInsights[$livraison->getIdLivraison()] = $deliveryRiskAiService->analyze($livraison);
+        }
 
         return $this->render('livraison/index.html.twig', [
             'livraisons' => $livraisons,
+            'deliveryInsights' => $deliveryInsights,
             'canManageLivraisons' => $this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_FOURNISSEUR'),
             'search' => $search,
             'sort' => $sort,

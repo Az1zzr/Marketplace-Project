@@ -29,7 +29,7 @@
                     </ul>
                 </div>
                 {% endif %}
-                <form method="post" novalidate>
+                <form method="post" novalidate data-turbo="false">
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="nomProduit" class="form-label">Product Name <span class="text-danger">*</span></label>
@@ -47,10 +47,29 @@
                         <select name="categorie" id="categorie" class="form-select {% if errors.categorie is defined %}is-invalid{% endif %}">
                             <option value="">Choose a category</option>
                             {% for categorie in categories %}
-                            <option value="{{ categorie.id }}" {% if app.request.request.get('categorie') == categorie.id %}selected{% endif %}>{{ categorie.nom }}</option>
+                            <option value="{{ categorie.id }}" {% if selectedCategoryId == categorie.id %}selected{% endif %}>{{ categorie.nom }}</option>
                             {% endfor %}
                         </select>
+                        <div class="form-text">Fill product name and address, then click <strong>Suggest Category</strong> to preview the AI recommendation before saving.</div>
                     </div>
+
+                    {% if aiCategorySuggestion %}
+                    <div class="alert alert-info d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="fw-semibold"><i class="bi bi-stars me-1"></i>AI category suggestion</div>
+                            <div>Suggested category: <strong>{{ aiCategorySuggestion.category.nom }}</strong></div>
+                            <div class="small text-muted">{{ aiCategorySuggestion.reason }} via {{ aiCategorySuggestion.sourceLabel }}.</div>
+                            {% if selectedCategoryId == aiCategorySuggestion.category.id %}
+                            <div class="small mt-1">The suggested category has been preselected for you.</div>
+                            {% endif %}
+                        </div>
+                        <span class="badge bg-primary">{{ aiCategorySuggestion.confidence }}%</span>
+                    </div>
+                    {% elseif app.request.request.get('suggestCategory') %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-circle me-1"></i>No AI category suggestion could be generated yet. Add a clearer product name and address, then try again.
+                    </div>
+                    {% endif %}
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -76,6 +95,9 @@
                     <hr class="my-4">
                     
                     <div class="d-flex gap-2">
+                        <button type="submit" name="suggestCategory" value="1" class="btn btn-outline-info">
+                            <i class="bi bi-stars me-1"></i> Suggest Category
+                        </button>
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-check-lg me-1"></i> Save Product
                         </button>
