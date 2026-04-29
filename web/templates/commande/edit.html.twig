@@ -63,6 +63,14 @@
                         <div class="invalid-feedback d-block">{{ errors['adresseLivraison'] }}</div>
                         {% endif %}
                     </div>
+
+                    <div class="mb-3">
+                        <label for="commentaireLivraison" class="form-label">Delivery Comment</label>
+                        <textarea name="commentaireLivraison" id="commentaireLivraison" class="form-control {% if errors['commentaireLivraison'] is defined %}is-invalid{% endif %}" rows="3">{{ app.request.request.get('commentaireLivraison', commande.commentaireLivraison) }}</textarea>
+                        {% if errors['commentaireLivraison'] is defined %}
+                        <div class="invalid-feedback d-block">{{ errors['commentaireLivraison'] }}</div>
+                        {% endif %}
+                    </div>
                     
                     <div class="mb-4">
                         <label for="statut" class="form-label">Status</label>

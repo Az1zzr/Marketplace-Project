@@ -69,12 +69,6 @@
                     <div class="col-sm-8 fw-medium">{{ produit.nomProduit }}</div>
                 </div>
                 <div class="row mb-3">
-                    <div class="col-sm-4 text-muted">SEO Slug</div>
-                    <div class="col-sm-8 fw-medium">
-                        <span class="badge bg-dark-subtle text-dark border">/{{ produit.slug ?? 'pending-slug' }}</span>
-                    </div>
-                </div>
-                <div class="row mb-3">
                     <div class="col-sm-4 text-muted">Address</div>
                     <div class="col-sm-8 fw-medium">
                         <i class="bi bi-geo-alt text-primary me-1"></i>{{ produit.adresse }}
@@ -165,22 +159,7 @@
                 {% endif %}
             </div>
         </div>
-
         {% endif %}
-
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-stars me-2"></i>AI Catalog Assistant</h5>
-            </div>
-            <div class="card-body">
-                <div class="d-flex flex-wrap gap-2 mb-3">
-                    <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle">{{ productAiInsight.stockSignal }}</span>
-                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">{{ productAiInsight.priceSignal|title }}</span>
-                    <span class="badge bg-light text-dark border">{{ productAiInsight.sourceLabel }}</span>
-                </div>
-                <p class="mb-0">{{ productAiInsight.summary }}</p>
-            </div>
-        </div>
 
         <div class="card">
             <div class="card-header">

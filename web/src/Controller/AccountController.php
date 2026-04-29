@@ -42,7 +42,6 @@ class AccountController extends AbstractController
             $newPassword = (string) $request->request->get('motDePasse', '');
             $confirmPassword = (string) $request->request->get('confirmMotDePasse', '');
             $uploadedPhoto = $request->files->get('photoProfil');
-            $previousPhotoPath = $user->getPhotoPath();
 
             $errors = $this->validateAccountData(
                 $inputValidationService,
@@ -60,7 +59,7 @@ class AccountController extends AbstractController
 
             if ($uploadedPhoto instanceof UploadedFile) {
                 try {
-                    $profilePhotoService->assertUploadedPhotoIsAllowed($uploadedPhoto);
+                    $newPhotoPath = $profilePhotoService->processUploadedPhoto($uploadedPhoto, $user->getPhotoPath());
                 } catch (\RuntimeException $exception) {
                     $errors['photoProfil'] = $exception->getMessage();
                 }
@@ -74,8 +73,8 @@ class AccountController extends AbstractController
                     ->setTelephone($inputValidationService->normalizePhone($telephone))
                     ->setDateNaissance($dateNaissance);
 
-                if ($uploadedPhoto instanceof UploadedFile) {
-                    $user->setPhotoFile($uploadedPhoto);
+                if (isset($newPhotoPath)) {
+                    $user->setPhotoPath($newPhotoPath);
                 }
 
                 if ('' !== trim($newPassword)) {
@@ -83,21 +82,6 @@ class AccountController extends AbstractController
                 }
 
                 $entityManager->flush();
-
-                if (
-                    $uploadedPhoto instanceof UploadedFile
-                    && null !== $previousPhotoPath
-                    && $previousPhotoPath !== $user->getPhotoPath()
-                ) {
-                    $profilePhotoService->deleteStoredPhoto($previousPhotoPath);
-                }
-
-                // The uploaded file object is only needed for Vich during flush.
-                // Clear it before the authenticated user is serialized back into the session.
-                if ($uploadedPhoto instanceof UploadedFile) {
-                    $user->setPhotoFile(null);
-                }
-
                 $this->addFlash('success', 'Your account has been updated successfully.');
 
                 return $this->redirectToRoute('app_account_profile');

@@ -17,7 +17,7 @@ class ProfilePhotoService
     ) {
     }
 
-    public function assertUploadedPhotoIsAllowed(UploadedFile $uploadedFile): void
+    public function processUploadedPhoto(UploadedFile $uploadedFile, ?string $currentPhotoPath = null): string
     {
         $validation = $this->inputValidationService->validateImageUpload($uploadedFile->getMimeType(), $uploadedFile->getSize());
         if (!$validation['valid']) {
@@ -28,6 +28,21 @@ class ProfilePhotoService
         if (!$moderation['valid']) {
             throw new \RuntimeException($moderation['message']);
         }
+
+        $targetDirectory = $this->projectDir . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'profile';
+        if (!is_dir($targetDirectory) && !mkdir($targetDirectory, 0777, true) && !is_dir($targetDirectory)) {
+            throw new \RuntimeException('Unable to create the profile upload directory.');
+        }
+
+        $extension = strtolower($uploadedFile->guessExtension() ?: $uploadedFile->getClientOriginalExtension() ?: 'jpg');
+        $filename = sprintf('profile-%s.%s', bin2hex(random_bytes(12)), $extension);
+        $uploadedFile->move($targetDirectory, $filename);
+
+        if (null !== $currentPhotoPath) {
+            $this->deleteStoredPhoto($currentPhotoPath);
+        }
+
+        return '/uploads/profile/' . $filename;
     }
 
     public function deleteStoredPhoto(?string $photoPath): void
@@ -124,7 +139,6 @@ class ProfilePhotoService
 
     private function shouldBypassModerationFailure(): bool
     {
-        // Keep development and automated tests usable when the external provider is unavailable.
         return in_array($this->appEnv, ['dev', 'test'], true);
     }
 }
