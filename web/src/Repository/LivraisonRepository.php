@@ -94,13 +94,6 @@ class LivraisonRepository extends ServiceEntityRepository
 
     public function findBySearchAndSortForUser(User $user, string $search, string $sort, string $order, ?string $statut): array
     {
-        return $this->createSearchQueryBuilderForUser($user, $search, $sort, $order, $statut)
-            ->getQuery()
-            ->getResult();
-    }
-
-    public function createSearchQueryBuilderForUser(User $user, string $search, string $sort, string $order, ?string $statut): QueryBuilder
-    {
         $qb = $this->createBaseQueryBuilder();
 
         if ($user->hasRoleCode(User::ROLE_CODE_CLIENT)) {
@@ -127,7 +120,7 @@ class LivraisonRepository extends ServiceEntityRepository
         $qb->orderBy('l.' . $sort, strtoupper($order))
             ->addOrderBy('l.dateLivraison', 'DESC');
 
-        return $qb;
+        return $qb->getQuery()->getResult();
     }
 
     public function findOneVisibleForUser(int $id, User $user): ?Livraison

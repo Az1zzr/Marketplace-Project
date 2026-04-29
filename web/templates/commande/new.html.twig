@@ -83,6 +83,7 @@
                 {% set selectedGovernorate = app.request.request.get('gouvernorat', cart.gouvernorat ?? '') %}
                 {% set deliveryPhone = app.request.request.get('telephoneLivraison', cart.telephoneLivraison ?? app.user.telephone ?? '') %}
                 {% set deliveryAddress = app.request.request.get('adresseLivraison', cart.adresseLivraison ?? '') %}
+                {% set deliveryComment = app.request.request.get('commentaireLivraison', cart.commentaireLivraison ?? '') %}
                 <div class="mb-3">
                     <div class="text-muted small">Buyer</div>
                     <div class="fw-semibold">{{ app.user.nomComplet }}</div>
@@ -123,6 +124,14 @@
                         <textarea name="adresseLivraison" id="adresseLivraison" class="form-control {% if errors['adresseLivraison'] is defined %}is-invalid{% endif %}" rows="3" placeholder="Street, area, building, floor, or any full address details">{{ deliveryAddress }}</textarea>
                         {% if errors['adresseLivraison'] is defined %}
                         <div class="invalid-feedback d-block">{{ errors['adresseLivraison'] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="commentaireLivraison" class="form-label">Delivery Comment</label>
+                        <textarea name="commentaireLivraison" id="commentaireLivraison" class="form-control {% if errors['commentaireLivraison'] is defined %}is-invalid{% endif %}" rows="3" placeholder="Tell the delivery person exactly where to find you">{{ deliveryComment }}</textarea>
+                        {% if errors['commentaireLivraison'] is defined %}
+                        <div class="invalid-feedback d-block">{{ errors['commentaireLivraison'] }}</div>
                         {% endif %}
                     </div>
 

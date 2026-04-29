@@ -9,13 +9,6 @@
 
 {% block body %}
 {% set isDeliveryFeedback = feedback.isDeliveryFeedback %}
-{% if errors is defined and errors|length > 0 %}
-{% set firstFeedbackError = errors|first %}
-<div class="alert alert-danger shadow position-fixed top-0 end-0 m-4" style="z-index: 1080; max-width: 420px;">
-    <div class="fw-semibold"><i class="bi bi-exclamation-octagon-fill me-2"></i>This isn't allowed.</div>
-    <div class="small mt-2">{{ firstFeedbackError }}</div>
-</div>
-{% endif %}
 <div class="page-header">
     <h1><i class="bi bi-pencil me-2"></i>Edit Feedback #{{ feedback.id }}</h1>
     <p>Update the feedback details below</p>
@@ -46,7 +39,6 @@
                         {% if errors['titre'] is defined %}
                         <div class="invalid-feedback d-block">{{ errors['titre'] }}</div>
                         {% endif %}
-                        <div class="form-text">Use words only in the title. Numbers are not allowed.</div>
                     </div>
 
                     <div class="mb-4">

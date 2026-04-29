@@ -7,10 +7,16 @@ use App\Entity\Role;
 use App\Repository\UserRepository;
 use App\Repository\RoleRepository;
 use App\Service\InputValidationService;
+use App\Service\ImageModerationService;
 use Doctrine\ORM\EntityManagerInterface;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -174,6 +180,90 @@ class UserController extends AbstractController
         return $this->render('user/show.html.twig', [
             'user' => $user,
         ]);
+    }
+
+    // ── Métier 1 : Activer / Bloquer un utilisateur ──────────────────────────
+    #[Route('/user/{id}/toggle-active', name: 'app_user_toggle_active', methods: ['POST'])]
+    public function toggleActive(int $id, UserRepository $userRepository, EntityManagerInterface $entityManager): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
+        $user = $userRepository->find($id);
+        if (!$user) {
+            throw $this->createNotFoundException('User not found');
+        }
+
+        $user->setIsActive(!$user->isActive());
+        $entityManager->flush();
+
+        $status = $user->isActive() ? 'activé' : 'bloqué';
+        $this->addFlash('success', "Utilisateur {$user->getNomComplet()} {$status} avec succès.");
+
+        return $this->redirectToRoute('app_user_index');
+    }
+
+    // ── API 2 : Export Excel ──────────────────────────────────────────────────
+    #[Route('/user/export/excel', name: 'app_user_export_excel')]
+    public function exportExcel(UserRepository $userRepository): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
+        $users       = $userRepository->findAll();
+        $spreadsheet = new Spreadsheet();
+        $sheet       = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Utilisateurs');
+
+        // En-têtes
+        $headers = ['ID', 'Nom', 'Prénom', 'Email', 'Téléphone', 'Rôle', 'Statut', 'Date inscription'];
+        foreach ($headers as $col => $header) {
+            $cell = chr(65 + $col) . '1';
+            $sheet->setCellValue($cell, $header);
+        }
+
+        // Style en-têtes
+        $sheet->getStyle('A1:H1')->applyFromArray([
+            'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1e3a5f']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+        ]);
+
+        // Données
+        $row = 2;
+        foreach ($users as $user) {
+            $sheet->setCellValue('A' . $row, $user->getId());
+            $sheet->setCellValue('B' . $row, $user->getNom());
+            $sheet->setCellValue('C' . $row, $user->getPrenom());
+            $sheet->setCellValue('D' . $row, $user->getEmail());
+            $sheet->setCellValue('E' . $row, $user->getTelephone() ?? '-');
+            $sheet->setCellValue('F' . $row, $user->getRole()?->getNomRole() ?? '-');
+            $sheet->setCellValue('G' . $row, $user->isActive() ? 'Actif' : 'Bloqué');
+            $sheet->setCellValue('H' . $row, $user->getCreatedAt()->format('d/m/Y'));
+
+            // Couleur statut
+            $statusColor = $user->isActive() ? 'D1FAE5' : 'FEE2E2';
+            $sheet->getStyle('G' . $row)->applyFromArray([
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $statusColor]],
+            ]);
+            $row++;
+        }
+
+        // Auto-width
+        foreach (range('A', 'H') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $writer   = new Xlsx($spreadsheet);
+        $filename = 'utilisateurs_' . date('Ymd_His') . '.xlsx';
+
+        $response = new StreamedResponse(function () use ($writer) {
+            $writer->save('php://output');
+        });
+
+        $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $response->headers->set('Content-Disposition', 'attachment; filename="' . $filename . '"');
+        $response->headers->set('Cache-Control', 'max-age=0');
+
+        return $response;
     }
 
     private function validateManagedUserData(

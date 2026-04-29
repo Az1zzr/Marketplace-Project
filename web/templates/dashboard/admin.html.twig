@@ -35,21 +35,22 @@
     </div>
 </div>
 
+{# ── Métier 2 : Statistiques utilisateurs ── #}
 <div class="stat-grid mb-4">
+    <div class="stat-card" style="border-left:4px solid #10b981;">
+        <div class="stat-label">Utilisateurs Actifs</div>
+        <div class="stat-value" style="color:#10b981;">{{ stats.activeUsers }}</div>
+        <div class="stat-note">Comptes accessibles normalement</div>
+    </div>
+    <div class="stat-card" style="border-left:4px solid #ef4444;">
+        <div class="stat-label">Utilisateurs Bloqués</div>
+        <div class="stat-value" style="color:#ef4444;">{{ stats.blockedUsers }}</div>
+        <div class="stat-note">Comptes dont l'accès est suspendu</div>
+    </div>
     <div class="stat-card">
         <div class="stat-label">Feedbacks Urgents</div>
         <div class="stat-value">{{ feedbackInsights.urgentCount }}</div>
         <div class="stat-note">Retours negatifs ou mal notes qui demandent une moderation rapide</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">A Traiter</div>
-        <div class="stat-value">{{ feedbackInsights.attentionCount }}</div>
-        <div class="stat-note">Feedbacks qui demandent encore une action rapide</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Sans Reponse</div>
-        <div class="stat-value">{{ feedbackInsights.unansweredCount }}</div>
-        <div class="stat-note">Feedbacks qui n'ont recu aucune reponse</div>
     </div>
     <div class="stat-card">
         <div class="stat-label">Sujet Principal</div>
@@ -81,6 +82,11 @@
                     <div class="col-md-6">
                         <a href="{{ path('app_feedback_export_pdf') }}" class="btn btn-outline-dark w-100 py-3">Exporter Feedback PDF</a>
                     </div>
+                    <div class="col-md-6">
+                        <a href="{{ path('app_user_export_excel') }}" class="btn btn-success w-100 py-3">
+                            📊 Exporter Utilisateurs Excel
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -102,4 +108,47 @@
         </div>
     </div>
 </div>
+
+{# ── Métier 2 : Graphique inscriptions par mois ── #}
+<div class="row g-4 mt-2">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">📈 Inscriptions des utilisateurs par mois</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="usersByMonthChart" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(function () {
+    const data = {{ stats.usersByMonth | raw }};
+    const labels = data.map(d => d.label);
+    const values = data.map(d => d.total);
+
+    new Chart(document.getElementById('usersByMonthChart'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Nouveaux utilisateurs',
+                data: values,
+                backgroundColor: 'rgba(16,185,129,0.7)',
+                borderColor: '#10b981',
+                borderWidth: 2,
+                borderRadius: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'top' } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+})();
+</script>
 {% endblock %}

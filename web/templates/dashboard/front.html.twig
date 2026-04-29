@@ -133,19 +133,9 @@
             </div>
             <div class="card-body">
                 {% if roleCode == 'fournisseur' %}
-                <p class="text-muted mb-3">You are in supplier mode. You can manage products and categories, receive client orders for your catalog, and assign deliveries.</p>
-                <div class="d-flex flex-wrap gap-2">
-                    <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">StofDoctrineExtensionsBundle: product slugs</span>
-                    <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">KnpPaginatorBundle: delivery paging</span>
-                    <span class="badge bg-light text-dark border">AI category assistant on Add Product</span>
-                </div>
+                <p class="text-muted mb-0">You are in supplier mode. You can manage products and categories, receive client orders for your catalog, and assign deliveries.</p>
                 {% else %}
-                <p class="text-muted mb-3">You are in client mode. You can browse the marketplace, create orders, follow deliveries, and publish feedback.</p>
-                <div class="d-flex flex-wrap gap-2">
-                    <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">VichUploaderBundle: profile photos</span>
-                    <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">KnpPaginatorBundle: delivery paging</span>
-                    <span class="badge bg-light text-dark border">AI risk assistant on deliveries</span>
-                </div>
+                <p class="text-muted mb-0">You are in client mode. You can browse the marketplace, create orders, follow deliveries, and publish feedback.</p>
                 {% endif %}
             </div>
         </div>

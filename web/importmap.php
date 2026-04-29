@@ -12,23 +12,7 @@
  * The "importmap:require" command can be used to add new entries to this file.
  */
 return [
-    'chart.js' => [
-        'version' => '4.5.1',
-    ],
-    '@kurkle/color' => [
-        'version' => '0.3.4',
-    ],
     '@hotwired/stimulus' => [
         'version' => '3.2.2',
-    ],
-    '@symfony/stimulus-bundle' => [
-        'path' => './vendor/symfony/stimulus-bundle/assets/dist/loader.js',
-    ],
-    'app' => [
-        'path' => './assets/app.js',
-        'entrypoint' => true,
-    ],
-    '@hotwired/turbo' => [
-        'version' => '8.0.23',
     ],
 ];

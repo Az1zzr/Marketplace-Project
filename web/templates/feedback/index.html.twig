@@ -61,31 +61,6 @@
 </div>
 {% endif %}
 
-{% if canSeeInsights and feedbackSentimentChart and feedbackTopicChart %}
-<div class="row g-4 mb-4">
-    <div class="col-lg-5">
-        <div class="card h-100">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>AI Sentiment Split</h5>
-            </div>
-            <div class="card-body" style="min-height: 320px;">
-                {{ render_chart(feedbackSentimentChart, {'class': 'w-100 h-100'}) }}
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-7">
-        <div class="card h-100">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>AI Topic Distribution</h5>
-            </div>
-            <div class="card-body" style="min-height: 320px;">
-                {{ render_chart(feedbackTopicChart, {'class': 'w-100 h-100'}) }}
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
 <div class="card mb-4">
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end" novalidate>

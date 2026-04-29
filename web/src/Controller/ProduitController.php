@@ -14,10 +14,8 @@ use App\Repository\LigneCommandeRepository;
 use App\Repository\ProduitRepository;
 use App\Service\CurrencyConversionService;
 use App\Service\InputValidationService;
-use App\Service\ProductCatalogAiService;
 use App\Service\ProductQrCodeService;
 use Doctrine\ORM\EntityManagerInterface;
-use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Request;
@@ -28,12 +26,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 class ProduitController extends AbstractController
 {
     #[Route('/produit', name: 'app_produit_index')]
-    public function index(
-        Request $request,
-        ProduitRepository $produitRepository,
-        CategorieRepository $categorieRepository,
-        PaginatorInterface $paginator
-    ): Response
+    public function index(Request $request, ProduitRepository $produitRepository, CategorieRepository $categorieRepository): Response
     {
         $currentUser = $this->getUser();
         $search = $request->query->get('search', '');
@@ -47,17 +40,12 @@ class ProduitController extends AbstractController
 
         $selectedCategorieId = ctype_digit((string) $categorieId) ? (int) $categorieId : null;
 
-        $produits = $paginator->paginate(
-            $produitRepository->createSearchQueryBuilder(
-                $search,
-                $sort,
-                $order,
-                $selectedCategorieId,
-                $currentUser instanceof User ? $currentUser : null
-            ),
-            max(1, $request->query->getInt('page', 1)),
-            6,
-            ['distinct' => true]
+        $produits = $produitRepository->findBySearchAndSort(
+            $search,
+            $sort,
+            $order,
+            $selectedCategorieId,
+            $currentUser instanceof User ? $currentUser : null
         );
 
         return $this->render('produit/index.html.twig', [
@@ -71,30 +59,14 @@ class ProduitController extends AbstractController
     }
 
     #[Route('/produit/new', name: 'app_produit_new')]
-    public function new(
-        Request $request,
-        CategorieRepository $categorieRepository,
-        ProductCatalogAiService $productCatalogAiService,
-        EntityManagerInterface $entityManager
-    ): Response
+    public function new(Request $request, CategorieRepository $categorieRepository, EntityManagerInterface $entityManager): Response
     {
         $this->denyUnlessCatalogManager();
 
         $categories = $categorieRepository->findAllOrdered();
         $errors = [];
-        $aiCategorySuggestion = $this->buildAiCategorySuggestion($request, $productCatalogAiService, $categories);
-        $selectedCategoryId = $this->resolveSelectedCategoryId($request, $aiCategorySuggestion);
 
         if ($request->isMethod('POST')) {
-            if ($request->request->has('suggestCategory')) {
-                return $this->render('produit/new.html.twig', [
-                    'categories' => $categories,
-                    'aiCategorySuggestion' => $aiCategorySuggestion,
-                    'selectedCategoryId' => $selectedCategoryId,
-                    'errors' => $errors,
-                ]);
-            }
-
             $produit = new Produit();
             $errors = $this->applyProductRequestData($produit, $request, $categorieRepository);
 
@@ -114,21 +86,12 @@ class ProduitController extends AbstractController
 
         return $this->render('produit/new.html.twig', [
             'categories' => $categories,
-            'aiCategorySuggestion' => $aiCategorySuggestion,
-            'selectedCategoryId' => $selectedCategoryId,
             'errors' => $errors,
         ]);
     }
 
     #[Route('/produit/{id}/edit', name: 'app_produit_edit')]
-    public function edit(
-        int $id,
-        Request $request,
-        ProduitRepository $produitRepository,
-        CategorieRepository $categorieRepository,
-        ProductCatalogAiService $productCatalogAiService,
-        EntityManagerInterface $entityManager
-    ): Response
+    public function edit(int $id, Request $request, ProduitRepository $produitRepository, CategorieRepository $categorieRepository, EntityManagerInterface $entityManager): Response
     {
         $produit = $produitRepository->find($id);
 
@@ -139,21 +102,8 @@ class ProduitController extends AbstractController
         $this->denyUnlessCanManageProduct($produit);
 
         $errors = [];
-        $categories = $categorieRepository->findAllOrdered();
-        $aiCategorySuggestion = $this->buildAiCategorySuggestion($request, $productCatalogAiService, $categories, $produit);
-        $selectedCategoryId = $this->resolveSelectedCategoryId($request, $aiCategorySuggestion, $produit);
 
         if ($request->isMethod('POST')) {
-            if ($request->request->has('suggestCategory')) {
-                return $this->render('produit/edit.html.twig', [
-                    'produit' => $produit,
-                    'categories' => $categories,
-                    'aiCategorySuggestion' => $aiCategorySuggestion,
-                    'selectedCategoryId' => $selectedCategoryId,
-                    'errors' => $errors,
-                ]);
-            }
-
             $errors = $this->applyProductRequestData($produit, $request, $categorieRepository);
 
             if (empty($errors)) {
@@ -166,9 +116,7 @@ class ProduitController extends AbstractController
 
         return $this->render('produit/edit.html.twig', [
             'produit' => $produit,
-            'categories' => $categories,
-            'aiCategorySuggestion' => $aiCategorySuggestion,
-            'selectedCategoryId' => $selectedCategoryId,
+            'categories' => $categorieRepository->findAllOrdered(),
             'errors' => $errors,
         ]);
     }
@@ -275,8 +223,7 @@ class ProduitController extends AbstractController
         FeedbackRepository $feedbackRepository,
         LigneCommandeRepository $ligneCommandeRepository,
         CommandeRepository $commandeRepository,
-        CurrencyConversionService $currencyConversionService,
-        ProductCatalogAiService $productCatalogAiService
+        CurrencyConversionService $currencyConversionService
     ): Response
     {
         $produit = $produitRepository->find($id);
@@ -304,7 +251,6 @@ class ProduitController extends AbstractController
             'eligibleFeedbackLine' => $eligibleFeedbackLine,
             'hasDraftCart' => $hasDraftCart,
             'convertedPrices' => $currencyConversionService->getPriceConversions((float) $produit->getPrix()),
-            'productAiInsight' => $productCatalogAiService->buildInsight($produit),
             'productUrl' => $productUrl,
         ]);
     }
@@ -444,33 +390,5 @@ class ProduitController extends AbstractController
         }
 
         return $errors;
-    }
-
-    private function buildAiCategorySuggestion(
-        Request $request,
-        ProductCatalogAiService $productCatalogAiService,
-        array $categories,
-        ?Produit $produit = null
-    ): ?array {
-        $nomProduit = trim((string) $request->request->get('nomProduit', $produit?->getNomProduit() ?? ''));
-        $adresse = trim((string) $request->request->get('adresse', $produit?->getAdresse() ?? ''));
-
-        return $productCatalogAiService->suggestCategory($nomProduit, $adresse, $categories);
-    }
-
-    private function resolveSelectedCategoryId(Request $request, ?array $aiCategorySuggestion, ?Produit $produit = null): string
-    {
-        $selectedCategoryId = (string) $request->request->get('categorie', $produit?->getCategorie()?->getId() ?? '');
-
-        if (
-            '' === $selectedCategoryId
-            && $request->request->has('suggestCategory')
-            && isset($aiCategorySuggestion['category'])
-            && $aiCategorySuggestion['category'] instanceof Categorie
-        ) {
-            return (string) $aiCategorySuggestion['category']->getId();
-        }
-
-        return $selectedCategoryId;
     }
 }

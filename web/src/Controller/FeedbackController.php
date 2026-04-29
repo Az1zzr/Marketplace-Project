@@ -24,8 +24,6 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\UX\Chartjs\Builder\ChartBuilderInterface;
-use Symfony\UX\Chartjs\Model\Chart;
 
 class FeedbackController extends AbstractController
 {
@@ -35,7 +33,6 @@ class FeedbackController extends AbstractController
         FeedbackRepository $feedbackRepository,
         AISentimentService $sentimentAnalyzer,
         FeedbackInsightService $feedbackInsightService,
-        ChartBuilderInterface $chartBuilder,
         LigneCommandeRepository $ligneCommandeRepository
     ): Response {
         $currentUser = $this->getUser();
@@ -49,7 +46,6 @@ class FeedbackController extends AbstractController
 
         return $this->render('feedback/index.html.twig', [
             ...$listing,
-            ...$this->buildFeedbackCharts($listing['feedbacksWithSentiment'], $chartBuilder),
             'hasEligibleProductFeedback' => $currentUser instanceof User && [] !== $ligneCommandeRepository->findEligibleFeedbackItemsForUser($currentUser),
         ]);
     }
@@ -510,7 +506,7 @@ class FeedbackController extends AbstractController
             ];
         }
 
-        return [ 
+        return [
             'feedbacksWithSentiment' => $feedbacksWithSentiment,
             'feedbackInsightsSummary' => $canSeeInsights ? $feedbackInsightService->summarize($feedbacksWithSentiment) : null,
             'search' => $search,
@@ -625,77 +621,5 @@ class FeedbackController extends AbstractController
         if ($refreshDate) {
             $feedback->setDateStatut(new \DateTime());
         }
-    }
-
-    private function buildFeedbackCharts(array $feedbacksWithSentiment, ChartBuilderInterface $chartBuilder): array
-    {
-        if ([] === $feedbacksWithSentiment) {
-            return [
-                'feedbackSentimentChart' => null,
-                'feedbackTopicChart' => null,
-            ];
-        }
-
-        $sentimentCounts = [
-            'POSITIF' => 0,
-            'NEUTRE' => 0,
-            'NEGATIF' => 0,
-        ];
-        $topicCounts = [];
-
-        foreach ($feedbacksWithSentiment as $item) {
-            $sentiment = (string) ($item['sentiment']['sentiment'] ?? 'NEUTRE');
-            if (isset($sentimentCounts[$sentiment])) {
-                ++$sentimentCounts[$sentiment];
-            }
-
-            $topicLabel = (string) ($item['insight']['topicLabel'] ?? 'General');
-            $topicCounts[$topicLabel] = ($topicCounts[$topicLabel] ?? 0) + 1;
-        }
-
-        $sentimentChart = $chartBuilder->createChart(Chart::TYPE_DOUGHNUT);
-        $sentimentChart->setData([
-            'labels' => array_keys($sentimentCounts),
-            'datasets' => [[
-                'label' => 'Feedback sentiment',
-                'data' => array_values($sentimentCounts),
-                'backgroundColor' => ['#16a34a', '#64748b', '#dc2626'],
-                'borderWidth' => 0,
-            ]],
-        ]);
-        $sentimentChart->setOptions([
-            'plugins' => [
-                'legend' => ['position' => 'bottom'],
-            ],
-            'maintainAspectRatio' => false,
-        ]);
-
-        $topicChart = $chartBuilder->createChart(Chart::TYPE_BAR);
-        $topicChart->setData([
-            'labels' => array_keys($topicCounts),
-            'datasets' => [[
-                'label' => 'Visible feedback topics',
-                'data' => array_values($topicCounts),
-                'backgroundColor' => '#2563eb',
-                'borderRadius' => 10,
-            ]],
-        ]);
-        $topicChart->setOptions([
-            'plugins' => [
-                'legend' => ['display' => false],
-            ],
-            'scales' => [
-                'y' => [
-                    'beginAtZero' => true,
-                    'ticks' => ['precision' => 0],
-                ],
-            ],
-            'maintainAspectRatio' => false,
-        ]);
-
-        return [
-            'feedbackSentimentChart' => $sentimentChart,
-            'feedbackTopicChart' => $topicChart,
-        ];
     }
 }
