@@ -10,6 +10,12 @@
 
 {% block body %}
 {% set feedbackAuthorName = feedback.auteur ? feedback.auteur.nomComplet : 'Deleted user' %}
+{% if errors['profanity'] is defined %}
+<div class="alert alert-danger shadow position-fixed top-0 end-0 m-4" style="z-index: 1080; max-width: 420px;" role="alert" data-moderation-alert="{{ errors['profanity']|e('html_attr') }}">
+    <div class="fw-semibold"><i class="bi bi-exclamation-octagon-fill me-2"></i>Bad words are not allowed.</div>
+    <div class="small mt-2">{{ errors['profanity'] }}</div>
+</div>
+{% endif %}
 <div class="page-header">
     <h1><i class="bi bi-reply me-2"></i>Add Response</h1>
     <p>Respond to {{ feedbackAuthorName }} on discussion #{{ feedback.id }}</p>
@@ -62,7 +68,7 @@
                 </div>
                 {% endif %}
 
-                <form method="post" novalidate>
+                <form method="post" novalidate data-turbo="false" data-moderation-target="#contenu" data-moderation-message="#response-profanity-message" data-moderation-field-label="response">
                     <div class="mb-4">
                         <label for="contenu" class="form-label">Response Content <span class="text-danger">*</span></label>
                         <textarea 
@@ -76,7 +82,7 @@
                         {% if errors['contenu'] is defined %}
                         <div class="invalid-feedback">{{ errors['contenu'] }}</div>
                         {% endif %}
-                        <div id="response-profanity-message" class="invalid-feedback d-block" {% if errors['profanity'] is not defined %}hidden{% endif %}>
+                        <div id="response-profanity-message" class="invalid-feedback d-block" data-moderation-message-box {% if errors['profanity'] is not defined %}hidden{% endif %}>
                             {% if errors['profanity'] is defined %}<i class="bi bi-shield-exclamation me-1"></i>{{ errors['profanity'] }}{% endif %}
                         </div>
                         <div class="form-text">Your response will be checked by the local moderation model for inappropriate language.</div>

@@ -10,9 +10,9 @@
 {% block body %}
 {% set isDeliveryFeedback = feedbackType == 'delivery' %}
 {% if errors is defined and errors|length > 0 %}
-{% set firstFeedbackError = errors|first %}
-<div class="alert alert-danger shadow position-fixed top-0 end-0 m-4" style="z-index: 1080; max-width: 420px;">
-    <div class="fw-semibold"><i class="bi bi-exclamation-octagon-fill me-2"></i>This isn't allowed.</div>
+{% set firstFeedbackError = errors['profanity'] is defined ? errors['profanity'] : errors|first %}
+<div class="alert alert-danger shadow position-fixed top-0 end-0 m-4" style="z-index: 1080; max-width: 420px;" role="alert" {% if errors['profanity'] is defined %}data-moderation-alert="{{ firstFeedbackError|e('html_attr') }}"{% endif %}>
+    <div class="fw-semibold"><i class="bi bi-exclamation-octagon-fill me-2"></i>{% if errors['profanity'] is defined %}Bad words are not allowed.{% else %}This isn't allowed.{% endif %}</div>
     <div class="small mt-2">{{ firstFeedbackError }}</div>
 </div>
 {% endif %}
@@ -39,7 +39,7 @@
                 </div>
                 {% endif %}
 
-                <form method="post" id="feedbackForm" novalidate>
+                <form method="post" id="feedbackForm" novalidate data-turbo="false" data-moderation-target="#commentaire" data-moderation-message="#feedback-profanity-message" data-moderation-field-label="comment">
                     {% if isDeliveryFeedback %}
                     <div class="mb-4">
                         <label class="form-label">Delivered Order</label>
@@ -167,7 +167,7 @@
                         {% if errors['commentaire'] is defined %}
                         <div class="invalid-feedback d-block">{{ errors['commentaire'] }}</div>
                         {% endif %}
-                        <div id="feedback-profanity-message" class="invalid-feedback d-block" {% if errors['profanity'] is not defined %}hidden{% endif %}>
+                        <div id="feedback-profanity-message" class="invalid-feedback d-block" data-moderation-message-box {% if errors['profanity'] is not defined %}hidden{% endif %}>
                             {% if errors['profanity'] is defined %}<i class="bi bi-shield-exclamation me-1"></i>{{ errors['profanity'] }}{% endif %}
                         </div>
                         <div class="form-text">Your comment will be checked by the local moderation model for inappropriate language.</div>

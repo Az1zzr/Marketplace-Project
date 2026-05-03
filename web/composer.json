@@ -12,7 +12,7 @@
         "doctrine/instantiator": "2.0.0",
         "doctrine/orm": "^3.6",
         "dompdf/dompdf": "^3.1",
-        "endroid/qr-code": "^6.1",
+        "endroid/qr-code": "^5.1",
         "knplabs/knp-paginator-bundle": "^6.10",
         "phpdocumentor/reflection-docblock": "^5.2",
         "phpoffice/phpspreadsheet": "^5.5",
@@ -105,6 +105,11 @@
         }
     },
     "require-dev": {
+        "ahmed-bhs/doctrine-doctor": "1.1.*",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-doctrine": "^2.0",
+        "phpstan/phpstan-phpunit": "^2.0",
+        "phpstan/phpstan-symfony": "^2.0",
         "phpunit/phpunit": "^11.5",
         "symfony/browser-kit": "6.4.*",
         "symfony/css-selector": "6.4.*",

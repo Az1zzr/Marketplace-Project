@@ -12,7 +12,8 @@ class FeedbackModerationService
 
     public function __construct(
         private readonly string $projectDir,
-        private readonly ProfanityFilterService $profanityFilter
+        private readonly ProfanityFilterService $profanityFilter,
+        private readonly ?array $pythonCommands = null
     ) {
     }
 
@@ -39,15 +40,7 @@ class FeedbackModerationService
 
     public function buildErrorMessage(array $moderation, string $fieldLabel): string
     {
-        if ('word_list_fallback' === ($moderation['source'] ?? null) && [] !== ($moderation['matchedWords'] ?? [])) {
-            return sprintf(
-                'Your %s contains inappropriate language: %s',
-                $fieldLabel,
-                implode(', ', $moderation['matchedWords'])
-            );
-        }
-
-        return sprintf('Your %s was flagged as inappropriate by the local moderation model.', $fieldLabel);
+        return sprintf("You can't write bad words to users in your %s.", $fieldLabel);
     }
 
     private function runLocalModel(string $text): ?array
@@ -107,7 +100,20 @@ class FeedbackModerationService
 
     private function getPythonCommands(): array
     {
+        if (null !== $this->pythonCommands) {
+            return $this->pythonCommands;
+        }
+
+        $commands = [];
+        $venvPythonPath = $this->projectDir . DIRECTORY_SEPARATOR . '.venv' . DIRECTORY_SEPARATOR
+            . ('\\' === DIRECTORY_SEPARATOR ? 'Scripts' . DIRECTORY_SEPARATOR . 'python.exe' : 'bin' . DIRECTORY_SEPARATOR . 'python');
+
+        if (is_file($venvPythonPath)) {
+            $commands[] = [$venvPythonPath];
+        }
+
         return [
+            ...$commands,
             ['python'],
             ['python3'],
             ['py', '-3'],

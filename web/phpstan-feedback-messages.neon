@@ -1,0 +1,17 @@
+includes:
+    - vendor/phpstan/phpstan-symfony/extension.neon
+    - vendor/phpstan/phpstan-doctrine/extension.neon
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+
+parameters:
+    level: 5
+    paths:
+        - src/Entity/Feedback.php
+        - src/Entity/Reponse.php
+        - src/Entity/Conversation.php
+        - src/Entity/ConversationMessage.php
+        - src/Repository/FeedbackRepository.php
+        - src/Repository/ConversationRepository.php
+        - src/Repository/ConversationMessageRepository.php
+        - tests/Entity
+    tmpDir: var/cache/phpstan-feedback-messages

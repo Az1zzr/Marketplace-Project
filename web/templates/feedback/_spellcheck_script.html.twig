@@ -1,8 +1,9 @@
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const buttons = document.querySelectorAll('[data-spellcheck-target]');
+(() => {
+    const spellcheckUrl = '{{ path('api_spellcheck') }}';
+    const moderationUrl = '{{ path('api_feedback_moderation') }}';
 
-    const escapeHtml = (value) => value
+    const escapeHtml = (value) => String(value ?? '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
@@ -11,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const buildHighlightedHtml = (text, errors) => {
         if (!errors.length) {
-            return `<div class="small text-success"><i class="bi bi-check-circle me-1"></i>Aucune faute detectee.</div>`;
+            return '<div class="small text-success"><i class="bi bi-check-circle me-1"></i>Aucune faute detectee.</div>';
         }
 
         const sorted = [...errors].sort((a, b) => (a.offset ?? 0) - (b.offset ?? 0));
@@ -49,70 +50,215 @@ document.addEventListener('DOMContentLoaded', () => {
         return `<ul class="mb-0 mt-2 small">${items}</ul>`;
     };
 
-    buttons.forEach((button) => {
-        const textarea = document.querySelector(button.dataset.spellcheckTarget);
-        const resultBox = document.querySelector(button.dataset.spellcheckResult);
+    const showModerationError = (form, textarea, message) => {
+        const target = form.dataset.moderationMessage;
+        const messageBox = target ? document.querySelector(target) : form.querySelector('[data-moderation-message-box]');
 
-        if (!textarea || !resultBox) {
-            return;
+        textarea.classList.add('is-invalid');
+
+        if (messageBox) {
+            messageBox.className = 'invalid-feedback d-block';
+            messageBox.hidden = false;
+            messageBox.innerHTML = `<i class="bi bi-shield-exclamation me-1"></i>${escapeHtml(message)}`;
         }
 
-        button.addEventListener('click', async () => {
-            const text = textarea.value.trim();
+        window.alert(message);
+        textarea.focus();
+    };
 
-            if (!text) {
-                resultBox.className = 'alert alert-warning mt-3 mb-0';
-                resultBox.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>Ajoutez du texte avant de verifier l\'orthographe.';
-                resultBox.hidden = false;
+    const clearModerationError = (form, textarea) => {
+        const target = form.dataset.moderationMessage;
+        const messageBox = target ? document.querySelector(target) : form.querySelector('[data-moderation-message-box]');
+
+        textarea.classList.remove('is-invalid');
+
+        if (messageBox) {
+            messageBox.hidden = true;
+            messageBox.innerHTML = '';
+        }
+    };
+
+    const initializeModerationAlerts = () => {
+        document.querySelectorAll('[data-moderation-alert]').forEach((alertBox) => {
+            if (alertBox.dataset.moderationShown === '1' || !alertBox.dataset.moderationAlert) {
                 return;
             }
 
-            const originalHtml = button.innerHTML;
-            button.disabled = true;
-            button.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Verification...';
-
-            try {
-                const formData = new FormData();
-                formData.append('text', text);
-
-                const response = await fetch('{{ path('api_spellcheck') }}', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-
-                const data = await response.json();
-                if (!data.success) {
-                    throw new Error(data.error || 'Spellcheck failed');
-                }
-
-                const errors = Array.isArray(data.errors) ? data.errors : [];
-                resultBox.className = errors.length ? 'alert alert-warning mt-3 mb-0' : 'alert alert-success mt-3 mb-0';
-                resultBox.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
-                        <div>
-                            <strong>${errors.length ? `${errors.length} probleme(s) detecte(s)` : 'Orthographe correcte'}</strong>
-                            ${buildSuggestionList(errors)}
-                        </div>
-                    </div>
-                    <div class="mt-3">${buildHighlightedHtml(text, errors)}</div>
-                `;
-                resultBox.hidden = false;
-            } catch (error) {
-                resultBox.className = 'alert alert-danger mt-3 mb-0';
-                resultBox.innerHTML = `<i class="bi bi-x-octagon me-1"></i>Impossible de verifier l'orthographe pour le moment.${error?.message ? ` (${escapeHtml(error.message)})` : ''}`;
-                resultBox.hidden = false;
-            } finally {
-                button.disabled = false;
-                button.innerHTML = originalHtml;
-            }
+            alertBox.dataset.moderationShown = '1';
+            window.alert(alertBox.dataset.moderationAlert);
         });
-    });
-});
+    };
+
+    const initializeModerationForms = () => {
+        document.querySelectorAll('form[data-moderation-target]').forEach((form) => {
+            if (form.dataset.moderationBound === '1') {
+                return;
+            }
+
+            form.dataset.moderationBound = '1';
+
+            form.addEventListener('submit', async (event) => {
+                if (form.dataset.moderationPassed === '1') {
+                    delete form.dataset.moderationPassed;
+                    return;
+                }
+
+                const textarea = document.querySelector(form.dataset.moderationTarget);
+                const text = textarea?.value.trim() ?? '';
+                if (!textarea || '' === text) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                const submitter = event.submitter instanceof HTMLElement ? event.submitter : null;
+                const originalHtml = submitter?.innerHTML;
+                const originalDisabled = submitter?.disabled;
+
+                if (submitter && 'disabled' in submitter) {
+                    submitter.disabled = true;
+                    submitter.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Checking...';
+                }
+
+                try {
+                    const formData = new FormData();
+                    formData.append('text', text);
+                    formData.append('fieldLabel', form.dataset.moderationFieldLabel || 'comment');
+
+                    const response = await fetch(moderationUrl, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    if (!data.allowed) {
+                        showModerationError(form, textarea, data.message || "You can't write bad words to users.");
+                        return;
+                    }
+
+                    clearModerationError(form, textarea);
+                    form.dataset.moderationPassed = '1';
+                    if (submitter && typeof form.requestSubmit === 'function') {
+                        form.requestSubmit(submitter);
+                    } else {
+                        form.submit();
+                    }
+                } catch (error) {
+                    form.dataset.moderationPassed = '1';
+                    if (submitter && typeof form.requestSubmit === 'function') {
+                        form.requestSubmit(submitter);
+                    } else {
+                        form.submit();
+                    }
+                } finally {
+                    if (submitter && 'disabled' in submitter) {
+                        submitter.disabled = originalDisabled ?? false;
+                        submitter.innerHTML = originalHtml;
+                    }
+                }
+            });
+        });
+    };
+
+    const initializeSpellcheckButtons = () => {
+        document.querySelectorAll('[data-spellcheck-target]').forEach((button) => {
+            if (button.dataset.spellcheckBound === '1') {
+                return;
+            }
+
+            button.dataset.spellcheckBound = '1';
+
+            const textarea = document.querySelector(button.dataset.spellcheckTarget);
+            const resultBox = document.querySelector(button.dataset.spellcheckResult);
+
+            if (!textarea || !resultBox) {
+                return;
+            }
+
+            button.addEventListener('click', async () => {
+                const text = textarea.value.trim();
+
+                if (!text) {
+                    resultBox.className = 'alert alert-warning mt-3 mb-0';
+                    resultBox.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>Ajoutez du texte avant de verifier l\'orthographe.';
+                    resultBox.hidden = false;
+                    return;
+                }
+
+                const originalHtml = button.innerHTML;
+                button.disabled = true;
+                button.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Verification...';
+
+                try {
+                    const formData = new FormData();
+                    formData.append('text', text);
+                    formData.append('language', 'auto');
+
+                    const response = await fetch(spellcheckUrl, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    const contentType = response.headers.get('content-type') ?? '';
+                    if (!contentType.includes('application/json')) {
+                        throw new Error('Spellcheck endpoint returned an unexpected response. Make sure you are signed in.');
+                    }
+
+                    const data = await response.json();
+                    if (!data.success) {
+                        throw new Error(data.error || 'Spellcheck failed');
+                    }
+
+                    const errors = Array.isArray(data.errors) ? data.errors : [];
+                    resultBox.className = errors.length ? 'alert alert-warning mt-3 mb-0' : 'alert alert-success mt-3 mb-0';
+                    resultBox.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                            <div>
+                                <strong>${errors.length ? `${errors.length} probleme(s) detecte(s)` : 'Orthographe correcte'}</strong>
+                                ${buildSuggestionList(errors)}
+                            </div>
+                        </div>
+                        <div class="mt-3">${buildHighlightedHtml(text, errors)}</div>
+                    `;
+                    resultBox.hidden = false;
+                } catch (error) {
+                    resultBox.className = 'alert alert-danger mt-3 mb-0';
+                    resultBox.innerHTML = `<i class="bi bi-x-octagon me-1"></i>Impossible de verifier l'orthographe pour le moment.${error?.message ? ` (${escapeHtml(error.message)})` : ''}`;
+                    resultBox.hidden = false;
+                } finally {
+                    button.disabled = false;
+                    button.innerHTML = originalHtml;
+                }
+            });
+        });
+    };
+
+    const initializeFeedbackTools = () => {
+        initializeModerationAlerts();
+        initializeModerationForms();
+        initializeSpellcheckButtons();
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeFeedbackTools, { once: true });
+    } else {
+        initializeFeedbackTools();
+    }
+
+    document.addEventListener('turbo:load', initializeFeedbackTools);
+})();
 </script>

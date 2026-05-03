@@ -4,6 +4,8 @@ namespace App\Tests\Entity;
 
 use App\Entity\Conversation;
 use App\Entity\ConversationMessage;
+use App\Entity\Commande;
+use App\Entity\Produit;
 use App\Entity\User;
 use PHPUnit\Framework\TestCase;
 
@@ -45,6 +47,51 @@ class ConversationTest extends TestCase
         self::assertTrue($conversation->getMessages()->contains($message));
         self::assertSame($message->getCreatedAt(), $conversation->getLastMessageAt());
         self::assertNotSame($originalLastMessageAt, $conversation->getLastMessageAt());
+    }
+
+    public function testRemoveMessageClearsConversationFromMessage(): void
+    {
+        $conversation = new Conversation();
+        $message = (new ConversationMessage())
+            ->setContent('Can you confirm availability?');
+
+        $conversation->addMessage($message);
+        $conversation->removeMessage($message);
+
+        self::assertFalse($conversation->getMessages()->contains($message));
+        self::assertNull($message->getConversation());
+    }
+
+    public function testAttachContextDoesNotOverrideExistingContext(): void
+    {
+        $existingProduct = new Produit();
+        $existingOrder = new Commande();
+        $newProduct = new Produit();
+        $newOrder = new Commande();
+
+        $conversation = (new Conversation())
+            ->setProduit($existingProduct)
+            ->setCommande($existingOrder)
+            ->attachContext($newProduct, $newOrder);
+
+        self::assertSame($existingProduct, $conversation->getProduit());
+        self::assertSame($existingOrder, $conversation->getCommande());
+    }
+
+    public function testConversationMessageTrimsContentAndKeepsReadTimestamp(): void
+    {
+        $message = (new ConversationMessage())
+            ->setContent('  Hello fournisseur  ');
+
+        self::assertSame('Hello fournisseur', $message->getContent());
+        self::assertFalse($message->isRead());
+
+        $message->markAsRead();
+        $readAt = $message->getReadAt();
+        $message->markAsRead();
+
+        self::assertTrue($message->isRead());
+        self::assertSame($readAt, $message->getReadAt());
     }
 
     private function setEntityId(object $entity, int $id): void

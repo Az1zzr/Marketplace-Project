@@ -413,10 +413,35 @@ class FeedbackController extends AbstractController
     public function spellCheck(Request $request, SpellCheckerService $spellChecker): JsonResponse
     {
         $text = $request->request->get('text', '');
+        $language = (string) $request->request->get('language', 'auto');
+        if (!in_array($language, ['auto', 'fr', 'en-US', 'en-GB'], true)) {
+            $language = 'auto';
+        }
         
-        $result = $spellChecker->check($text, 'fr');
+        $result = $spellChecker->check($text, $language);
 
         return $this->json($result);
+    }
+
+    #[Route('/api/feedback/moderation', name: 'api_feedback_moderation', methods: ['POST'])]
+    public function checkFeedbackModeration(Request $request, FeedbackModerationService $feedbackModeration): JsonResponse
+    {
+        $fieldLabel = (string) $request->request->get('fieldLabel', 'comment');
+        if (!in_array($fieldLabel, ['comment', 'response'], true)) {
+            $fieldLabel = 'comment';
+        }
+
+        $moderation = $feedbackModeration->moderate((string) $request->request->get('text', ''));
+        $flagged = (bool) ($moderation['flagged'] ?? false);
+
+        return $this->json([
+            'allowed' => !$flagged,
+            'flagged' => $flagged,
+            'message' => $flagged ? $feedbackModeration->buildErrorMessage($moderation, $fieldLabel) : null,
+            'source' => $moderation['source'] ?? null,
+            'score' => $moderation['score'] ?? null,
+            'threshold' => $moderation['threshold'] ?? null,
+        ]);
     }
 
     private function denyUnlessBuyer(): void

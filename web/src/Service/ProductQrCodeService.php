@@ -12,15 +12,15 @@ class ProductQrCodeService
 {
     public function generateSvgString(string $data): string
     {
-        $result = (new Builder())->build(
-            writer: new SvgWriter(),
-            data: $data,
-            encoding: new Encoding('UTF-8'),
-            errorCorrectionLevel: ErrorCorrectionLevel::Medium,
-            size: 280,
-            margin: 14,
-            roundBlockSizeMode: RoundBlockSizeMode::Margin
-        );
+        $result = Builder::create()
+            ->writer(new SvgWriter())
+            ->data($data)
+            ->encoding(new Encoding('UTF-8'))
+            ->errorCorrectionLevel(ErrorCorrectionLevel::Medium)
+            ->size(280)
+            ->margin(14)
+            ->roundBlockSizeMode(RoundBlockSizeMode::Margin)
+            ->build();
 
         return $result->getString();
     }
