@@ -10,7 +10,7 @@ class AISentimentService
     private string $apiUrl = 'https://router.huggingface.co/hf-inference/models/nlptown/bert-base-multilingual-uncased-sentiment';
     private string $apiKey;
 
-    public function __construct(HttpClientInterface $httpClient, string $huggingfaceApiKey = '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')
+    public function __construct(HttpClientInterface $httpClient, string $huggingfaceApiKey = '')
     {
         $this->httpClient = $httpClient;
         $this->apiKey = trim($huggingfaceApiKey);
