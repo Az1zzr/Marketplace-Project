@@ -19,27 +19,18 @@ class ProfanityFilterService
 
     public function __construct()
     {
-        $this->frenchWords = array_map('strtolower', $this->frenchWords);
-        $this->englishWords = array_map('strtolower', $this->englishWords);
+        $this->frenchWords = $this->normalizeWords($this->frenchWords);
+        $this->englishWords = $this->normalizeWords($this->englishWords);
     }
 
     public function containsProfanity(string $text): bool
     {
-        $text = strtolower($text);
-        $words = array_merge($this->frenchWords, $this->englishWords);
-
-        foreach ($words as $word) {
-            if (str_contains($text, $word)) {
-                return true;
-            }
-        }
-
-        return false;
+        return [] !== $this->getProfanityWords($text);
     }
 
     public function filterProfanity(string $text, string $replacement = '***'): string
     {
-        $words = array_merge($this->frenchWords, $this->englishWords);
+        $words = $this->getAllWords();
         
         foreach ($words as $word) {
             $pattern = '/\b' . preg_quote($word, '/') . '\b/i';
@@ -51,16 +42,31 @@ class ProfanityFilterService
 
     public function getProfanityWords(string $text): array
     {
-        $text = strtolower($text);
-        $words = array_merge($this->frenchWords, $this->englishWords);
         $found = [];
 
-        foreach ($words as $word) {
-            if (str_contains($text, $word)) {
+        foreach ($this->getAllWords() as $word) {
+            if ($this->matchesWord($text, $word)) {
                 $found[] = $word;
             }
         }
 
-        return array_unique($found);
+        return array_values(array_unique($found));
+    }
+
+    public function getAllWords(): array
+    {
+        return array_values(array_unique(array_merge($this->frenchWords, $this->englishWords)));
+    }
+
+    private function normalizeWords(array $words): array
+    {
+        return array_values(array_unique(array_map('strtolower', $words)));
+    }
+
+    private function matchesWord(string $text, string $word): bool
+    {
+        $pattern = '/(?:^|[^\p{L}\p{N}])' . preg_quote($word, '/') . '(?=$|[^\p{L}\p{N}])/iu';
+
+        return 1 === preg_match($pattern, $text);
     }
 }

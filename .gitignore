@@ -48,6 +48,7 @@ build/
 /web/.env.local
 /web/.env.local.php
 /web/.env.*.local
+/web/.venv/
 /config/secrets/prod/prod.decrypt.private.php
 /public/bundles/
 /var/

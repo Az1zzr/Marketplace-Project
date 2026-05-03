@@ -7,7 +7,10 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 class SpellCheckerService
 {
     private HttpClientInterface $httpClient;
-    private string $apiUrl = 'https://api.languagetoolplus.com/v2/check';
+    private array $apiUrls = [
+        'https://api.languagetool.org/v2/check',
+        'https://api.languagetoolplus.com/v2/check',
+    ];
 
     public function __construct(HttpClientInterface $httpClient)
     {
@@ -20,29 +23,34 @@ class SpellCheckerService
             return ['success' => true, 'errors' => []];
         }
 
-        try {
-            $response = $this->httpClient->request('POST', $this->apiUrl, [
-                'headers' => [
-                    'User-Agent' => 'LocalTrade-App/1.0',
-                    'Content-Type' => 'application/x-www-form-urlencoded',
-                ],
-                'body' => http_build_query([
-                    'text' => $text,
-                    'language' => $language,
-                    'enabledOnly' => 'false',
-                ]),
-            ]);
+        $lastError = 'Spellcheck service unavailable.';
 
-            $data = $response->toArray();
-            
-            return $this->parseErrors($data);
-        } catch (\Exception $e) {
-            return [
-                'success' => false,
-                'error' => $e->getMessage(),
-                'errors' => [],
-            ];
+        foreach ($this->apiUrls as $apiUrl) {
+            try {
+                $response = $this->httpClient->request('POST', $apiUrl, [
+                    'headers' => [
+                        'User-Agent' => 'LocalTrade-App/1.0',
+                    ],
+                    'body' => [
+                        'text' => $text,
+                        'language' => $language,
+                        'enabledOnly' => 'false',
+                    ],
+                    'timeout' => 10,
+                    'max_duration' => 15,
+                ]);
+
+                return $this->parseErrors($response->toArray());
+            } catch (\Throwable $exception) {
+                $lastError = $exception->getMessage();
+            }
         }
+
+        return [
+            'success' => false,
+            'error' => $lastError,
+            'errors' => [],
+        ];
     }
 
     private function parseErrors(array $data): array

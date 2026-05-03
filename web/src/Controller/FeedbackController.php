@@ -10,8 +10,8 @@ use App\Repository\FeedbackRepository;
 use App\Repository\LigneCommandeRepository;
 use App\Repository\LivraisonRepository;
 use App\Repository\ReponseRepository;
-use App\Service\ProfanityFilterService;
 use App\Service\AISentimentService;
+use App\Service\FeedbackModerationService;
 use App\Service\FeedbackInsightService;
 use App\Service\InputValidationService;
 use App\Service\SpellCheckerService;
@@ -106,7 +106,7 @@ class FeedbackController extends AbstractController
         ?int $ligneCommandeId,
         Request $request,
         EntityManagerInterface $entityManager,
-        ProfanityFilterService $profanityFilter,
+        FeedbackModerationService $feedbackModeration,
         InputValidationService $validationService,
         LigneCommandeRepository $ligneCommandeRepository
     ): Response {
@@ -139,7 +139,7 @@ class FeedbackController extends AbstractController
                 $ambiance,
                 $recommande,
                 $validationService,
-                $profanityFilter
+                $feedbackModeration
             );
 
             if (!$selectedLine instanceof LigneCommande) {
@@ -176,7 +176,7 @@ class FeedbackController extends AbstractController
         Request $request,
         LivraisonRepository $livraisonRepository,
         EntityManagerInterface $entityManager,
-        ProfanityFilterService $profanityFilter,
+        FeedbackModerationService $feedbackModeration,
         InputValidationService $validationService
     ): Response {
         $this->denyUnlessBuyer();
@@ -211,7 +211,7 @@ class FeedbackController extends AbstractController
                 $ambiance,
                 $recommande,
                 $validationService,
-                $profanityFilter
+                $feedbackModeration
             );
 
             if (empty($errors)) {
@@ -243,7 +243,7 @@ class FeedbackController extends AbstractController
         Request $request,
         FeedbackRepository $feedbackRepository,
         EntityManagerInterface $entityManager,
-        ProfanityFilterService $profanityFilter,
+        FeedbackModerationService $feedbackModeration,
         InputValidationService $validationService
     ): Response {
         $feedback = $feedbackRepository->find($id);
@@ -270,7 +270,7 @@ class FeedbackController extends AbstractController
                 $ambiance,
                 $recommande,
                 $validationService,
-                $profanityFilter
+                $feedbackModeration
             );
 
             if (empty($errors)) {
@@ -341,7 +341,7 @@ class FeedbackController extends AbstractController
         Request $request,
         FeedbackRepository $feedbackRepository,
         EntityManagerInterface $entityManager,
-        ProfanityFilterService $profanityFilter,
+        FeedbackModerationService $feedbackModeration,
         InputValidationService $validationService
     ): Response {
         $currentUser = $this->requireCurrentUser();
@@ -363,10 +363,9 @@ class FeedbackController extends AbstractController
                 $errors['contenu'] = $result['message'];
             }
 
-            // Check for profanity
-            if ($profanityFilter->containsProfanity($contenu)) {
-                $badWords = $profanityFilter->getProfanityWords($contenu);
-                $errors['profanity'] = 'Your response contains inappropriate language: ' . implode(', ', $badWords);
+            $moderation = $feedbackModeration->moderate($contenu);
+            if ($moderation['flagged']) {
+                $errors['profanity'] = $feedbackModeration->buildErrorMessage($moderation, 'response');
             }
 
             if (empty($errors)) {
@@ -567,7 +566,7 @@ class FeedbackController extends AbstractController
         ?string $ambiance,
         ?string $recommande,
         InputValidationService $validationService,
-        ProfanityFilterService $profanityFilter
+        FeedbackModerationService $feedbackModeration
     ): array {
         $errors = [];
 
@@ -596,9 +595,11 @@ class FeedbackController extends AbstractController
             $errors['recommande'] = $result['message'];
         }
 
-        if ($commentaire !== null && $profanityFilter->containsProfanity($commentaire)) {
-            $badWords = $profanityFilter->getProfanityWords($commentaire);
-            $errors['profanity'] = 'Your comment contains inappropriate language: ' . implode(', ', $badWords);
+        if ($commentaire !== null) {
+            $moderation = $feedbackModeration->moderate($commentaire);
+            if ($moderation['flagged']) {
+                $errors['profanity'] = $feedbackModeration->buildErrorMessage($moderation, 'comment');
+            }
         }
 
         return $errors;
