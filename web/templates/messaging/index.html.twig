@@ -1,0 +1,421 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Messages{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .messaging-layout {
+            display: grid;
+            grid-template-columns: 340px minmax(0, 1fr);
+            gap: 1rem;
+            align-items: start;
+        }
+
+        .conversation-list {
+            display: grid;
+            gap: 0.85rem;
+        }
+
+        .conversation-link {
+            display: block;
+            padding: 1rem;
+            border-radius: 18px;
+            border: 1px solid var(--slate-200);
+            background: #fff;
+            text-decoration: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        .conversation-link:hover,
+        .conversation-link.active {
+            border-color: rgba(15, 118, 110, 0.35);
+            box-shadow: 0 18px 36px -30px rgba(15, 23, 42, 0.45);
+            transform: translateY(-1px);
+        }
+
+        .conversation-meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .conversation-role {
+            color: var(--slate-500);
+            font-size: 0.85rem;
+        }
+
+        .conversation-context {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+            margin-top: 0.85rem;
+        }
+
+        .conversation-context .badge {
+            font-weight: 600;
+        }
+
+        .chat-shell {
+            min-height: 640px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.15rem 1.25rem;
+            border-bottom: 1px solid var(--slate-200);
+            background: linear-gradient(135deg, rgba(15, 118, 110, 0.08), rgba(37, 99, 235, 0.08));
+        }
+
+        .chat-participant {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            min-width: 0;
+        }
+
+        .chat-participant strong,
+        .chat-participant span {
+            display: block;
+        }
+
+        .chat-participant span {
+            color: var(--slate-500);
+            font-size: 0.9rem;
+        }
+
+        .chat-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding: 1.25rem;
+            background:
+                linear-gradient(180deg, rgba(248, 250, 252, 0.96), rgba(241, 245, 249, 0.92)),
+                radial-gradient(circle at top left, rgba(15, 118, 110, 0.08), transparent 26%);
+        }
+
+        .chat-message-list {
+            display: grid;
+            gap: 0.9rem;
+            align-content: start;
+        }
+
+        .chat-row {
+            display: flex;
+        }
+
+        .chat-row-own {
+            justify-content: flex-end;
+        }
+
+        .chat-bubble {
+            max-width: min(78%, 620px);
+            padding: 0.9rem 1rem;
+            border-radius: 20px;
+            background: #fff;
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            box-shadow: 0 18px 30px -28px rgba(15, 23, 42, 0.55);
+        }
+
+        .chat-row-own .chat-bubble {
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(15, 118, 110, 0.12));
+            border-color: rgba(37, 99, 235, 0.18);
+        }
+
+        .chat-bubble-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.45rem;
+            color: var(--slate-500);
+            font-size: 0.8rem;
+        }
+
+        .chat-bubble-content {
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.6;
+        }
+
+        .chat-placeholder {
+            flex: 1;
+            display: grid;
+            place-items: center;
+            text-align: center;
+            padding: 2rem;
+            color: var(--slate-500);
+        }
+
+        .chat-form-panel {
+            border-top: 1px solid var(--slate-200);
+            background: #fff;
+            padding: 1rem 1.25rem 1.2rem;
+        }
+
+        .chat-form-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            align-items: center;
+            margin-top: 0.85rem;
+        }
+
+        .emoji-toolbar {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 0.85rem;
+            flex-wrap: wrap;
+        }
+
+        .emoji-picker-panel {
+            margin-bottom: 0.9rem;
+            padding: 1rem;
+            border: 1px solid var(--slate-200);
+            border-radius: 18px;
+            background: #f8fafc;
+        }
+
+        .emoji-picker-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            align-items: center;
+            margin-bottom: 0.85rem;
+        }
+
+        .emoji-picker-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+            gap: 0.45rem;
+            max-height: 220px;
+            overflow-y: auto;
+        }
+
+        .emoji-picker-item {
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            background: #fff;
+            border-radius: 12px;
+            padding: 0.5rem 0;
+            font-size: 1.25rem;
+            line-height: 1;
+            transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .emoji-picker-item:hover {
+            transform: translateY(-1px);
+            border-color: rgba(37, 99, 235, 0.28);
+            box-shadow: 0 16px 24px -20px rgba(15, 23, 42, 0.65);
+        }
+
+        @media (max-width: 991.98px) {
+            .messaging-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .chat-shell {
+                min-height: auto;
+            }
+
+            .chat-bubble {
+                max-width: 100%;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active" aria-current="page">Messages</li>
+{% endblock %}
+
+{% block body %}
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+        <h1><i class="bi bi-chat-dots me-2"></i>Messages</h1>
+        <p>Private conversations between clients and fournisseurs.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        {% if canStartConversation %}
+        <a href="{{ path('app_messaging_new') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>New Conversation
+        </a>
+        {% endif %}
+        {% if selectedConversation %}
+        <a href="{{ path('app_messaging_index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-list me-1"></i>All Conversations
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="messaging-layout">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-inboxes me-2"></i>Your Conversations</h5>
+            <span class="badge bg-light text-dark border">{{ conversations|length }}</span>
+        </div>
+        <div class="card-body">
+            {% if conversations is empty %}
+            <div class="text-center py-5">
+                <i class="bi bi-chat-square-text" style="font-size: 3rem; color: #94a3b8;"></i>
+                <h5 class="mt-3 text-muted">No conversations yet</h5>
+                <p class="text-muted mb-0">
+                    {% if canStartConversation %}
+                    Start your first conversation with a fournisseur.
+                    {% else %}
+                    Client conversations will appear here as soon as they contact you.
+                    {% endif %}
+                </p>
+            </div>
+            {% else %}
+            <div class="conversation-list">
+                {% for conversation in conversations %}
+                    {% set participant = conversation.otherParticipant(app.user) %}
+                    <a href="{{ path('app_messaging_show', {'id': conversation.id}) }}" class="conversation-link {% if selectedConversation and selectedConversation.id == conversation.id %}active{% endif %}">
+                        <div class="conversation-meta">
+                            <div>
+                                <div class="fw-semibold">{{ participant ? participant.nomComplet : 'Unknown user' }}</div>
+                                <div class="conversation-role">{{ participant ? participant.roleDisplayName : 'Conversation participant' }}</div>
+                            </div>
+                            <div class="small text-muted text-end">
+                                {{ conversation.lastMessageAt ? conversation.lastMessageAt|date('Y-m-d H:i') : conversation.createdAt|date('Y-m-d H:i') }}
+                            </div>
+                        </div>
+                        <div class="conversation-context">
+                            {% if conversation.produit %}
+                            <span class="badge bg-light text-dark border"><i class="bi bi-box-seam me-1"></i>{{ conversation.produit.nomProduit }}</span>
+                            {% endif %}
+                            {% if conversation.commande %}
+                            <span class="badge bg-light text-dark border"><i class="bi bi-cart3 me-1"></i>{{ conversation.commande.numeroCommande }}</span>
+                            {% endif %}
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card chat-shell">
+        {% if selectedConversation %}
+            <div class="chat-header">
+                <div class="chat-participant">
+                    {% if otherParticipant and otherParticipant.photoPath %}
+                    <img src="{{ otherParticipant.photoPath }}" alt="{{ otherParticipant.nomComplet }}" class="user-avatar-image">
+                    {% else %}
+                    <div class="user-avatar">{{ otherParticipant ? otherParticipant.prenom|first }}{{ otherParticipant ? otherParticipant.nom|first }}</div>
+                    {% endif %}
+                    <div>
+                        <strong>{{ otherParticipant ? otherParticipant.nomComplet : 'Conversation participant' }}</strong>
+                        <span>{{ otherParticipant ? otherParticipant.roleDisplayName : 'Marketplace user' }}</span>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-2 justify-content-end">
+                    {% if selectedConversation.produit %}
+                    <a href="{{ path('app_produit_show', {'id': selectedConversation.produit.id}) }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-box-seam me-1"></i>Open Product
+                    </a>
+                    {% endif %}
+                    {% if selectedConversation.commande %}
+                    <a href="{{ path('app_commande_show', {'id': selectedConversation.commande.idCommande}) }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-cart3 me-1"></i>Open Order
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="chat-body">
+                <div class="small text-muted">
+                    Manual refresh mode: the latest messages appear when the conversation page is opened or refreshed.
+                </div>
+
+                {% if conversationMessages is empty %}
+                <div class="chat-placeholder">
+                    <div>
+                        <i class="bi bi-chat-left-dots" style="font-size: 3rem; color: #94a3b8;"></i>
+                        <h5 class="mt-3 text-muted">No messages yet</h5>
+                        <p class="mb-0">Start the conversation below.</p>
+                    </div>
+                </div>
+                {% else %}
+                <div class="chat-message-list">
+                    {% for message in conversationMessages %}
+                        {% set isOwnMessage = message.sender and app.user and message.sender.id == app.user.id %}
+                        <div class="chat-row {% if isOwnMessage %}chat-row-own{% endif %}">
+                            <div class="chat-bubble">
+                                <div class="chat-bubble-header">
+                                    <span>{{ isOwnMessage ? 'You' : (message.sender ? message.sender.nomComplet : 'Deleted user') }}</span>
+                                    <span>
+                                        {{ message.createdAt|date('Y-m-d H:i') }}
+                                        {% if isOwnMessage and message.readAt %}
+                                        <i class="bi bi-check2-all ms-1 text-primary"></i>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="chat-bubble-content">{{ message.content }}</div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="chat-form-panel">
+                <form action="{{ path('app_messaging_send', {'id': selectedConversation.id}) }}" method="post" novalidate data-emoji-picker data-emoji-api-url="{{ path('app_messaging_emoji_api') }}">
+                    <label for="content" class="form-label fw-semibold">Write a message</label>
+                    <div class="emoji-toolbar">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-emoji-toggle aria-expanded="false">
+                            <i class="bi bi-emoji-smile me-1"></i>Emoji API Picker
+                        </button>
+                    </div>
+                    <div class="emoji-picker-panel" data-emoji-panel hidden>
+                        <div class="emoji-picker-header">
+                            <input type="text" class="form-control form-control-sm" placeholder="Search emojis..." data-emoji-search>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-emoji-close>
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                        <div class="small text-muted mb-3" data-emoji-status>Open the picker to load emojis.</div>
+                        <div class="emoji-picker-grid" data-emoji-grid></div>
+                    </div>
+                    <textarea name="content" id="content" rows="4" class="form-control {% if messageErrors.content is defined or messageErrors.profanity is defined %}is-invalid{% endif %}" placeholder="Type your message here..." data-emoji-textarea>{{ draftMessage }}</textarea>
+                    {% if messageErrors.content is defined %}
+                    <div class="invalid-feedback d-block">{{ messageErrors.content }}</div>
+                    {% endif %}
+                    {% if messageErrors.profanity is defined %}
+                    <div class="text-danger small mt-2">{{ messageErrors.profanity }}</div>
+                    {% endif %}
+                    <div class="chat-form-actions">
+                        <div class="small text-muted">Your message will appear after the page reloads.</div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send me-1"></i>Send Message
+                        </button>
+                    </div>
+                </form>
+            </div>
+        {% else %}
+            <div class="chat-placeholder">
+                <div>
+                    <i class="bi bi-chat-dots" style="font-size: 3rem; color: #94a3b8;"></i>
+                    <h5 class="mt-3 text-muted">Select a conversation</h5>
+                    <p class="mb-0">
+                        {% if canStartConversation %}
+                        Pick an existing thread or start a new conversation with a fournisseur.
+                        {% else %}
+                        Open one of your client conversations from the list.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

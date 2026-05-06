@@ -68,13 +68,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $photoPath = null;
 
     #[ORM\Column(name: 'reset_password_code_hash', length: 255, nullable: true)]
+    #[\Symfony\Component\Serializer\Attribute\Ignore]
     private ?string $resetPasswordCodeHash = null;
 
     #[ORM\Column(name: 'reset_password_expires_at', type: 'datetime', nullable: true)]
+    #[\Symfony\Component\Serializer\Attribute\Ignore]
     private ?\DateTimeInterface $resetPasswordExpiresAt = null;
 
     #[ORM\Column(name: 'is_active', type: 'boolean', options: ['default' => true])]
-    private bool $isActive = true;
+    private bool $active = true;
 
     #[ORM\Column(name: 'created_at', type: 'datetime')]
     private \DateTimeInterface $createdAt;
@@ -187,7 +189,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->resetPasswordCodeHash;
     }
 
-    public function setResetPasswordCodeHash(?string $resetPasswordCodeHash): static
+    public function setResetPasswordCodeHash(#[\SensitiveParameter] ?string $resetPasswordCodeHash): static
     {
         $this->resetPasswordCodeHash = $resetPasswordCodeHash;
         return $this;
@@ -197,14 +199,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         return $this->resetPasswordExpiresAt;
     }
-/////////////lena badlt zeda
+
+    /**
+     * Set the password reset expiration time
+     */
     public function setResetPasswordExpiresAt(?\DateTimeInterface $resetPasswordExpiresAt): static
-{
-    $this->resetPasswordExpiresAt = null === $resetPasswordExpiresAt
-        ? null
-        : \DateTime::createFromInterface($resetPasswordExpiresAt);
-    return $this;
-}
+    {
+        $this->resetPasswordExpiresAt = null === $resetPasswordExpiresAt
+            ? null
+            : \DateTime::createFromInterface($resetPasswordExpiresAt);
+        return $this;
+    }
 
     public function getNomComplet(): string
     {
@@ -270,12 +275,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function isActive(): bool
     {
-        return $this->isActive;
+        return $this->active;
     }
 
     public function setIsActive(bool $isActive): static
     {
-        $this->isActive = $isActive;
+        $this->active = $isActive;
         return $this;
     }
 

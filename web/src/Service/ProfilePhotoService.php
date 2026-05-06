@@ -17,7 +17,7 @@ class ProfilePhotoService
     ) {
     }
 
-    public function processUploadedPhoto(UploadedFile $uploadedFile, ?string $currentPhotoPath = null): string
+    public function assertUploadedPhotoIsAllowed(UploadedFile $uploadedFile): void
     {
         $validation = $this->inputValidationService->validateImageUpload($uploadedFile->getMimeType(), $uploadedFile->getSize());
         if (!$validation['valid']) {
@@ -28,21 +28,20 @@ class ProfilePhotoService
         if (!$moderation['valid']) {
             throw new \RuntimeException($moderation['message']);
         }
+    }
 
-        $targetDirectory = $this->projectDir . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'profile';
-        if (!is_dir($targetDirectory) && !mkdir($targetDirectory, 0777, true) && !is_dir($targetDirectory)) {
-            throw new \RuntimeException('Unable to create the profile upload directory.');
+    public function storePhoto(UploadedFile $uploadedFile): string
+    {
+        $uploadDir = $this->projectDir . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'profiles';
+
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
         }
 
-        $extension = strtolower($uploadedFile->guessExtension() ?: $uploadedFile->getClientOriginalExtension() ?: 'jpg');
-        $filename = sprintf('profile-%s.%s', bin2hex(random_bytes(12)), $extension);
-        $uploadedFile->move($targetDirectory, $filename);
+        $filename = uniqid('photo_', true) . '.' . ($uploadedFile->guessExtension() ?? 'jpg');
+        $uploadedFile->move($uploadDir, $filename);
 
-        if (null !== $currentPhotoPath) {
-            $this->deleteStoredPhoto($currentPhotoPath);
-        }
-
-        return '/uploads/profile/' . $filename;
+        return 'uploads/profiles/' . $filename;
     }
 
     public function deleteStoredPhoto(?string $photoPath): void
@@ -108,10 +107,6 @@ class ProfilePhotoService
             $predictions = $data[0];
         }
 
-        if (!is_array($predictions)) {
-            return ['valid' => false, 'message' => 'Unexpected response from the image moderation API.'];
-        }
-
         foreach ($predictions as $prediction) {
             if (!is_array($prediction)) {
                 continue;
@@ -139,6 +134,7 @@ class ProfilePhotoService
 
     private function shouldBypassModerationFailure(): bool
     {
+        // Keep development and automated tests usable when the external provider is unavailable.
         return in_array($this->appEnv, ['dev', 'test'], true);
     }
 }

@@ -42,6 +42,7 @@ class AccountController extends AbstractController
             $newPassword = (string) $request->request->get('motDePasse', '');
             $confirmPassword = (string) $request->request->get('confirmMotDePasse', '');
             $uploadedPhoto = $request->files->get('photoProfil');
+            $previousPhotoPath = $user->getPhotoPath();
 
             $errors = $this->validateAccountData(
                 $inputValidationService,
@@ -59,7 +60,7 @@ class AccountController extends AbstractController
 
             if ($uploadedPhoto instanceof UploadedFile) {
                 try {
-                    $newPhotoPath = $profilePhotoService->processUploadedPhoto($uploadedPhoto, $user->getPhotoPath());
+                    $profilePhotoService->assertUploadedPhotoIsAllowed($uploadedPhoto);
                 } catch (\RuntimeException $exception) {
                     $errors['photoProfil'] = $exception->getMessage();
                 }
@@ -73,7 +74,8 @@ class AccountController extends AbstractController
                     ->setTelephone($inputValidationService->normalizePhone($telephone))
                     ->setDateNaissance($dateNaissance);
 
-                if (isset($newPhotoPath)) {
+                if ($uploadedPhoto instanceof UploadedFile) {
+                    $newPhotoPath = $profilePhotoService->storePhoto($uploadedPhoto);
                     $user->setPhotoPath($newPhotoPath);
                 }
 
@@ -82,6 +84,17 @@ class AccountController extends AbstractController
                 }
 
                 $entityManager->flush();
+
+                if (
+                    $uploadedPhoto instanceof UploadedFile
+                    && null !== $previousPhotoPath
+                    && $previousPhotoPath !== $user->getPhotoPath()
+                ) {
+                    $profilePhotoService->deleteStoredPhoto($previousPhotoPath);
+                }
+
+                // Photo path already updated via setPhotoPath() above — nothing more to do.
+
                 $this->addFlash('success', 'Your account has been updated successfully.');
 
                 return $this->redirectToRoute('app_account_profile');
