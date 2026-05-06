@@ -75,7 +75,8 @@ class AccountController extends AbstractController
                     ->setDateNaissance($dateNaissance);
 
                 if ($uploadedPhoto instanceof UploadedFile) {
-                    $user->setPhotoFile($uploadedPhoto);
+                    $newPhotoPath = $profilePhotoService->storePhoto($uploadedPhoto);
+                    $user->setPhotoPath($newPhotoPath);
                 }
 
                 if ('' !== trim($newPassword)) {
@@ -92,11 +93,7 @@ class AccountController extends AbstractController
                     $profilePhotoService->deleteStoredPhoto($previousPhotoPath);
                 }
 
-                // The uploaded file object is only needed for Vich during flush.
-                // Clear it before the authenticated user is serialized back into the session.
-                if ($uploadedPhoto instanceof UploadedFile) {
-                    $user->setPhotoFile(null);
-                }
+                // Photo path already updated via setPhotoPath() above — nothing more to do.
 
                 $this->addFlash('success', 'Your account has been updated successfully.');
 

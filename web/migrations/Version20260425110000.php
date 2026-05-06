@@ -17,8 +17,15 @@ final class Version20260425110000 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
+<<<<<<< HEAD
         $this->abortIf(!$this->connection->getDatabasePlatform() instanceof MySQLPlatform, 'Migration can only be executed safely on mysql.');
 
+=======
+        $this->abortIf(
+    !$this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform,
+    'Migration can only be executed safely on mysql.');
+    
+>>>>>>> maram/access-control
         $this->addSql("CREATE TABLE conversation (id INT AUTO_INCREMENT NOT NULL, client_id INT NOT NULL, fournisseur_id INT NOT NULL, produit_id INT DEFAULT NULL, commande_id INT DEFAULT NULL, created_at DATETIME NOT NULL COMMENT '(DC2Type:datetime_immutable)', last_message_at DATETIME NOT NULL COMMENT '(DC2Type:datetime_immutable)', INDEX IDX_8D93D64919EB6921 (client_id), INDEX IDX_8D93D649E0D8B6D8 (fournisseur_id), INDEX IDX_8D93D649F347EFB (produit_id), INDEX IDX_8D93D64982EA2E54 (commande_id), UNIQUE INDEX uniq_conversation_client_fournisseur (client_id, fournisseur_id), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB");
         $this->addSql("CREATE TABLE conversation_message (id INT AUTO_INCREMENT NOT NULL, conversation_id INT NOT NULL, sender_id INT NOT NULL, content LONGTEXT NOT NULL, created_at DATETIME NOT NULL COMMENT '(DC2Type:datetime_immutable)', read_at DATETIME DEFAULT NULL COMMENT '(DC2Type:datetime_immutable)', INDEX IDX_D67D31A19C0C757 (conversation_id), INDEX IDX_D67D31AF624B39D (sender_id), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB");
         $this->addSql('ALTER TABLE conversation ADD CONSTRAINT FK_8D93D64919EB6921 FOREIGN KEY (client_id) REFERENCES user (id) ON DELETE CASCADE');

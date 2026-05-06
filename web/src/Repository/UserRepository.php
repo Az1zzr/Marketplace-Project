@@ -48,6 +48,7 @@ class UserRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+<<<<<<< HEAD
     public function findMarketplaceSuppliers(?User $excludeUser = null, string $search = ''): array
     {
         $qb = $this->createQueryBuilder('u')
@@ -72,3 +73,48 @@ class UserRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 }
+=======
+    public function countActiveUsers(): int
+    {
+        return (int) $this->createQueryBuilder('u')
+            ->select('COUNT(u.id)')
+            ->andWhere('u.active = :active')
+            ->setParameter('active', true)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function countBlockedUsers(): int
+    {
+        return (int) $this->createQueryBuilder('u')
+            ->select('COUNT(u.id)')
+            ->andWhere('u.active = :active')
+            ->setParameter('active', false)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function countUsersByMonth(): array
+    {
+        $conn = $this->getEntityManager()->getConnection();
+
+        $sql = "
+            SELECT
+                DATE_FORMAT(created_at, '%b %Y') AS label,
+                MONTH(created_at)                AS month_num,
+                YEAR(created_at)                 AS year_num,
+                COUNT(id)                        AS total
+            FROM user
+            GROUP BY year_num, month_num, label
+            ORDER BY year_num ASC, month_num ASC
+        ";
+
+        $results = $conn->executeQuery($sql)->fetchAllAssociative();
+
+        return array_map(fn($row) => [
+            'label' => $row['label'],
+            'total' => (int) $row['total'],
+        ], $results);
+    }
+}
+>>>>>>> maram/access-control
