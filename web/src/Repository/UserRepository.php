@@ -48,7 +48,6 @@ class UserRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-<<<<<<< HEAD
     public function findMarketplaceSuppliers(?User $excludeUser = null, string $search = ''): array
     {
         $qb = $this->createQueryBuilder('u')
@@ -72,8 +71,7 @@ class UserRepository extends ServiceEntityRepository
 
         return $qb->getQuery()->getResult();
     }
-}
-=======
+
     public function countActiveUsers(): int
     {
         return (int) $this->createQueryBuilder('u')
@@ -117,4 +115,3 @@ class UserRepository extends ServiceEntityRepository
         ], $results);
     }
 }
->>>>>>> maram/access-control
