@@ -619,6 +619,12 @@
                             Deliveries
                         </a>
                         {% endif %}
+                        {% if roleCode in ['client', 'fournisseur'] %}
+                        <a href="{{ path('app_messaging_index') }}" class="front-nav-link {% if 'messaging' in currentRoute %}active{% endif %}">
+                            <i class="bi bi-chat-dots"></i>
+                            Messages
+                        </a>
+                        {% endif %}
                         {% if roleCode == 'fournisseur' %}
                         <a href="{{ path('app_categorie_index') }}" class="front-nav-link {% if 'categorie' in currentRoute %}active{% endif %}">
                             <i class="bi bi-tags"></i>
@@ -696,6 +702,8 @@
         {{ renderedAuthContent|raw }}
     {% endif %}
 
-    {% block javascripts %}{% endblock %}
+    {% block javascripts %}
+        {{ importmap('app') }}
+    {% endblock %}
 </body>
 </html>

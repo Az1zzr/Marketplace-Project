@@ -287,7 +287,7 @@ class SecurityController extends AbstractController
         ]);
     }
 
-    // ÉTAPE 2 : Vérification du code OTP seulement
+    //  Vérification du code OTP seulement
 #[Route('/reset-password/verify', name: 'app_reset_password_verify')]
 public function verifyResetPassword(
     Request $request,
@@ -327,7 +327,7 @@ public function verifyResetPassword(
         }
 
         if (empty($errors)) {
-            // ✅ Code OK → on marque la session et on passe à l'étape 3
+            //   Code OK → on marque la session et on passe à l'étape 3
             $session->set('password_reset_code_verified', true);
             return $this->redirectToRoute('app_reset_password_new');
         }

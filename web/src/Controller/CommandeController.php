@@ -68,14 +68,12 @@ class CommandeController extends AbstractController
             $address = (string) $request->request->get('adresseLivraison', '');
             $governorate = (string) $request->request->get('gouvernorat', '');
             $deliveryPhone = (string) $request->request->get('telephoneLivraison', '');
-            $deliveryComment = (string) $request->request->get('commentaireLivraison', '');
 
             $errors = $this->validateOrderDetails(
                 $validationService,
                 $address,
                 $governorate,
-                $deliveryPhone,
-                $deliveryComment
+                $deliveryPhone
             );
 
             foreach ($cart->getLignesCommande() as $ligneCommande) {
@@ -104,8 +102,7 @@ class CommandeController extends AbstractController
                     $validationService,
                     $address,
                     $governorate,
-                    $deliveryPhone,
-                    $deliveryComment
+                    $deliveryPhone
                 );
             }
 
@@ -195,15 +192,13 @@ class CommandeController extends AbstractController
             $address = (string) $request->request->get('adresseLivraison', '');
             $governorate = (string) $request->request->get('gouvernorat', '');
             $deliveryPhone = (string) $request->request->get('telephoneLivraison', '');
-            $deliveryComment = (string) $request->request->get('commentaireLivraison', '');
             $status = (string) $request->request->get('statut', Commande::STATUS_PENDING);
 
             $errors = $this->validateOrderDetails(
                 $validationService,
                 $address,
                 $governorate,
-                $deliveryPhone,
-                $deliveryComment
+                $deliveryPhone
             );
 
             if (!in_array($status, [Commande::STATUS_PENDING, 'Confirmee', 'Annulee'], true)) {
@@ -220,8 +215,7 @@ class CommandeController extends AbstractController
                     $validationService,
                     $address,
                     $governorate,
-                    $deliveryPhone,
-                    $deliveryComment
+                    $deliveryPhone
                 );
 
                 $entityManager->flush();
@@ -377,8 +371,7 @@ class CommandeController extends AbstractController
         InputValidationService $validationService,
         string $address,
         string $governorate,
-        string $deliveryPhone,
-        string $deliveryComment
+        string $deliveryPhone
     ): array
     {
         $errors = [];
@@ -386,7 +379,6 @@ class CommandeController extends AbstractController
             'adresseLivraison' => $validationService->validateDeliveryAddress($address),
             'gouvernorat' => $validationService->validateTunisianGovernorate($governorate),
             'telephoneLivraison' => $validationService->validateRequiredTunisianPhone($deliveryPhone, 'Delivery phone number'),
-            'commentaireLivraison' => $validationService->validateDeliveryComment($deliveryComment),
         ];
 
         foreach ($validations as $field => $result) {
@@ -403,15 +395,13 @@ class CommandeController extends AbstractController
         InputValidationService $validationService,
         string $address,
         string $governorate,
-        string $deliveryPhone,
-        string $deliveryComment
+        string $deliveryPhone
     ): void
     {
         $commande
             ->setAdresseLivraison($address)
             ->setGouvernorat($governorate)
-            ->setTelephoneLivraison($validationService->normalizePhone($deliveryPhone))
-            ->setCommentaireLivraison($deliveryComment);
+            ->setTelephoneLivraison($validationService->normalizePhone($deliveryPhone));
     }
 
     private function buildVisibleOrderViewModel(Commande $commande, User $currentUser): array

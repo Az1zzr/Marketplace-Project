@@ -182,7 +182,7 @@ class UserController extends AbstractController
         ]);
     }
 
-    // ── Métier 1 : Activer / Bloquer un utilisateur ──────────────────────────
+    // ── Feature 1 : Activate / Block a user ──────────────────────────
     #[Route('/user/{id}/toggle-active', name: 'app_user_toggle_active', methods: ['POST'])]
     public function toggleActive(int $id, UserRepository $userRepository, EntityManagerInterface $entityManager): Response
     {
@@ -196,13 +196,13 @@ class UserController extends AbstractController
         $user->setIsActive(!$user->isActive());
         $entityManager->flush();
 
-        $status = $user->isActive() ? 'activé' : 'bloqué';
-        $this->addFlash('success', "Utilisateur {$user->getNomComplet()} {$status} avec succès.");
+        $status = $user->isActive() ? 'activated' : 'blocked';
+        $this->addFlash('success', "User {$user->getNomComplet()} has been {$status} successfully.");
 
         return $this->redirectToRoute('app_user_index');
     }
 
-    // ── API 2 : Export Excel ──────────────────────────────────────────────────
+    // ── Feature 2 : Export to Excel ──────────────────────────────────
     #[Route('/user/export/excel', name: 'app_user_export_excel')]
     public function exportExcel(UserRepository $userRepository): Response
     {
@@ -211,23 +211,23 @@ class UserController extends AbstractController
         $users       = $userRepository->findAll();
         $spreadsheet = new Spreadsheet();
         $sheet       = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Utilisateurs');
+        $sheet->setTitle('Users');
 
-        // En-têtes
-        $headers = ['ID', 'Nom', 'Prénom', 'Email', 'Téléphone', 'Rôle', 'Statut', 'Date inscription'];
+        // Headers
+        $headers = ['ID', 'Last Name', 'First Name', 'Email', 'Phone', 'Role', 'Status', 'Registration Date'];
         foreach ($headers as $col => $header) {
             $cell = chr(65 + $col) . '1';
             $sheet->setCellValue($cell, $header);
         }
 
-        // Style en-têtes
+        // Header styling
         $sheet->getStyle('A1:H1')->applyFromArray([
             'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1e3a5f']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
         ]);
 
-        // Données
+        // Data
         $row = 2;
         foreach ($users as $user) {
             $sheet->setCellValue('A' . $row, $user->getId());
@@ -236,10 +236,10 @@ class UserController extends AbstractController
             $sheet->setCellValue('D' . $row, $user->getEmail());
             $sheet->setCellValue('E' . $row, $user->getTelephone() ?? '-');
             $sheet->setCellValue('F' . $row, $user->getRole()?->getNomRole() ?? '-');
-            $sheet->setCellValue('G' . $row, $user->isActive() ? 'Actif' : 'Bloqué');
-            $sheet->setCellValue('H' . $row, $user->getCreatedAt()->format('d/m/Y'));
+            $sheet->setCellValue('G' . $row, $user->isActive() ? 'Active' : 'Blocked');
+            $sheet->setCellValue('H' . $row, $user->getCreatedAt()->format('Y-m-d'));
 
-            // Couleur statut
+            // Status color coding
             $statusColor = $user->isActive() ? 'D1FAE5' : 'FEE2E2';
             $sheet->getStyle('G' . $row)->applyFromArray([
                 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $statusColor]],
@@ -247,13 +247,13 @@ class UserController extends AbstractController
             $row++;
         }
 
-        // Auto-width
+        // Auto-width columns
         foreach (range('A', 'H') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
         $writer   = new Xlsx($spreadsheet);
-        $filename = 'utilisateurs_' . date('Ymd_His') . '.xlsx';
+        $filename = 'users_' . date('Ymd_His') . '.xlsx';
 
         $response = new StreamedResponse(function () use ($writer) {
             $writer->save('php://output');
