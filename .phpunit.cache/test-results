@@ -1,0 +1,1 @@
+{"version":2,"defects":[],"times":{"App\\Tests\\Service\\ProduitManagerTest::testValidProduit":0.868,"App\\Tests\\Service\\ProduitManagerTest::testProduitWithoutName":0.2,"App\\Tests\\Service\\ProduitManagerTest::testProduitWithNegativePrice":0,"App\\Tests\\Service\\ProduitManagerTest::testProduitWithNegativeQuantity":0}}

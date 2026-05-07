@@ -1,0 +1,248 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ produit.nomProduit }} - Product Details{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ path('app_produit_index') }}">Products</a></li>
+<li class="breadcrumb-item active">{{ produit.nomProduit }}</li>
+{% endblock %}
+
+{% block body %}
+{% set canManageCatalog = canManageProduct %}
+{% set canReviewPurchasedProduct = eligibleFeedbackLine is not null %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1><i class="bi bi-box-seam me-2"></i>{{ produit.nomProduit }}</h1>
+        <p>Product details and information</p>
+    </div>
+    <div class="d-flex gap-2">
+        {% if canManageCatalog %}
+        <a href="{{ path('app_produit_edit', {'id': produit.id}) }}" class="btn btn-primary">
+            <i class="bi bi-pencil me-1"></i> Edit
+        </a>
+        {% endif %}
+        <a href="{{ path('app_produit_index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-5 mb-4">
+        <div class="card">
+            {% if produit.imageURL %}
+            <img src="{{ produit.imageURL }}" class="card-img-top" alt="{{ produit.nomProduit }}" style="max-height: 400px; object-fit: cover;">
+            {% else %}
+            <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height: 300px;">
+                <i class="bi bi-box-seam" style="font-size: 6rem; color: #cbd5e1;"></i>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-qr-code me-2"></i>QR Code Produit</h5>
+            </div>
+            <div class="card-body text-center">
+                <img src="{{ path('app_produit_qr_code', {'id': produit.id}) }}" alt="QR code for {{ produit.nomProduit }}" class="img-fluid border rounded-4 p-3 bg-white" style="max-width: 240px;">
+                <p class="text-muted mt-3 mb-2">Scannez ce QR code pour ouvrir directement la fiche de ce produit.</p>
+                <div class="small text-muted mb-3">{{ productUrl }}</div>
+                <a href="{{ path('app_produit_qr_code', {'id': produit.id, 'download': 1}) }}" class="btn btn-outline-dark btn-sm">
+                    <i class="bi bi-download me-1"></i> Telecharger le QR code SVG
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-7 mb-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Product Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Product ID</div>
+                    <div class="col-sm-8 fw-medium">#{{ produit.id }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Name</div>
+                    <div class="col-sm-8 fw-medium">{{ produit.nomProduit }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Address</div>
+                    <div class="col-sm-8 fw-medium">
+                        <i class="bi bi-geo-alt text-primary me-1"></i>{{ produit.adresse }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Price</div>
+                    <div class="col-sm-8">
+                        <span class="h4 text-primary mb-0">{{ produit.prix|number_format(2, '.', ',') }} TND</span>
+                        {% if convertedPrices.available %}
+                        <div class="mt-2 d-flex flex-wrap gap-2">
+                            {% for currency in convertedPrices.currencies %}
+                            <span class="badge bg-light text-dark border">{{ currency.label }}: {{ currency.amount|number_format(2, '.', ',') }} {{ currency.code }}</span>
+                            {% endfor %}
+                        </div>
+                        <div class="small text-muted mt-2">
+                            Conversion approximative depuis le dinar tunisien via {{ convertedPrices.sourceLabel }}
+                            {% if convertedPrices.updatedAt %}
+                            (maj {{ convertedPrices.updatedAt|date('Y-m-d H:i') }})
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="small text-muted mt-2">Conversion EUR/USD indisponible pour le moment.</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Category</div>
+                    <div class="col-sm-8 fw-medium">
+                        <span class="badge bg-light text-dark"><i class="bi bi-tag me-1"></i>{{ produit.categorie.nom }}</span>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Quantity Available</div>
+                    <div class="col-sm-8">
+                        <span class="badge {% if produit.quantite > 10 %}bg-success{% elseif produit.quantite > 0 %}bg-warning{% else %}bg-danger{% endif %} fs-6">
+                            {{ produit.quantite }} units
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if canBuy %}
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-bag-plus me-2"></i>Buy This Product</h5>
+                {% if hasDraftCart %}
+                <a href="{{ path('app_commande_new') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-bag-check me-1"></i> Current Order
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if produit.quantite > 0 %}
+                <form action="{{ path('app_produit_buy', {'id': produit.id}) }}" method="post" novalidate>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label for="quantite" class="form-label">Quantity</label>
+                            <input type="text" name="quantite" id="quantite" class="form-control" value="1" placeholder="1">
+                        </div>
+                        <div class="col-md-8 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-cart-plus me-1"></i> Add To Current Order
+                            </button>
+                            {% if hasDraftCart %}
+                            <a href="{{ path('app_commande_new') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-right me-1"></i> Checkout
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </form>
+                {% else %}
+                <div class="alert alert-warning mb-0">
+                    This product is currently out of stock.
+                </div>
+                {% endif %}
+
+                <hr class="my-4">
+
+                {% if canReviewPurchasedProduct %}
+                <a href="{{ path('app_feedback_new', {'ligneCommandeId': eligibleFeedbackLine.id}) }}" class="btn btn-outline-success">
+                    <i class="bi bi-chat-heart me-1"></i> Leave Feedback For This Product
+                </a>
+                {% else %}
+                <p class="text-muted mb-0">Feedback becomes available only after this product has been delivered to your account.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-tags me-2"></i>Catalog Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Category</div>
+                    <div class="col-sm-8 fw-medium">{{ produit.categorie.nom }}</div>
+                </div>
+                {% if produit.categorie.description %}
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Description</div>
+                    <div class="col-sm-8">{{ produit.categorie.description }}</div>
+                </div>
+                {% endif %}
+                {% if canManageCatalog %}
+                <a href="{{ path('app_categorie_edit', {'id': produit.categorie.id}) }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-pencil me-1"></i> Manage Category
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-chat-left-quote me-2"></i>Product Feedback ({{ feedbacks|length }})</h5>
+        {% if canReviewPurchasedProduct %}
+        <a href="{{ path('app_feedback_new', {'ligneCommandeId': eligibleFeedbackLine.id}) }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i> Add Feedback
+        </a>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        {% if feedbacks is empty %}
+        <div class="text-center py-4">
+            <i class="bi bi-chat-square-text fs-1 text-muted mb-3"></i>
+            <p class="text-muted mb-0">No feedback has been published for this product yet.</p>
+        </div>
+        {% else %}
+        <div class="row g-3">
+            {% for feedback in feedbacks %}
+            <div class="col-lg-6">
+                <div class="border rounded-4 p-3 h-100">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <div class="fw-semibold">{{ feedback.auteur ? feedback.auteur.nomComplet : 'Deleted user' }}</div>
+                            <small class="text-muted">{{ feedback.dateStatut|date('Y-m-d H:i') }}</small>
+                        </div>
+                        <div class="text-warning">
+                            {% for i in 1..5 %}
+                                {% if i <= feedback.note|number_format %}&#9733;{% else %}&#9734;{% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <p class="mb-3">{{ feedback.commentaire|slice(0, 200) }}{% if feedback.commentaire|length > 200 %}...{% endif %}</p>
+                    <a href="{{ path('app_feedback_show', {'id': feedback.id}) }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-eye me-1"></i> View Discussion
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if canManageCatalog %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-trash me-2 text-danger"></i>Danger Zone</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">Deleting this product will permanently remove it and all associated data.</p>
+        <form action="{{ path('app_produit_delete', {'id': produit.id}) }}" method="post" novalidate>
+            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ produit.id) }}">
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="bi bi-trash me-1"></i> Delete Product
+            </button>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

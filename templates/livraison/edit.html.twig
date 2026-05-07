@@ -1,0 +1,130 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit Delivery{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ path('app_livraison_index') }}">Deliveries</a></li>
+<li class="breadcrumb-item active">Edit #{{ livraison.numeroBL }}</li>
+{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <h1><i class="bi bi-pencil me-2"></i>Edit Delivery</h1>
+    <p>Update the assigned driver and tracking information for <strong>#{{ livraison.numeroBL }}</strong></p>
+</div>
+
+<div class="row">
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Delivery Info</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <span class="text-muted small">BL Number</span>
+                    <div class="fw-medium">#{{ livraison.numeroBL }}</div>
+                </div>
+                <div class="mb-3">
+                    <span class="text-muted small">Order</span>
+                    <div class="fw-medium">
+                        {% if livraison.commande %}
+                        <a href="{{ path('app_commande_show', {'id': livraison.commande.idCommande}) }}" class="text-decoration-none">
+                            #{{ livraison.commande.numeroCommande }}
+                        </a>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if livraison.commande %}
+                <div class="mb-3">
+                    <span class="text-muted small">Governorate</span>
+                    <div class="fw-medium">{{ livraison.commande.gouvernorat ?? '-' }}</div>
+                </div>
+                <div class="mb-3">
+                    <span class="text-muted small">Delivery Phone</span>
+                    <div class="fw-medium">{{ livraison.commande.telephoneLivraison ?? '-' }}</div>
+                </div>
+                <div>
+                    <span class="text-muted small">Delivery Comment</span>
+                    <div class="fw-medium">{{ livraison.commande.commentaireLivraison ? livraison.commande.commentaireLivraison|nl2br : '-' }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-truck me-2"></i>Delivery Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="dateLivraison" class="form-label">Delivery Date <span class="text-danger">*</span></label>
+                            <input type="date" name="dateLivraison" id="dateLivraison" class="form-control" value="{{ livraison.dateLivraison|date('Y-m-d') }}" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="livreur" class="form-label">Driver Name <span class="text-danger">*</span></label>
+                            <input type="text" name="livreur" id="livreur" class="form-control" value="{{ livraison.livreur }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="statutLivraison" class="form-label">Status</label>
+                        <select name="statutLivraison" id="statutLivraison" class="form-select">
+                            <option value="En cours" {% if livraison.statutLivraison == 'En cours' %}selected{% endif %}>En cours</option>
+                            <option value="Livree" {% if livraison.statutLivraison == 'Livree' %}selected{% endif %}>Livree</option>
+                            <option value="Retardee" {% if livraison.statutLivraison == 'Retardee' %}selected{% endif %}>Retardee</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="noteDelivery" class="form-label">Notes <span class="text-muted small">(Optional)</span></label>
+                        <textarea name="noteDelivery" id="noteDelivery" class="form-control" rows="2">{{ livraison.noteDelivery ?? '' }}</textarea>
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-header py-2">
+                            <h6 class="mb-0"><i class="bi bi-geo-alt me-2"></i>GPS Location <span class="text-muted small">(Optional)</span></h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-2">
+                                    <label for="latitude" class="form-label">Latitude</label>
+                                    <input type="number" name="latitude" id="latitude" class="form-control" step="0.000001" value="{{ livraison.latitude ?? '' }}" placeholder="36.8065">
+                                </div>
+                                
+                                <div class="col-md-6 mb-2">
+                                    <label for="longitude" class="form-label">Longitude</label>
+                                    <input type="number" name="longitude" id="longitude" class="form-control" step="0.000001" value="{{ livraison.longitude ?? '' }}" placeholder="10.1815">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i> Update Delivery
+                        </button>
+                        {% if livraison.commande %}
+                        <a href="{{ path('app_commande_show', {'id': livraison.commande.idCommande}) }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg me-1"></i> Cancel
+                        </a>
+                        {% else %}
+                        <a href="{{ path('app_livraison_index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg me-1"></i> Cancel
+                        </a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

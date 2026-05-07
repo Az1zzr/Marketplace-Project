@@ -1,0 +1,45 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}New Role{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ path('app_role_index') }}">Roles</a></li>
+<li class="breadcrumb-item active">New Role</li>
+{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <h1><i class="bi bi-plus-circle me-2"></i>Add New Role</h1>
+    <p>Create a new user role</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-shield-lock me-2"></i>Role Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    <div class="mb-4">
+                        <label for="nomRole" class="form-label">Role Name <span class="text-danger">*</span></label>
+                        <input type="text" name="nomRole" id="nomRole" class="form-control" required placeholder="e.g., Admin, Vendeur, Client">
+                        <div class="form-text">Enter a descriptive name for the role</div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i> Create Role
+                        </button>
+                        <a href="{{ path('app_role_index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg me-1"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

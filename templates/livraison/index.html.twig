@@ -1,0 +1,158 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Deliveries{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Deliveries</li>
+{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <h1><i class="bi bi-truck me-2"></i>Deliveries</h1>
+    <p>{% if is_granted('ROLE_ADMIN') %}Manage all delivery assignments{% elseif canManageLivraisons %}Assign and follow deliveries for orders containing your products{% else %}Track the current state of your deliveries{% endif %}</p>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end" novalidate>
+            <div class="col-md-3">
+                <label for="search" class="form-label">Search</label>
+                <input type="text" name="search" id="search" class="form-control" value="{{ search }}" placeholder="BL #, driver, notes...">
+            </div>
+            <div class="col-md-2">
+                <label for="statut" class="form-label">Status</label>
+                <select name="statut" id="statut" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="En cours" {% if statut == 'En cours' %}selected{% endif %}>En cours</option>
+                    <option value="Livree" {% if statut == 'Livree' %}selected{% endif %}>Livree</option>
+                    <option value="Retardee" {% if statut == 'Retardee' %}selected{% endif %}>Retardee</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="sort" class="form-label">Sort by</label>
+                <select name="sort" id="sort" class="form-select">
+                    <option value="dateLivraison" {% if sort == 'dateLivraison' %}selected{% endif %}>Date</option>
+                    <option value="numeroBL" {% if sort == 'numeroBL' %}selected{% endif %}>BL Number</option>
+                    <option value="livreur" {% if sort == 'livreur' %}selected{% endif %}>Driver</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="order" class="form-label">Order</label>
+                <select name="order" id="order" class="form-select">
+                    <option value="asc" {% if order == 'asc' %}selected{% endif %}>Ascending</option>
+                    <option value="desc" {% if order == 'desc' %}selected{% endif %}>Descending</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="bi bi-search me-1"></i> Apply
+                </button>
+                <a href="{{ path('app_livraison_index') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-lg me-1"></i> Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if livraisons is empty %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-truck" style="font-size: 3rem; color: #94a3b8;"></i>
+        <h5 class="mt-3 text-muted">No deliveries found</h5>
+        {% if search or statut %}
+        <p class="text-muted">No deliveries match your search criteria.</p>
+        {% else %}
+        <p class="text-muted">{% if is_granted('ROLE_ADMIN') %}Deliveries are created from order details pages.{% elseif canManageLivraisons %}Deliveries will appear here after you assign a driver to one of your client orders.{% else %}Your delivery tracking will appear here once a fournisseur assigns shipment details to one of your orders.{% endif %}</p>
+        {% endif %}
+        <a href="{{ path('app_commande_index') }}" class="btn btn-primary mt-2">
+            <i class="bi bi-cart3 me-1"></i> View Orders
+        </a>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>BL Number</th>
+                        <th>Order #</th>
+                        <th>Date</th>
+                        <th>Driver</th>
+                        <th>Status</th>
+                        <th>GPS</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for livraison in livraisons %}
+                    <tr>
+                        <td><strong>#{{ livraison.numeroBL }}</strong></td>
+                        <td>
+                            {% if livraison.commande %}
+                            <a href="{{ path('app_commande_show', {'id': livraison.commande.idCommande}) }}" class="text-decoration-none">
+                                #{{ livraison.commande.numeroCommande }}
+                            </a>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ livraison.dateLivraison|date('Y-m-d') }}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="user-avatar me-2" style="width: 32px; height: 32px; font-size: 0.75rem;">{{ livraison.livreur|first|upper }}</div>
+                                {{ livraison.livreur }}
+                            </div>
+                        </td>
+                        <td>
+                            {% if livraison.statutLivraison == 'En cours' %}
+                            <span class="badge badge-status-progress"><i class="bi bi-truck me-1"></i>{{ livraison.statutLivraison }}</span>
+                            {% elseif livraison.statutLivraison == 'Livree' %}
+                            <span class="badge badge-status-delivered"><i class="bi bi-check-circle me-1"></i>{{ livraison.statutLivraison }}</span>
+                            {% elseif livraison.statutLivraison == 'Retardee' %}
+                            <span class="badge badge-status-delayed"><i class="bi bi-exclamation-triangle me-1"></i>{{ livraison.statutLivraison }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ livraison.statutLivraison }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if livraison.hasLocation %}
+                            <span class="badge bg-info"><i class="bi bi-geo-alt me-1"></i>{{ livraison.latitude|slice(0, 6) }}...</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                {% if canManageLivraisons %}
+                                <a href="{{ path('app_livraison_edit', {'id': livraison.idLivraison}) }}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {% endif %}
+                                {% if livraison.commande %}
+                                <a href="{{ path('app_commande_show', {'id': livraison.commande.idCommande}) }}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% endif %}
+                                {% if is_granted('ROLE_CLIENT') and livraison.statutLivraison == 'Livree' and livraison.feedback is null %}
+                                <a href="{{ path('app_feedback_delivery_new', {'livraisonId': livraison.idLivraison}) }}" class="btn btn-outline-success btn-sm">
+                                    <i class="bi bi-chat-heart"></i>
+                                </a>
+                                {% elseif livraison.feedback %}
+                                <a href="{{ path('app_feedback_show', {'id': livraison.feedback.id}) }}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-chat-left-text"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

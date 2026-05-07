@@ -1,0 +1,59 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Login{% endblock %}
+
+{% block auth_content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-logo">🛒</div>
+        <h2 class="text-center mb-4" style="font-weight: 700; color: #1e293b;">Welcome Back</h2>
+        <p class="text-center text-muted mb-4">Sign in to continue to Marketplace</p>
+
+        {% for message in app.flashes('success') %}
+        <div class="alert alert-success d-flex align-items-center" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            {{ message }}
+        </div>
+        {% endfor %}
+
+        {% if error %}
+        <div class="alert alert-danger d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            {{ error.messageKey|trans(error.messageData, 'security') }}
+        </div>
+        {% endif %}
+
+        <form action="{{ path('app_login') }}" method="post" novalidate>
+            <div class="mb-3">
+                <label for="email" class="form-label">Email Address</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-envelope"></i></span>
+                    <input type="email" name="email" id="email" value="{{ last_username|e('html_attr') }}" class="form-control border-start-0" placeholder="Enter your email" autocomplete="username" autocapitalize="none" inputmode="email" maxlength="255" required autofocus spellcheck="false">
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="password" class="form-label">Password</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock"></i></span>
+                    <input type="password" name="password" id="password" class="form-control border-start-0" placeholder="Enter your password" autocomplete="current-password" maxlength="72" required>
+                </div>
+            </div>
+
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+            <button type="submit" class="btn btn-primary w-100 py-3 mb-3" style="font-weight: 600;">
+                <i class="bi bi-box-arrow-in-right me-2"></i> Sign In
+            </button>
+
+            <p class="text-center mb-3">
+                <a href="{{ path('app_forgot_password') }}" class="text-decoration-none" style="color: var(--primary-color); font-weight: 500;">Forgot your password?</a>
+            </p>
+
+            <p class="text-center text-muted mb-0">
+                Don't have an account? <a href="{{ path('app_register') }}" class="text-decoration-none" style="color: var(--primary-color); font-weight: 500;">Create Account</a>
+            </p>
+        </form>
+    </div>
+</div>
+{% endblock %}

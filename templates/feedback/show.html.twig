@@ -1,0 +1,237 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Feedback Details{% endblock %}
+
+{% block breadcrumb %}
+<li><a href="{{ path('app_feedback_index') }}">Feedbacks</a></li>
+<li class="breadcrumb-item active" aria-current="page">#{{ feedback.id }}</li>
+{% endblock %}
+
+{% block body %}
+{% set feedbackAuthorName = feedback.auteur ? feedback.auteur.nomComplet : 'Deleted user' %}
+{% set canManageFeedback = is_granted('ROLE_ADMIN') or (feedback.auteur and app.user and app.user.id == feedback.auteur.id) %}
+{% set canReplyToFeedback = is_granted('ROLE_USER') %}
+{% set moodEmoji = feedback.ambiance == 'love' ? '😍' : (feedback.ambiance == 'happy' ? '😊' : (feedback.ambiance == 'neutral' ? '😐' : (feedback.ambiance == 'sad' ? '😕' : (feedback.ambiance == 'angry' ? '😡' : '💬')))) %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1>{{ feedback.displayTitle }}</h1>
+        <p class="mb-0">Started by {{ feedbackAuthorName }} on {{ feedback.dateStatut|date('F j, Y \\a\\t H:i') }}</p>
+    </div>
+    <div>
+        {% if canManageFeedback %}
+        <a href="{{ path('app_feedback_edit', {'id': feedback.id}) }}" class="btn btn-primary">
+            <i class="bi bi-pencil me-1"></i> Edit
+        </a>
+        {% endif %}
+        <a href="{{ path('app_feedback_index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Discussion</h5>
+            </div>
+            <div class="card-body">
+                <div class="border rounded p-3 mb-4 bg-light-subtle">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="d-flex align-items-center">
+                            {% if feedback.auteur %}
+                            <div class="user-avatar me-2" style="width: 40px; height: 40px; font-size: 0.95rem;">{{ feedback.auteur.prenom|first }}{{ feedback.auteur.nom|first }}</div>
+                            {% else %}
+                            <div class="bg-white rounded-circle d-flex align-items-center justify-content-center me-2 border" style="width: 40px; height: 40px;">
+                                <i class="bi bi-person text-secondary"></i>
+                            </div>
+                            {% endif %}
+                            <div>
+                                <div class="fw-medium">{{ feedbackAuthorName }}</div>
+                                <small class="text-muted">Original feedback</small>
+                            </div>
+                        </div>
+                        <small class="text-muted">
+                            <i class="bi bi-calendar me-1"></i>{{ feedback.dateStatut|date('Y-m-d H:i') }}
+                        </small>
+                    </div>
+
+                    <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+                        <div>
+                            <span class="fs-4 me-2">{{ moodEmoji }}</span>
+                            <span class="badge {{ feedback.isDeliveryFeedback ? 'bg-dark' : 'bg-info text-dark' }}">{{ feedback.isDeliveryFeedback ? 'Delivery feedback' : 'Product feedback' }}</span>
+                        </div>
+                        <div>
+                            <span class="star-rating">
+                                {% for i in 1..5 %}
+                                    {% if i <= feedback.note|number_format %}&#9733;{% else %}&#9734;{% endif %}
+                                {% endfor %}
+                            </span>
+                            <span class="ms-2 text-muted">({{ feedback.note }}/5)</span>
+                        </div>
+                        {% if sentiment is defined %}
+                        <div>
+                            <span class="badge {{ sentiment.sentiment == 'POSITIF' ? 'bg-success' : (sentiment.sentiment == 'NEGATIF' ? 'bg-danger' : 'bg-secondary') }}">
+                                <i class="bi {{ sentiment.sentiment == 'POSITIF' ? 'bi-emoji-smile' : (sentiment.sentiment == 'NEGATIF' ? 'bi-emoji-frown' : 'bi-emoji-neutral') }} me-1"></i>
+                                {{ sentiment.sentiment }}
+                            </span>
+                            <small class="text-muted ms-2">Confidence: {{ sentiment.confidence|round(1) }}%</small>
+                            <small class="text-muted ms-2">Source: {{ sentiment.sourceLabel ?? sentiment.source ?? 'Unknown' }}</small>
+                        </div>
+                        {% endif %}
+                        {% if feedback.recommande is not null %}
+                        <div>
+                            <span class="badge {{ feedback.recommande ? 'bg-success' : 'bg-danger' }}">{{ feedback.recommande ? 'Recommended' : 'Not recommended' }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    {% if feedback.produit %}
+                    <div class="mb-3">
+                        <a href="{{ path('app_produit_show', {'id': feedback.produit.id}) }}" class="badge bg-light text-dark text-decoration-none">
+                            <i class="bi bi-box-seam me-1"></i>{{ feedback.produit.nomProduit }}
+                        </a>
+                        {% if feedback.ligneCommande and feedback.ligneCommande.commande %}
+                        <a href="{{ path('app_commande_show', {'id': feedback.ligneCommande.commande.idCommande}) }}" class="badge bg-secondary text-decoration-none ms-2">
+                            <i class="bi bi-receipt me-1"></i>Order #{{ feedback.ligneCommande.commande.numeroCommande }}
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    {% if feedback.livraison %}
+                    <div class="mb-3">
+                        <span class="badge bg-light text-dark">
+                            <i class="bi bi-truck me-1"></i>Driver {{ feedback.livraison.livreur }}
+                        </span>
+                        <a href="{{ path('app_commande_show', {'id': feedback.livraison.commande.idCommande}) }}" class="badge bg-secondary text-decoration-none ms-2">
+                            <i class="bi bi-receipt me-1"></i>Order #{{ feedback.livraison.commande.numeroCommande }}
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    <p class="mb-0">{{ feedback.commentaire|nl2br }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-chat-dots me-2"></i>Replies ({{ reponses|length }})</h5>
+                {% if canReplyToFeedback %}
+                <a href="{{ path('app_reponse_new', {'id': feedback.id}) }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i> Add Response
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if reponses is empty %}
+                <div class="text-center py-4">
+                    <i class="bi bi-chat-dots fs-1 text-muted mb-2"></i>
+                    <p class="text-muted mb-0">No responses yet. Be the first to respond!</p>
+                </div>
+                {% else %}
+                {% for reponse in reponses %}
+                {% set responseAuthorName = reponse.auteur ? reponse.auteur.nomComplet : 'Deleted user' %}
+                {% set canManageResponse = is_granted('ROLE_ADMIN') or (reponse.auteur and app.user and app.user.id == reponse.auteur.id) %}
+                <div class="border rounded p-3 mb-3 {% if loop.last %}mb-0{% endif %}">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="d-flex align-items-center">
+                            {% if reponse.auteur %}
+                            <div class="user-avatar me-2" style="width: 36px; height: 36px; font-size: 0.9rem;">{{ reponse.auteur.prenom|first }}{{ reponse.auteur.nom|first }}</div>
+                            {% else %}
+                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center me-2 border" style="width: 36px; height: 36px;">
+                                <i class="bi bi-person text-secondary"></i>
+                            </div>
+                            {% endif %}
+                            <div>
+                                <div class="fw-medium">{{ responseAuthorName }}</div>
+                                <small class="text-muted">Replied to this discussion</small>
+                            </div>
+                        </div>
+                        <small class="text-muted">
+                            <i class="bi bi-calendar me-1"></i>{{ reponse.dateReponse|date('Y-m-d H:i') }}
+                        </small>
+                    </div>
+                    {% if canManageResponse %}
+                    <div class="d-flex justify-content-end mb-2">
+                        <form action="{{ path('app_reponse_delete', {'id': reponse.id}) }}" method="post" style="display:inline" novalidate>
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
+                    <p class="mb-0">{{ reponse.contenu|nl2br }}</p>
+                </div>
+                {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        {% if canSeeInsights and insight %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Analyse</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <span class="text-muted small">Sujet</span>
+                    <div class="mt-1"><span class="badge {{ insight.topicBadgeClass }}">{{ insight.topicLabel }}</span></div>
+                </div>
+                <div class="mb-3">
+                    <span class="text-muted small">Priorite</span>
+                    <div class="mt-1"><span class="badge {{ insight.priorityBadgeClass }}">{{ insight.priorityLabel }}</span></div>
+                </div>
+                <div class="mb-3">
+                    <span class="text-muted small">Statut</span>
+                    <div class="mt-1 d-flex flex-wrap gap-2">
+                        {% if insight.needsAttention %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">A traiter</span>
+                        {% endif %}
+                        {% if insight.isUnanswered %}
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Sans reponse</span>
+                        {% else %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Avec reponse</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div>
+                    <span class="text-muted small">Reponses</span>
+                    <div class="fw-medium">{{ insight.responseCount }}</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if canManageFeedback %}
+                    <a href="{{ path('app_feedback_edit', {'id': feedback.id}) }}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil me-2"></i> Edit Feedback
+                    </a>
+                    {% endif %}
+                    {% if canReplyToFeedback %}
+                    <a href="{{ path('app_reponse_new', {'id': feedback.id}) }}" class="btn btn-outline-success">
+                        <i class="bi bi-reply me-2"></i> Add Response
+                    </a>
+                    {% endif %}
+                    {% if canManageFeedback %}
+                    <form action="{{ path('app_feedback_delete', {'id': feedback.id}) }}" method="post" novalidate>
+                        <button type="submit" class="btn btn-outline-danger w-100">
+                            <i class="bi bi-trash me-2"></i> Delete Feedback
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

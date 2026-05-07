@@ -1,0 +1,105 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Register{% endblock %}
+
+{% block auth_content %}
+<div class="auth-container">
+    <div class="auth-card" style="max-width: 520px;">
+        <div class="auth-logo">🛒</div>
+        <h2 class="text-center mb-4" style="font-weight: 700; color: #1e293b;">Create Account</h2>
+        <p class="text-center text-muted mb-4">Join our marketplace community</p>
+
+        {% if registrationForm.vars.errors|length > 0 %}
+        <div class="alert alert-danger d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <div>
+                {% for error in registrationForm.vars.errors %}
+                <div>{{ error.message }}</div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {{ form_start(registrationForm, {'attr': {'novalidate': 'novalidate'}}) }}
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    {{ form_label(registrationForm.prenom, null, {'label_attr': {'class': 'form-label'}}) }}
+                    {{ form_widget(registrationForm.prenom, {'attr': {'class': 'form-control' ~ (registrationForm.prenom.vars.errors|length ? ' is-invalid' : '')}}) }}
+                    {% for error in registrationForm.prenom.vars.errors %}
+                    <div class="invalid-feedback d-block">{{ error.message }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form_label(registrationForm.nom, null, {'label_attr': {'class': 'form-label'}}) }}
+                    {{ form_widget(registrationForm.nom, {'attr': {'class': 'form-control' ~ (registrationForm.nom.vars.errors|length ? ' is-invalid' : '')}}) }}
+                    {% for error in registrationForm.nom.vars.errors %}
+                    <div class="invalid-feedback d-block">{{ error.message }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                {{ form_label(registrationForm.email, null, {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(registrationForm.email, {'attr': {'class': 'form-control' ~ (registrationForm.email.vars.errors|length ? ' is-invalid' : '')}}) }}
+                {% for error in registrationForm.email.vars.errors %}
+                <div class="invalid-feedback d-block">{{ error.message }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    {{ form_label(registrationForm.telephone, null, {'label_attr': {'class': 'form-label'}}) }}
+                    {{ form_widget(registrationForm.telephone, {'attr': {'class': 'form-control' ~ (registrationForm.telephone.vars.errors|length ? ' is-invalid' : '')}}) }}
+                    {% for error in registrationForm.telephone.vars.errors %}
+                    <div class="invalid-feedback d-block">{{ error.message }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form_label(registrationForm.dateNaissance, null, {'label_attr': {'class': 'form-label'}}) }}
+                    {{ form_widget(registrationForm.dateNaissance, {'attr': {'class': 'form-control' ~ (registrationForm.dateNaissance.vars.errors|length ? ' is-invalid' : '')}}) }}
+                    {% for error in registrationForm.dateNaissance.vars.errors %}
+                    <div class="invalid-feedback d-block">{{ error.message }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                {{ form_label(registrationForm.plainPassword.first, null, {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(registrationForm.plainPassword.first, {'attr': {'class': 'form-control' ~ ((registrationForm.plainPassword.first.vars.errors|length or registrationForm.plainPassword.vars.errors|length) ? ' is-invalid' : '')}}) }}
+                {% for error in registrationForm.plainPassword.first.vars.errors %}
+                <div class="invalid-feedback d-block">{{ error.message }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="mb-3">
+                {{ form_label(registrationForm.plainPassword.second, null, {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(registrationForm.plainPassword.second, {'attr': {'class': 'form-control' ~ ((registrationForm.plainPassword.second.vars.errors|length or registrationForm.plainPassword.vars.errors|length) ? ' is-invalid' : '')}}) }}
+                {% for error in registrationForm.plainPassword.second.vars.errors %}
+                <div class="invalid-feedback d-block">{{ error.message }}</div>
+                {% endfor %}
+                {% for error in registrationForm.plainPassword.vars.errors %}
+                <div class="invalid-feedback d-block">{{ error.message }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="mb-4">
+                {{ form_label(registrationForm.role, null, {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(registrationForm.role, {'attr': {'class': 'form-select' ~ (registrationForm.role.vars.errors|length ? ' is-invalid' : '')}}) }}
+                {% for error in registrationForm.role.vars.errors %}
+                <div class="invalid-feedback d-block">{{ error.message }}</div>
+                {% endfor %}
+            </div>
+
+            {{ form_rest(registrationForm) }}
+
+            <button type="submit" class="btn btn-primary w-100 py-3 mb-3" style="font-weight: 600;">
+                <i class="bi bi-person-plus me-2"></i> Create Account
+            </button>
+
+            <p class="text-center text-muted mb-0">
+                Already have an account? <a href="{{ path('app_login') }}" class="text-decoration-none" style="color: var(--primary-color); font-weight: 500;">Sign In</a>
+            </p>
+        {{ form_end(registrationForm, {render_rest: false}) }}
+    </div>
+</div>
+{% endblock %}

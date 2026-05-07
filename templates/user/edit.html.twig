@@ -1,0 +1,100 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit {{ user.nomComplet }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ path('app_user_index') }}">Users</a></li>
+<li class="breadcrumb-item"><a href="{{ path('app_user_show', {'id': user.id}) }}">{{ user.nomComplet }}</a></li>
+<li class="breadcrumb-item active">Edit</li>
+{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <h1><i class="bi bi-pencil me-2"></i>Edit User</h1>
+    <p>Update information for <strong>{{ user.nomComplet }}</strong></p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-person me-2"></i>User Information</h5>
+            </div>
+            <div class="card-body">
+                {% set selectedRoleId = app.request.request.get('role', user.role ? user.role.idRole : '') %}
+                {% if errors is not empty %}
+                <div class="alert alert-danger">
+                    Please correct the highlighted fields before saving the user.
+                </div>
+                {% endif %}
+                <form method="post" novalidate>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nom" class="form-label">Last Name <span class="text-danger">*</span></label>
+                            <input type="text" name="nom" id="nom" class="form-control {% if errors.nom is defined %}is-invalid{% endif %}" value="{{ app.request.request.get('nom', user.nom) }}">
+                            {% if errors.nom is defined %}<div class="invalid-feedback d-block">{{ errors.nom }}</div>{% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="prenom" class="form-label">First Name <span class="text-danger">*</span></label>
+                            <input type="text" name="prenom" id="prenom" class="form-control {% if errors.prenom is defined %}is-invalid{% endif %}" value="{{ app.request.request.get('prenom', user.prenom) }}">
+                            {% if errors.prenom is defined %}<div class="invalid-feedback d-block">{{ errors.prenom }}</div>{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                            <input type="text" name="email" id="email" class="form-control {% if errors.email is defined %}is-invalid{% endif %}" value="{{ app.request.request.get('email', user.email) }}">
+                            {% if errors.email is defined %}<div class="invalid-feedback d-block">{{ errors.email }}</div>{% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="telephone" class="form-label">Phone</label>
+                            <input type="text" name="telephone" id="telephone" class="form-control {% if errors.telephone is defined %}is-invalid{% endif %}" value="{{ app.request.request.get('telephone', user.telephone ?? '') }}">
+                            {% if errors.telephone is defined %}<div class="invalid-feedback d-block">{{ errors.telephone }}</div>{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="motDePasse" class="form-label">New Password</label>
+                            <input type="password" name="motDePasse" id="motDePasse" class="form-control {% if errors.motDePasse is defined %}is-invalid{% endif %}" placeholder="Leave empty to keep current">
+                            {% if errors.motDePasse is defined %}<div class="invalid-feedback d-block">{{ errors.motDePasse }}</div>{% endif %}
+                            <div class="form-text">Leave empty to keep the current password</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="dateNaissance" class="form-label">Birth Date</label>
+                            <input type="date" name="dateNaissance" id="dateNaissance" class="form-control {% if errors.dateNaissance is defined %}is-invalid{% endif %}" value="{{ app.request.request.get('dateNaissance', user.dateNaissance ? user.dateNaissance|date('Y-m-d') : '') }}">
+                            {% if errors.dateNaissance is defined %}<div class="invalid-feedback d-block">{{ errors.dateNaissance }}</div>{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="role" class="form-label">Role</label>
+                        <select name="role" id="role" class="form-select {% if errors.role is defined %}is-invalid{% endif %}">
+                            <option value="">-- Select Role --</option>
+                            {% for role in roles %}
+                            <option value="{{ role.idRole }}" {% if selectedRoleId == role.idRole %}selected{% endif %}>{{ role.nomRole }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if errors.role is defined %}<div class="invalid-feedback d-block">{{ errors.role }}</div>{% endif %}
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i> Update User
+                        </button>
+                        <a href="{{ path('app_user_show', {'id': user.id}) }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg me-1"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
