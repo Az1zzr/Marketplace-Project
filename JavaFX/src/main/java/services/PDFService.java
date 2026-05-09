@@ -184,9 +184,9 @@ public class PDFService {
      */
     private BaseColor getStatutBackgroundColor(String statut) {
         return switch (statut) {
-            case "Confirmée" -> new BaseColor(76, 175, 80); // Vert
+            case "Confirmee" -> new BaseColor(76, 175, 80); // Vert
             case "En attente" -> new BaseColor(255, 193, 7); // Orange
-            case "Annulée" -> new BaseColor(244, 67, 54); // Rouge
+            case "Annulee" -> new BaseColor(244, 67, 54); // Rouge
             default -> new BaseColor(158, 158, 158); // Gris
         };
     }

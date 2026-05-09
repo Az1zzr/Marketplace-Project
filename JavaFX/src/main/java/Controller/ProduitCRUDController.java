@@ -194,7 +194,7 @@ public class ProduitCRUDController {
     private void onSearch() {
         String q = safe(searchField.getText()).trim().toLowerCase(Locale.ROOT);
         if (q.isEmpty()) { refresh(); return; }
-        var filtered = produitService.recuperer().stream()
+            var filtered = produitService.recupererPourUtilisateurCourant().stream()
                 .filter(p -> safe(p.getNomProduit()).toLowerCase(Locale.ROOT).contains(q)
                         || safe(p.getAdresse()).toLowerCase(Locale.ROOT).contains(q))
                 .collect(Collectors.toList());
@@ -238,7 +238,7 @@ public class ProduitCRUDController {
             MainLayoutController.current.showStock();
         } else {
             // Fallback : fenêtre autonome (mode hors MainLayout)
-            openWindow("/Stock.fxml", "Gestion Stock");
+            openWindow("/crudStock.fxml", "Gestion Stock");
         }
     }
 
@@ -343,7 +343,7 @@ public class ProduitCRUDController {
         } catch (Exception e) { return 0; }
     }
 
-    private void refresh() { data.setAll(produitService.recuperer()); }
+    private void refresh() { data.setAll(produitService.recupererPourUtilisateurCourant()); }
 
     private void fillForm(Produit p) {
         idLabel.setText(String.valueOf(p.getId()));

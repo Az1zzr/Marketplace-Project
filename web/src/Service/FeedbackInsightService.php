@@ -34,12 +34,12 @@ class FeedbackInsightService
         self::PRIORITY_LOW => 'Basse',
     ];
 
-    public function analyze(Feedback $feedback, array $sentiment): array
+    public function analyze(Feedback $feedback, array $sentiment, ?int $responseCount = null): array
     {
         $comment = mb_strtolower($feedback->getCommentaire() ?? '');
         $topic = $this->detectTopic($feedback, $comment);
         $priority = $this->detectPriority($feedback, $sentiment);
-        $responseCount = $feedback->getReponses()->count();
+        $responseCount ??= $feedback->getReponses()->count();
         $isUnanswered = 0 === $responseCount;
         $needsAttention = self::PRIORITY_HIGH === $priority || ($isUnanswered && self::PRIORITY_MEDIUM === $priority);
 

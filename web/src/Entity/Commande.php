@@ -44,7 +44,7 @@ class Commande
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(name: 'idCommande')]
-    private ?int $idCommande = null;
+    private $idCommande = null;
 
     #[ORM\Column(name: 'numeroCommande', length: 50)]
     private ?string $numeroCommande = null;

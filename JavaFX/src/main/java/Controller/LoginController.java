@@ -30,13 +30,6 @@ public class LoginController {
     private final UserService userService = new UserService();
     private boolean pwdVisible = false;
 
-    // ══════════════════════════════════════════════════
-    // ✅ ADMIN HARDCODÉ — modifier ici si besoin
-    // ══════════════════════════════════════════════════
-    private static final String ADMIN_EMAIL    = "admin@localtrade.com";
-    private static final String ADMIN_PASSWORD = "Admis200";
-    // ══════════════════════════════════════════════════
-
     private static final Pattern EMAIL =
             Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
     private static final Pattern PHONE =
@@ -74,26 +67,7 @@ public class LoginController {
         if (pwd.isEmpty()) { setInvalid(passwordField); showError("Mot de passe requis."); return; }
 
         try {
-            User user = null;
-
-            // ✅ Vérification admin hardcodé EN PREMIER
-            if (email.equals(ADMIN_EMAIL) && pwd.equals(ADMIN_PASSWORD)) {
-                // Créer un User admin fictif sans passer par la BD
-                models.Role adminRole = new models.Role();
-                adminRole.setId_role(1);
-                adminRole.setNomRole("admin");
-
-                user = new User();
-                user.setId(0);
-                user.setNom("Admin");
-                user.setPrenom("LocalTrade");
-                user.setEmail(ADMIN_EMAIL);
-                user.setMotDePasse(ADMIN_PASSWORD);
-                user.setRole(adminRole);
-            } else {
-                // Authentification normale via BD pour les autres utilisateurs
-                user = userService.authenticate(email, pwd);
-            }
+            User user = userService.authenticate(email, pwd);
 
             if (user == null) {
                 showError("Email ou mot de passe incorrect.");

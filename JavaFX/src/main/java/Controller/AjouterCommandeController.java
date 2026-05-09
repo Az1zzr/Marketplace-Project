@@ -41,7 +41,7 @@ public class AjouterCommandeController {
 
         commandeService = new CommandeService();
 
-        statutComboBox.getItems().addAll("En attente", "Confirmée", "Annulée");
+        statutComboBox.getItems().addAll("En attente", "Confirmee", "Annulee");
         statutComboBox.setValue("En attente");
         dateCommandePicker.setValue(LocalDate.now());
 

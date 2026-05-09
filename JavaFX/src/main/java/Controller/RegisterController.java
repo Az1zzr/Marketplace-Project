@@ -192,7 +192,7 @@ public class RegisterController {
         // ✅ Vérification de sécurité — jamais Admin via register
         if (role == null) {
             errors.append("• Veuillez sélectionner un rôle.\n");
-        } else if (role.getNomRole().equalsIgnoreCase("Administrateur")) {
+        } else if (role.getNomRole().equalsIgnoreCase("Administrateur") || role.getNomRole().equalsIgnoreCase("admin")) {
             errors.append("• Rôle non autorisé.\n"); // sécurité double
         }
 

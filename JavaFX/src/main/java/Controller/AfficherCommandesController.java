@@ -80,7 +80,7 @@ public class AfficherCommandesController {
         Label statutLabel = new Label(commande.getStatut());
         statutLabel.setFont(new Font("Arial Bold", 11));
         statutLabel.setTextFill(Color.WHITE);
-        String couleurStatut = commande.getStatut().equals("Confirmée") ? "#4CAF50"
+        String couleurStatut = commande.getStatut().equals("Confirmee") ? "#4CAF50"
                 : commande.getStatut().equals("En attente") ? "#FF9800" : "#d9534f";
         statutLabel.setStyle("-fx-background-color: " + couleurStatut + "; -fx-padding: 5px 10px; -fx-border-radius: 5;");
 
@@ -189,7 +189,7 @@ public class AfficherCommandesController {
             Label statutLabel = new Label("Statut:");
             statutLabel.setStyle("-fx-font-weight: bold;");
             ComboBox<String> statutCombo = new ComboBox<>();
-            statutCombo.getItems().addAll("En attente", "Confirmée", "Annulée");
+            statutCombo.getItems().addAll("En attente", "Confirmee", "Annulee");
             statutCombo.setValue(commande.getStatut());
 
             formBox.getChildren().addAll(

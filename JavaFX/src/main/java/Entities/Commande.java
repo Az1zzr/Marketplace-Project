@@ -6,10 +6,14 @@ public class Commande {
     private int idCommande;
     private String numeroCommande;
     private String client;
+    private Integer clientUserId;
     private LocalDate dateCommande;
     private double montantTotal;
     private String adresseLivraison;
     private String statut; // En attente, Confirmée, Annulée
+    private String gouvernorat;
+    private String telephoneLivraison;
+    private String commentaireLivraison;
 
     // Constructeurs
     public Commande() {
@@ -61,6 +65,14 @@ public class Commande {
         this.client = client;
     }
 
+    public Integer getClientUserId() {
+        return clientUserId;
+    }
+
+    public void setClientUserId(Integer clientUserId) {
+        this.clientUserId = clientUserId;
+    }
+
     public LocalDate getDateCommande() {
         return dateCommande;
     }
@@ -93,6 +105,30 @@ public class Commande {
         this.statut = statut;
     }
 
+    public String getGouvernorat() {
+        return gouvernorat;
+    }
+
+    public void setGouvernorat(String gouvernorat) {
+        this.gouvernorat = gouvernorat;
+    }
+
+    public String getTelephoneLivraison() {
+        return telephoneLivraison;
+    }
+
+    public void setTelephoneLivraison(String telephoneLivraison) {
+        this.telephoneLivraison = telephoneLivraison;
+    }
+
+    public String getCommentaireLivraison() {
+        return commentaireLivraison;
+    }
+
+    public void setCommentaireLivraison(String commentaireLivraison) {
+        this.commentaireLivraison = commentaireLivraison;
+    }
+
     @Override
     public String toString() {
         return "Commande{" +
@@ -107,14 +143,14 @@ public class Commande {
     }
 
     public String getNomClient() {
-        return "";
+        return client == null ? "" : client;
     }
 
     public String getId() {
-        return "";
+        return String.valueOf(idCommande);
     }
 
     public String getTotal() {
-        return "";
+        return String.format("%.2f", montantTotal);
     }
 }

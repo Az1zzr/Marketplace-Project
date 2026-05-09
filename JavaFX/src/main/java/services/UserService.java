@@ -19,17 +19,18 @@ public class UserService implements IService<User> {
         if (isAdminRole(user) && countAdmins() >= 1)
             throw new SQLException("Un seul administrateur est autorisé !");
 
-        String sql = "INSERT INTO user (nom, prenom, email, motDePasse, date_naissance, id_role, photo_profil) " +
-                "VALUES (?,?,?,?,?,?,?)";
+        String sql = "INSERT INTO user (nom, prenom, email, telephone, motDePasse, date_naissance, id_role, photo_profil) " +
+                "VALUES (?,?,?,?,?,?,?,?)";
         try (PreparedStatement ps = conn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, user.getNom());
             ps.setString(2, user.getPrenom() != null ? user.getPrenom() : "");
             ps.setString(3, user.getEmail().toLowerCase());
-            ps.setString(4, user.getMotDePasse());
-            ps.setDate(5, user.getDateNaissance() != null ? Date.valueOf(user.getDateNaissance()) : null);
-            if (user.getRole() != null) ps.setInt(6, user.getRole().getId_role());
-            else ps.setNull(6, Types.INTEGER);
-            ps.setString(7, user.getPhotoPath());
+            ps.setString(4, user.getTelephone());
+            ps.setString(5, user.getMotDePasse());
+            ps.setDate(6, user.getDateNaissance() != null ? Date.valueOf(user.getDateNaissance()) : null);
+            if (user.getRole() != null) ps.setInt(7, user.getRole().getId_role());
+            else ps.setNull(7, Types.INTEGER);
+            ps.setString(8, user.getPhotoPath());
             ps.executeUpdate();
 
             try (ResultSet keys = ps.getGeneratedKeys()) {
@@ -83,21 +84,22 @@ public class UserService implements IService<User> {
     public void update(User user) throws SQLException {
         // ✅ Hasher seulement si pas déjà hashé
         String pwd = user.getMotDePasse();
-        if (!pwd.startsWith("$2a$") && !pwd.startsWith("$2b$")) {
+        if (!pwd.startsWith("$2a$") && !pwd.startsWith("$2b$") && !pwd.startsWith("$argon2")) {
             user.setMotDePasse(PasswordUtil.hash(pwd));
         }
-        String sql = "UPDATE user SET nom=?, prenom=?, email=?, motDePasse=?, " +
+        String sql = "UPDATE user SET nom=?, prenom=?, email=?, telephone=?, motDePasse=?, " +
                 "date_naissance=?, id_role=?, photo_profil=? WHERE id=?";
         try (PreparedStatement ps = conn().prepareStatement(sql)) {
             ps.setString(1, user.getNom());
             ps.setString(2, user.getPrenom() != null ? user.getPrenom() : "");
             ps.setString(3, user.getEmail().toLowerCase());
-            ps.setString(4, user.getMotDePasse());
-            ps.setDate(5, user.getDateNaissance() != null ? Date.valueOf(user.getDateNaissance()) : null);
-            if (user.getRole() != null) ps.setInt(6, user.getRole().getId_role());
-            else ps.setNull(6, Types.INTEGER);
-            ps.setString(7, user.getPhotoPath());
-            ps.setInt(8, user.getId());
+            ps.setString(4, user.getTelephone());
+            ps.setString(5, user.getMotDePasse());
+            ps.setDate(6, user.getDateNaissance() != null ? Date.valueOf(user.getDateNaissance()) : null);
+            if (user.getRole() != null) ps.setInt(7, user.getRole().getId_role());
+            else ps.setNull(7, Types.INTEGER);
+            ps.setString(8, user.getPhotoPath());
+            ps.setInt(9, user.getId());
 
             int rows = ps.executeUpdate();
             if (rows == 0)
@@ -118,22 +120,28 @@ public class UserService implements IService<User> {
     // ─── AUTHENTICATE ─────────────────────────────────────────────────────────
     public User authenticate(String email, String password) throws SQLException {
         String sql = """
-        SELECT u.id, u.nom, u.prenom, u.email, u.telephone, u.motDePasse, u.date_naissance,
-               u.photo_profil, r.id_role, r.nomRole
-        FROM user u LEFT JOIN role r ON u.id_role = r.id_role
-        WHERE u.email = ?
-        """;
+            SELECT u.id, u.nom, u.prenom, u.email, u.telephone, u.motDePasse, u.date_naissance,
+            u.photo_profil, r.id_role, r.nomRole
+            FROM user u LEFT JOIN role r ON u.id_role = r.id_role
+            WHERE u.email = ?
+            """;
         try (PreparedStatement ps = conn().prepareStatement(sql)) {
             ps.setString(1, email.toLowerCase());
+            System.err.println("[AUTH] Looking up email: " + email.toLowerCase());
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     User user = mapRow(rs);
-                    // ✅ Vérifier le mot de passe avec BCrypt
-                    if (PasswordUtil.verify(password, user.getMotDePasse())) {
-                        return user;
-                    }
+                    System.err.println("[AUTH] User found: id=" + user.getId() + " email=" + user.getEmail() + " hashPrefix=" + user.getMotDePasse().substring(0, Math.min(10, user.getMotDePasse().length())) + " hashLen=" + user.getMotDePasse().length());
+                    boolean ok = PasswordUtil.verify(password, user.getMotDePasse());
+                    System.err.println("[AUTH] Password verify result: " + ok);
+                    if (ok) return user;
+                } else {
+                    System.err.println("[AUTH] No user found with email: " + email.toLowerCase());
                 }
             }
+        } catch (SQLException e) {
+            System.err.println("[AUTH] SQL Error: " + e.getMessage());
+            throw e;
         }
         return null;
     }

@@ -9,7 +9,7 @@ public class MyDB {
     private Connection conn;
 
     // ✅ allowPublicKeyRetrieval=true résout les erreurs SSL avec MySQL 8
-    private final String URL  = "jdbc:mysql://localhost:3306/markethub_db2";
+    private final String URL  = "jdbc:mysql://localhost:3306/markethub_db";
     private final String USER     = "root";
     private final String PASSWORD = "";
 

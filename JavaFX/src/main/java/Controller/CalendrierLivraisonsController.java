@@ -336,7 +336,7 @@ public class CalendrierLivraisonsController {
     private void mettreAJourCompteurs() {
         long total       = tousLesEvenements.size();
         long livrees     = tousLesEvenements.stream()
-                .filter(e -> e.livraison != null && "Livré".equals(e.livraison.getStatutLivraison())
+                .filter(e -> e.livraison != null && "Livree".equals(e.livraison.getStatutLivraison())
                         && e.date.getMonth() == moisActuel.getMonth()
                         && e.date.getYear()  == moisActuel.getYear())
                 .count();
@@ -487,7 +487,7 @@ public class CalendrierLivraisonsController {
     private String getCouleurStatut(EvenementCalendrier evt) {
         if (evt.livraison == null) return "#94a3b8";
         return switch (evt.livraison.getStatutLivraison()) {
-            case "Livré"    -> "#4CAF50";
+            case "Livree"    -> "#4CAF50";
             case "En cours" -> "#FF9800";
             default         -> "#d9534f";
         };

@@ -6,7 +6,7 @@ import java.sql.SQLException;
 
 public class MyConnection {
 
-    private String url="jdbc:mysql://localhost:3306/markethub_db2";
+    private String url="jdbc:mysql://localhost:3306/markethub_db";
     private String login="root";
     private String pwd="";
     private Connection cnx;
