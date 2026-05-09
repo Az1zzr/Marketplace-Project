@@ -30,6 +30,20 @@ class ProfilePhotoService
         }
     }
 
+    public function storePhoto(UploadedFile $uploadedFile): string
+    {
+        $uploadDir = $this->projectDir . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'profiles';
+
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        $filename = uniqid('photo_', true) . '.' . ($uploadedFile->guessExtension() ?? 'jpg');
+        $uploadedFile->move($uploadDir, $filename);
+
+        return 'uploads/profiles/' . $filename;
+    }
+
     public function deleteStoredPhoto(?string $photoPath): void
     {
         if (null === $photoPath || '' === trim($photoPath)) {
@@ -91,10 +105,6 @@ class ProfilePhotoService
         $predictions = $data;
         if (isset($data[0]) && is_array($data[0]) && isset($data[0][0])) {
             $predictions = $data[0];
-        }
-
-        if (!is_array($predictions)) {
-            return ['valid' => false, 'message' => 'Unexpected response from the image moderation API.'];
         }
 
         foreach ($predictions as $prediction) {

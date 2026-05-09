@@ -39,6 +39,7 @@
                         <th>Email</th>
                         <th>Phone</th>
                         <th>Role</th>
+                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -73,6 +74,13 @@
                             {% endif %}
                         </td>
                         <td>
+                            {% if user.isActive %}
+                                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Active</span>
+                            {% else %}
+                                <span class="badge bg-danger"><i class="bi bi-slash-circle me-1"></i>Blocked</span>
+                            {% endif %}
+                        </td>
+                        <td>
                             <div class="btn-group" role="group">
                                 <a href="{{ path('app_user_show', {'id': user.id}) }}" class="btn btn-outline-secondary btn-sm">
                                     <i class="bi bi-eye"></i>
@@ -80,6 +88,13 @@
                                 <a href="{{ path('app_user_edit', {'id': user.id}) }}" class="btn btn-outline-primary btn-sm">
                                     <i class="bi bi-pencil"></i>
                                 </a>
+                                <form action="{{ path('app_user_toggle_active', {'id': user.id}) }}" method="post" class="d-inline" novalidate>
+                                    <input type="hidden" name="_token" value="{{ csrf_token('toggle_active_' ~ user.id) }}">
+                                    <button type="submit" class="btn btn-sm {{ user.isActive ? 'btn-outline-warning' : 'btn-outline-success' }}"
+                                            title="{{ user.isActive ? 'Block user' : 'Activate user' }}">
+                                        <i class="bi {{ user.isActive ? 'bi-lock' : 'bi-unlock' }}"></i>
+                                    </button>
+                                </form>
                                 <form action="{{ path('app_user_delete', {'id': user.id}) }}" method="post" class="d-inline" novalidate>
                                     <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id) }}">
                                     <button type="submit" class="btn btn-outline-danger btn-sm">

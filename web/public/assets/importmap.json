@@ -12,11 +12,11 @@
         "type": "js"
     },
     "@symfony\/stimulus-bundle": {
-        "path": "\/assets\/@symfony\/stimulus-bundle\/loader-20ecc10cbbb74d097d458e14577bcd99.js",
+        "path": "\/assets\/@symfony\/stimulus-bundle\/loader-4e84a7d659b85c6399a8caf56ac47fae.js",
         "type": "js"
     },
     "\/assets\/@symfony\/stimulus-bundle\/controllers.js": {
-        "path": "\/assets\/@symfony\/stimulus-bundle\/controllers-2d5cc4502f14101f1369329e3b034609.js",
+        "path": "\/assets\/@symfony\/stimulus-bundle\/controllers-0367245ad68082848410295b7eab0263.js",
         "type": "js"
     },
     "\/assets\/@symfony\/ux-chartjs\/controller.js": {
@@ -24,7 +24,7 @@
         "type": "js"
     },
     "\/assets\/@symfony\/ux-turbo\/turbo_controller.js": {
-        "path": "\/assets\/@symfony\/ux-turbo\/turbo_controller-6c50a8e6e6ca21c94e8fd8573c988499.js",
+        "path": "\/assets\/@symfony\/ux-turbo\/turbo_controller-2dd41054dc2733edc79f876095f963b9.js",
         "type": "js"
     },
     "app": {

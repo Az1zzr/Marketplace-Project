@@ -17,7 +17,7 @@ final class Version20260418100000 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        $this->abortIf(!$this->connection->getDatabasePlatform() instanceof MySQLPlatform, 'Migration can only be executed safely on mysql.');
+       // $this->abortIf(!$this->connection->getDatabasePlatform() instanceof MySQLPlatform, 'Migration can only be executed safely on mysql.');
 
         $this->addSql('ALTER TABLE user ADD photo_updated_at DATETIME DEFAULT NULL');
         $this->addSql('ALTER TABLE produit ADD slug VARCHAR(255) DEFAULT NULL');

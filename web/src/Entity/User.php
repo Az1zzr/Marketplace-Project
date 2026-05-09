@@ -7,16 +7,13 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
-use Vich\UploaderBundle\Mapping\Annotation as Vich;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: 'user')]
 #[UniqueEntity(fields: ['email'], message: 'An account with this email already exists.')]
-#[Vich\Uploadable]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     public const ROLE_CODE_ADMIN = 'admin';
@@ -70,24 +67,27 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(name: 'photo_profil', length: 500, nullable: true)]
     private ?string $photoPath = null;
 
-    #[ORM\Column(name: 'photo_updated_at', type: 'datetime', nullable: true)]
-    private ?\DateTimeInterface $photoUpdatedAt = null;
-
-    #[Vich\UploadableField(mapping: 'profile_photos', fileNameProperty: 'photoPath')]
-    private ?File $photoFile = null;
-
     #[ORM\Column(name: 'reset_password_code_hash', length: 255, nullable: true)]
+    #[\Symfony\Component\Serializer\Attribute\Ignore]
     private ?string $resetPasswordCodeHash = null;
 
     #[ORM\Column(name: 'reset_password_expires_at', type: 'datetime', nullable: true)]
+    #[\Symfony\Component\Serializer\Attribute\Ignore]
     private ?\DateTimeInterface $resetPasswordExpiresAt = null;
+
+    #[ORM\Column(name: 'is_active', type: 'boolean', options: ['default' => true])]
+    private bool $active = true;
+
+    #[ORM\Column(name: 'created_at', type: 'datetime')]
+    private \DateTimeInterface $createdAt;
 
     #[ORM\OneToMany(mappedBy: 'fournisseur', targetEntity: Produit::class)]
     private Collection $produits;
 
     public function __construct()
     {
-        $this->produits = new ArrayCollection();
+        $this->produits  = new ArrayCollection();
+        $this->createdAt = new \DateTime();
     }
 
     public function getId(): ?int
@@ -175,54 +175,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getPhotoPath(): ?string
     {
-        if (null === $this->photoPath || '' === trim($this->photoPath)) {
-            return null;
-        }
-
-        if (str_starts_with($this->photoPath, '/')) {
-            return $this->photoPath;
-        }
-
-        return '/uploads/profile/' . ltrim($this->photoPath, '/');
+        return $this->photoPath;
     }
 
     public function setPhotoPath(?string $photoPath): static
     {
-        if (null === $photoPath) {
-            $this->photoPath = null;
-
-            return $this;
-        }
-
-        $normalizedPath = ltrim(str_replace('\\', '/', trim($photoPath)), '/');
-        if (str_starts_with($normalizedPath, 'uploads/profile/')) {
-            $normalizedPath = substr($normalizedPath, strlen('uploads/profile/'));
-        }
-
-        $this->photoPath = '' === $normalizedPath ? null : $normalizedPath;
-
+        $this->photoPath = $photoPath;
         return $this;
-    }
-
-    public function getPhotoFile(): ?File
-    {
-        return $this->photoFile;
-    }
-
-    public function setPhotoFile(?File $photoFile = null): static
-    {
-        $this->photoFile = $photoFile;
-
-        if (null !== $photoFile) {
-            $this->photoUpdatedAt = new \DateTime();
-        }
-
-        return $this;
-    }
-
-    public function getPhotoUpdatedAt(): ?\DateTimeInterface
-    {
-        return $this->photoUpdatedAt;
     }
 
     public function getResetPasswordCodeHash(): ?string
@@ -230,7 +189,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->resetPasswordCodeHash;
     }
 
-    public function setResetPasswordCodeHash(?string $resetPasswordCodeHash): static
+    public function setResetPasswordCodeHash(#[\SensitiveParameter] ?string $resetPasswordCodeHash): static
     {
         $this->resetPasswordCodeHash = $resetPasswordCodeHash;
         return $this;
@@ -241,9 +200,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->resetPasswordExpiresAt;
     }
 
+    /**
+     * Set the password reset expiration time
+     */
     public function setResetPasswordExpiresAt(?\DateTimeInterface $resetPasswordExpiresAt): static
     {
-        $this->resetPasswordExpiresAt = $resetPasswordExpiresAt;
+        $this->resetPasswordExpiresAt = null === $resetPasswordExpiresAt
+            ? null
+            : \DateTime::createFromInterface($resetPasswordExpiresAt);
         return $this;
     }
 
@@ -307,6 +271,22 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
 
         return array_unique($roles);
+    }
+
+    public function isActive(): bool
+    {
+        return $this->active;
+    }
+
+    public function setIsActive(bool $isActive): static
+    {
+        $this->active = $isActive;
+        return $this;
+    }
+
+    public function getCreatedAt(): \DateTimeInterface
+    {
+        return $this->createdAt;
     }
 
     public function eraseCredentials(): void

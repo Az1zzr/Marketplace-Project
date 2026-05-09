@@ -4,46 +4,50 @@ namespace App\Service;
 
 use App\Entity\User;
 use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Email;
 use Twilio\Rest\Client as TwilioClient;
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception as PHPMailerException;
 
 class PasswordResetService
 {
-    private const RESET_LINK_TTL = '+60 minutes';
+    // ── Gmail credentials ────────────────────────────────────────────────────
+    private const GMAIL_USER = 'maramsoltani175@gmail.com';
+    private const GMAIL_PASS = 'alsmqwnccmlwhpgk'; // app password sans espaces
 
     public function __construct(
         private readonly MailerInterface $mailer,
         private readonly string $appSecret,
-        private readonly string $mailerDsn = '',
-        private readonly string $mailerFromAddress = '',
-        private readonly string $twilioAccountSid = '',
-        private readonly string $twilioAuthToken = '',
-        private readonly string $twilioFromNumber = ''
+        private readonly string $mailerDsn,
+        private readonly string $mailerFromAddress,
+        private readonly string $twilioAccountSid,
+        private readonly string $twilioAuthToken,
+        private readonly string $twilioFromNumber,
     ) {
     }
 
-    public function issueResetToken(User $user): string
+    public function issueResetCode(User $user): string
     {
-        $token = bin2hex(random_bytes(32));
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
         $user
-            ->setResetPasswordCodeHash($this->hashToken($token))
-            ->setResetPasswordExpiresAt(new \DateTime(self::RESET_LINK_TTL));
+            ->setResetPasswordCodeHash($this->hashCode($code))
+            ->setResetPasswordExpiresAt(new \DateTime('+15 minutes'));
 
-        return $token;
+        return $code;
     }
 
-    public function clearResetToken(User $user): void
+    public function clearResetCode(User $user): void
     {
         $user
             ->setResetPasswordCodeHash(null)
             ->setResetPasswordExpiresAt(null);
     }
 
-    public function isResetTokenValid(User $user, string $token): bool
+    public function isResetCodeValid(User $user, string $code): bool
     {
         $expiresAt = $user->getResetPasswordExpiresAt();
-        $hash = $user->getResetPasswordCodeHash();
+        $hash      = $user->getResetPasswordCodeHash();
 
         if (null === $expiresAt || null === $hash) {
             return false;
@@ -53,40 +57,84 @@ class PasswordResetService
             return false;
         }
 
-        return hash_equals($hash, $this->hashToken($token));
+        return hash_equals($hash, $this->hashCode($code));
     }
 
-    public function sendResetLink(User $user, string $resetUrl): void
+    public function sendResetCode(User $user, string $channel, string $code): void
     {
-        $this->sendByEmail($user, $resetUrl);
+        if ('email' === $channel) {
+            $this->sendByEmail($user, $code);
+            return;
+        }
+
+        if ('sms' === $channel) {
+            $this->sendBySms($user, $code);
+            return;
+        }
+
+        throw new \RuntimeException('Unsupported verification channel.');
     }
 
-    private function sendByEmail(User $user, string $resetUrl): void
+    public function maskContact(User $user, string $channel): string
     {
-        if ('' === trim($this->mailerDsn) || str_starts_with($this->mailerDsn, 'null://')) {
-            throw new \RuntimeException('Email sending is not configured yet. Set a real MAILER_DSN first.');
+        if ('sms' === $channel) {
+            $phone  = $user->getTelephone() ?? '';
+            $suffix = mb_substr($phone, -2);
+            return '*** *** ' . $suffix;
         }
 
-        if ('' === trim($this->mailerFromAddress)) {
-            throw new \RuntimeException('MAILER_FROM_ADDRESS is missing.');
+        $email = $user->getEmail() ?? '';
+        $parts = explode('@', $email, 2);
+        if (2 !== count($parts)) {
+            return $email;
         }
 
-        $email = (new Email())
-            ->from($this->mailerFromAddress)
-            ->to((string) $user->getEmail())
-            ->subject('Marketplace password reset')
-            ->html(sprintf(
-                '<p>Hello %s,</p><p>We received a request to reset your Marketplace password.</p><p><a href="%s">Reset your password</a></p><p>This link will expire in 60 minutes.</p><p>If you did not request it, you can ignore this message.</p>',
-                htmlspecialchars($user->getNomComplet(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
-                htmlspecialchars($resetUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
-            ))
-            ->text(sprintf(
-                "Hello %s,\n\nWe received a request to reset your Marketplace password.\n\nReset your password: %s\n\nThis link will expire in 60 minutes.\n\nIf you did not request it, you can ignore this message.",
+        $namePart = $parts[0];
+        $visible  = mb_substr($namePart, 0, 2);
+
+        return $visible . str_repeat('*', max(1, mb_strlen($namePart) - 2)) . '@' . $parts[1];
+    }
+
+    private function sendByEmail(User $user, string $code): void
+    {
+        $mail = new PHPMailer(true);
+
+        try {
+            $mail->SMTPDebug  = SMTP::DEBUG_OFF;
+            $mail->isSMTP();
+            $mail->Host       = 'smtp.gmail.com';
+            $mail->SMTPAuth   = true;
+            $mail->Username   = self::GMAIL_USER;
+            $mail->Password   = self::GMAIL_PASS;
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port       = 587;
+            $mail->SMTPOptions = [
+                'ssl' => [
+                    'verify_peer'       => false,
+                    'verify_peer_name'  => false,
+                    'allow_self_signed' => true,
+                ],
+            ];
+            $mail->CharSet = 'UTF-8';
+
+            $mail->setFrom(self::GMAIL_USER, 'Marketplace');
+            $mail->addAddress((string) $user->getEmail(), $user->getNomComplet());
+
+            $mail->isHTML(false);
+            $mail->Subject = 'Marketplace - Code de vérification';
+            $mail->Body    = sprintf(
+                "Bonjour %s,\n\nVotre code de vérification Marketplace est : %s\n\nCe code expire dans 15 minutes.\n\nSi vous n'avez pas fait cette demande, ignorez ce message.",
                 $user->getNomComplet(),
-                $resetUrl
-            ));
+                $code
+            );
 
-        $this->mailer->send($email);
+            $mail->send();
+
+        } catch (PHPMailerException $e) {
+            throw new \RuntimeException(
+                sprintf('Impossible d\'envoyer l\'email : %s', $mail->ErrorInfo)
+            );
+        }
     }
 
     private function sendBySms(User $user, string $code): void
@@ -96,7 +144,7 @@ class PasswordResetService
             || '' === trim($this->twilioAuthToken)
             || '' === trim($this->twilioFromNumber)
         ) {
-            throw new \RuntimeException('SMS sending is not configured yet. Add your Twilio credentials first.');
+            throw new \RuntimeException('SMS sending is not configured yet.');
         }
 
         $phone = $user->getTelephone();
@@ -111,9 +159,9 @@ class PasswordResetService
         ]);
     }
 
-    private function hashToken(string $token): string
+    private function hashCode(string $code): string
     {
-        return hash('sha256', $this->appSecret . '|' . $token);
+        return hash('sha256', $this->appSecret . '|' . $code);
     }
 
     private function formatPhoneForSms(string $phone): string
