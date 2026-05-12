@@ -30,14 +30,18 @@ class SecurityController extends AbstractController
     public function home(): Response
     {
         $user = $this->getUser();
+
+        // ── Visiteur non connecté → page d'accueil publique ──────────────────
         if (!$user instanceof User) {
-            return $this->redirectToRoute('app_login');
+            return $this->render('security/Accueil.html.twig');
         }
 
+        // ── Admin → dashboard admin ───────────────────────────────────────────
         if ($this->isGranted('ROLE_ADMIN')) {
             return $this->redirectToRoute('app_admin_dashboard');
         }
 
+        // ── Utilisateur connecté → dashboard front ────────────────────────────
         return $this->redirectToRoute('app_front_dashboard');
     }
 
@@ -83,7 +87,7 @@ class SecurityController extends AbstractController
     ): Response {
         $user = $this->getUser();
         if (!$user instanceof User) {
-            return $this->redirectToRoute('app_login');
+            return $this->redirectToRoute('app_home');
         }
 
         if ($this->isGranted('ROLE_ADMIN')) {
@@ -107,13 +111,13 @@ class SecurityController extends AbstractController
 
         return $this->render('dashboard/front.html.twig', [
             'stats' => [
-                'products' => $productsCount,
-                'orders' => $ordersCount,
-                'feedbacks' => $feedbackCount,
+                'products'   => $productsCount,
+                'orders'     => $ordersCount,
+                'feedbacks'  => $feedbackCount,
                 'categories' => $categorieRepository->count([]),
             ],
             'feedbackInsights' => $feedbackInsights,
-            'roleCode' => $user->getRoleCode(),
+            'roleCode'         => $user->getRoleCode(),
         ]);
     }
 
@@ -127,9 +131,9 @@ class SecurityController extends AbstractController
         foreach ($feedbacks as $feedback) {
             $sentiment = $sentimentAnalyzer->analyze($feedback->getCommentaire());
             $feedbacksWithInsights[] = [
-                'feedback' => $feedback,
+                'feedback'  => $feedback,
                 'sentiment' => $sentiment,
-                'insight' => $feedbackInsightService->analyze($feedback, $sentiment),
+                'insight'   => $feedbackInsightService->analyze($feedback, $sentiment),
             ];
         }
 
@@ -143,12 +147,12 @@ class SecurityController extends AbstractController
             return $this->redirectToRoute('app_home');
         }
 
-        $error = $authenticationUtils->getLastAuthenticationError();
+        $error        = $authenticationUtils->getLastAuthenticationError();
         $lastUsername = $authenticationUtils->getLastUsername();
 
         return $this->render('security/login.html.twig', [
             'last_username' => $lastUsername,
-            'error' => $error,
+            'error'         => $error,
         ]);
     }
 
@@ -166,8 +170,7 @@ class SecurityController extends AbstractController
         InputValidationService $inputValidationService,
         UserRepository $userRepository,
         ImageModerationService $imageModerationService
-    ): Response
-    {
+    ): Response {
         if ($this->getUser()) {
             return $this->redirectToRoute('app_home');
         }
@@ -194,7 +197,6 @@ class SecurityController extends AbstractController
                     }
                 } catch (\Throwable $e) {
                     // Si l'API Vision est indisponible → on laisse passer (fail open)
-                    // Remplacez par addError() si vous préférez bloquer en cas d'erreur
                 }
             }
         }
@@ -234,9 +236,9 @@ class SecurityController extends AbstractController
             return $this->redirectToRoute('app_home');
         }
 
-        $errors = [];
+        $errors     = [];
         $identifier = trim((string) $request->request->get('identifier', ''));
-        $channel = (string) $request->request->get('channel', 'email');
+        $channel    = (string) $request->request->get('channel', 'email');
 
         if ($request->isMethod('POST')) {
             $channelValidation = $inputValidationService->validateResetChannel($channel);
@@ -281,124 +283,120 @@ class SecurityController extends AbstractController
         }
 
         return $this->render('security/forgot_password.html.twig', [
-            'errors' => $errors,
+            'errors'     => $errors,
             'identifier' => $identifier,
-            'channel' => $channel,
+            'channel'    => $channel,
         ]);
     }
 
-    //  Vérification du code OTP seulement
-#[Route('/reset-password/verify', name: 'app_reset_password_verify')]
-public function verifyResetPassword(
-    Request $request,
-    UserRepository $userRepository,
-    PasswordResetService $passwordResetService,
-    InputValidationService $inputValidationService,
-    EntityManagerInterface $entityManager
-): Response {
-    if ($this->getUser()) {
-        return $this->redirectToRoute('app_home');
-    }
-
-    $session = $request->getSession();
-    $userId  = $session->get('password_reset_user_id');
-
-    if (!is_int($userId) && !ctype_digit((string) $userId)) {
-        return $this->redirectToRoute('app_forgot_password');
-    }
-
-    $user = $userRepository->find((int) $userId);
-    if (!$user instanceof User) {
-        $this->clearPasswordResetSession($request);
-        return $this->redirectToRoute('app_forgot_password');
-    }
-
-    $errors = [];
-    $code   = trim((string) $request->request->get('code', ''));
-
-    if ($request->isMethod('POST')) {
-        $codeValidation = $inputValidationService->validateVerificationCode($code);
-        if (!$codeValidation['valid']) {
-            $errors['code'] = $codeValidation['message'];
+    #[Route('/reset-password/verify', name: 'app_reset_password_verify')]
+    public function verifyResetPassword(
+        Request $request,
+        UserRepository $userRepository,
+        PasswordResetService $passwordResetService,
+        InputValidationService $inputValidationService,
+        EntityManagerInterface $entityManager
+    ): Response {
+        if ($this->getUser()) {
+            return $this->redirectToRoute('app_home');
         }
 
-        if (empty($errors) && !$passwordResetService->isResetCodeValid($user, $code)) {
-            $errors['code'] = 'Code invalide ou expiré.';
+        $session = $request->getSession();
+        $userId  = $session->get('password_reset_user_id');
+
+        if (!is_int($userId) && !ctype_digit((string) $userId)) {
+            return $this->redirectToRoute('app_forgot_password');
         }
 
-        if (empty($errors)) {
-            //   Code OK → on marque la session et on passe à l'étape 3
-            $session->set('password_reset_code_verified', true);
-            return $this->redirectToRoute('app_reset_password_new');
-        }
-    }
-
-    return $this->render('security/reset_password_verify.html.twig', [
-        'errors'       => $errors,
-        'maskedTarget' => (string) $session->get('password_reset_target', ''),
-        'channel'      => (string) $session->get('password_reset_channel', 'email'),
-        'code'         => $code,
-    ]);
-}
-
-// ÉTAPE 3 : Nouveau mot de passe
-#[Route('/reset-password/new', name: 'app_reset_password_new')]
-public function newPassword(
-    Request $request,
-    UserRepository $userRepository,
-    PasswordResetService $passwordResetService,
-    InputValidationService $inputValidationService,
-    UserPasswordHasherInterface $passwordHasher,
-    EntityManagerInterface $entityManager
-): Response {
-    if ($this->getUser()) {
-        return $this->redirectToRoute('app_home');
-    }
-
-    $session = $request->getSession();
-    $userId  = $session->get('password_reset_user_id');
-
-    // Sécurité : si pas de session ou code pas vérifié → retour étape 1
-    if (!$session->get('password_reset_code_verified') || !$userId) {
-        return $this->redirectToRoute('app_forgot_password');
-    }
-
-    $user = $userRepository->find((int) $userId);
-    if (!$user instanceof User) {
-        $this->clearPasswordResetSession($request);
-        return $this->redirectToRoute('app_forgot_password');
-    }
-
-    $errors = [];
-
-    if ($request->isMethod('POST')) {
-        $password        = (string) $request->request->get('password', '');
-        $confirmPassword = (string) $request->request->get('confirmPassword', '');
-
-        $passwordValidation = $inputValidationService->validatePassword($password);
-        if (!$passwordValidation['valid']) {
-            $errors['password'] = $passwordValidation['message'];
-        }
-
-        if ($password !== $confirmPassword) {
-            $errors['confirmPassword'] = 'Les mots de passe ne correspondent pas.';
-        }
-
-        if (empty($errors)) {
-            $user->setMotDePasse($passwordHasher->hashPassword($user, $password));
-            $passwordResetService->clearResetCode($user);
-            $entityManager->flush();
+        $user = $userRepository->find((int) $userId);
+        if (!$user instanceof User) {
             $this->clearPasswordResetSession($request);
-
-            $this->addFlash('success', 'Mot de passe réinitialisé avec succès !');
-            return $this->redirectToRoute('app_login');
+            return $this->redirectToRoute('app_forgot_password');
         }
+
+        $errors = [];
+        $code   = trim((string) $request->request->get('code', ''));
+
+        if ($request->isMethod('POST')) {
+            $codeValidation = $inputValidationService->validateVerificationCode($code);
+            if (!$codeValidation['valid']) {
+                $errors['code'] = $codeValidation['message'];
+            }
+
+            if (empty($errors) && !$passwordResetService->isResetCodeValid($user, $code)) {
+                $errors['code'] = 'Code invalide ou expiré.';
+            }
+
+            if (empty($errors)) {
+                $session->set('password_reset_code_verified', true);
+                return $this->redirectToRoute('app_reset_password_new');
+            }
+        }
+
+        return $this->render('security/reset_password_verify.html.twig', [
+            'errors'       => $errors,
+            'maskedTarget' => (string) $session->get('password_reset_target', ''),
+            'channel'      => (string) $session->get('password_reset_channel', 'email'),
+            'code'         => $code,
+        ]);
     }
 
-    return $this->render('security/reset_password_new.html.twig', [
-        'errors' => $errors,
-    ]);
-}
+    #[Route('/reset-password/new', name: 'app_reset_password_new')]
+    public function newPassword(
+        Request $request,
+        UserRepository $userRepository,
+        PasswordResetService $passwordResetService,
+        InputValidationService $inputValidationService,
+        UserPasswordHasherInterface $passwordHasher,
+        EntityManagerInterface $entityManager
+    ): Response {
+        if ($this->getUser()) {
+            return $this->redirectToRoute('app_home');
+        }
+
+        $session = $request->getSession();
+        $userId  = $session->get('password_reset_user_id');
+
+        if (!$session->get('password_reset_code_verified') || !$userId) {
+            return $this->redirectToRoute('app_forgot_password');
+        }
+
+        $user = $userRepository->find((int) $userId);
+        if (!$user instanceof User) {
+            $this->clearPasswordResetSession($request);
+            return $this->redirectToRoute('app_forgot_password');
+        }
+
+        $errors = [];
+
+        if ($request->isMethod('POST')) {
+            $password        = (string) $request->request->get('password', '');
+            $confirmPassword = (string) $request->request->get('confirmPassword', '');
+
+            $passwordValidation = $inputValidationService->validatePassword($password);
+            if (!$passwordValidation['valid']) {
+                $errors['password'] = $passwordValidation['message'];
+            }
+
+            if ($password !== $confirmPassword) {
+                $errors['confirmPassword'] = 'Les mots de passe ne correspondent pas.';
+            }
+
+            if (empty($errors)) {
+                $user->setMotDePasse($passwordHasher->hashPassword($user, $password));
+                $passwordResetService->clearResetCode($user);
+                $entityManager->flush();
+                $this->clearPasswordResetSession($request);
+
+                $this->addFlash('success', 'Mot de passe réinitialisé avec succès !');
+                return $this->redirectToRoute('app_login');
+            }
+        }
+
+        return $this->render('security/reset_password_new.html.twig', [
+            'errors' => $errors,
+        ]);
+    }
 
     private function addRegistrationValidationErrors(
         \Symfony\Component\Form\FormInterface $form,
@@ -451,11 +449,11 @@ public function newPassword(
     }
 
     private function clearPasswordResetSession(Request $request): void
-{
-    $session = $request->getSession();
-    $session->remove('password_reset_user_id');
-    $session->remove('password_reset_channel');
-    $session->remove('password_reset_target');
-    $session->remove('password_reset_code_verified'); // 
-}
+    {
+        $session = $request->getSession();
+        $session->remove('password_reset_user_id');
+        $session->remove('password_reset_channel');
+        $session->remove('password_reset_target');
+        $session->remove('password_reset_code_verified');
+    }
 }

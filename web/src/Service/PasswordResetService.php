@@ -3,7 +3,6 @@
 namespace App\Service;
 
 use App\Entity\User;
-use Symfony\Component\Mailer\MailerInterface;
 use Twilio\Rest\Client as TwilioClient;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
@@ -16,10 +15,7 @@ class PasswordResetService
     private const GMAIL_PASS = 'alsmqwnccmlwhpgk'; // app password sans espaces
 
     public function __construct(
-        private readonly MailerInterface $mailer,
         private readonly string $appSecret,
-        private readonly string $mailerDsn,
-        private readonly string $mailerFromAddress,
         private readonly string $twilioAccountSid,
         private readonly string $twilioAuthToken,
         private readonly string $twilioFromNumber,

@@ -52,6 +52,7 @@ security:
     - { path: ^/feedback/livraison/\d+/new$, roles: ROLE_CLIENT }
     - { path: ^/feedback/\d+/reponse/new$, roles: ROLE_USER }
     - { path: ^/reponse/\d+/delete$, roles: ROLE_USER }
+    - { path: ^/$, roles: PUBLIC_ACCESS }
     - { path: ^/, roles: ROLE_USER }
 
 when@test:

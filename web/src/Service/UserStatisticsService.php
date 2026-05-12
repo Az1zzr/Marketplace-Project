@@ -101,6 +101,7 @@ class UserStatisticsService
         if ($total === 0) {
             return false; // Pas d'utilisateurs → taux = 0%
         }
+        
 
         $blocked = $this->userRepository->countBlockedUsers();
         $rate    = ($blocked / $total) * 100;

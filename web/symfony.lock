@@ -1,10 +1,6 @@
 {
     "ahmed-bhs/doctrine-doctor": {
-<<<<<<< HEAD
         "version": "1.1",
-=======
-        "version": "1.0",
->>>>>>> maram/access-control
         "recipe": {
             "repo": "github.com/symfony/recipes-contrib",
             "branch": "main",
@@ -17,7 +13,6 @@
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
-            "version": "1.0",
             "ref": "fdd756167454623e21f1d769c5b814b243782a67"
         }
     },
@@ -56,7 +51,6 @@
         "recipe": {
             "repo": "github.com/symfony/recipes-contrib",
             "branch": "main",
-            "version": "1.0",
             "ref": "5e490cc197fb6bb1ae22e5abbc531ddc633b6767"
         }
     },
@@ -181,7 +175,6 @@
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
-            "version": "1.0",
             "ref": "fadbfe33303a76e25cb63401050439aa9b1a9c7f"
         }
     },
@@ -338,7 +331,6 @@
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
-            "version": "1.0",
             "ref": "b9e6cc8e7b6069d0e8a816665809a423864eb4dd"
         },
         "files": [
