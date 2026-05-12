@@ -142,13 +142,13 @@ class SecurityController extends AbstractController
             $feedbacksWithInsights[] = [
                 'feedback'  => $feedback,
                 'sentiment' => $sentiment,
-<<<<<<< HEAD
+
                 
                 'insight' => $feedbackInsightService->analyze($feedback, $sentiment, $responseCount),
 
-=====
+
                 'insight' => $feedbackInsightService->analyze($feedback, $sentiment, $responseCount),
->>>>>>> d16bfe22170c5d281a08dc619cce035d707a54c9
+
             ];
         }
 
