@@ -8,6 +8,7 @@ public class Reponse {
     private String contenu;
     private Date dateReponse;
     private int feedbackId;   // clé étrangère vers Feedback
+    private Integer auteurId;
 
     public Reponse() {
     }
@@ -48,6 +49,14 @@ public class Reponse {
 
     public void setFeedbackId(int feedbackId) {
         this.feedbackId = feedbackId;
+    }
+
+    public Integer getAuteurId() {
+        return auteurId;
+    }
+
+    public void setAuteurId(Integer auteurId) {
+        this.auteurId = auteurId;
     }
 
     @Override

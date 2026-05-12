@@ -17,7 +17,15 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import utils.AISentimentAnalyzer;
 
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.PdfPCell;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
+
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -279,6 +287,100 @@ public class AfficherFeedbacksController {
     private void actualiser() {
         chargerFeedbacks();
         showAlert("Actualisation", "Liste actualisée !", Alert.AlertType.INFORMATION);
+    }
+
+    @FXML
+    private void exporterPDF() {
+        javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+        fileChooser.setTitle("Exporter les feedbacks en PDF");
+        fileChooser.getExtensionFilters().add(
+            new javafx.stage.FileChooser.ExtensionFilter("Fichiers PDF", "*.pdf")
+        );
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+        fileChooser.setInitialFileName("feedbacks_" + timestamp + ".pdf");
+        java.io.File file = fileChooser.showSaveDialog(vboxFeedbacks.getScene().getWindow());
+        if (file == null) return;
+
+        try {
+            Document document = new Document(PageSize.A4, 36, 36, 50, 50);
+            PdfWriter.getInstance(document, new FileOutputStream(file));
+            document.open();
+
+            com.itextpdf.text.Font titleFont = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 22, com.itextpdf.text.Font.BOLD, new BaseColor(31, 74, 168));
+            com.itextpdf.text.Font headerFont = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 11, com.itextpdf.text.Font.BOLD, BaseColor.WHITE);
+            com.itextpdf.text.Font cellFont = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 10, com.itextpdf.text.Font.NORMAL, BaseColor.DARK_GRAY);
+            com.itextpdf.text.Font dateFont = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 9, com.itextpdf.text.Font.ITALIC, BaseColor.GRAY);
+
+            Paragraph title = new Paragraph("Rapport des Feedbacks", titleFont);
+            title.setAlignment(Element.ALIGN_CENTER);
+            title.setSpacingAfter(5);
+            document.add(title);
+
+            Paragraph subtitle = new Paragraph(
+                "Genere le " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
+                dateFont
+            );
+            subtitle.setAlignment(Element.ALIGN_CENTER);
+            subtitle.setSpacingAfter(20);
+            document.add(subtitle);
+
+            PdfPTable table = new PdfPTable(6);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{1, 3, 5, 1.5f, 2, 2});
+
+            BaseColor headerBg = new BaseColor(31, 74, 168);
+            String[] cols = {"#", "Titre", "Commentaire", "Note", "Ambiance", "Date"};
+            for (String col : cols) {
+                PdfPCell cell = new PdfPCell(new Phrase(col, headerFont));
+                cell.setBackgroundColor(headerBg);
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                cell.setPadding(8);
+                table.addCell(cell);
+            }
+
+            List<Feedback> feedbacks = feedbacksOriginaux;
+            if (feedbacks.isEmpty()) {
+                document.add(new Paragraph("Aucun feedback a afficher.", cellFont));
+            } else {
+                BaseColor evenRow = new BaseColor(240, 244, 255);
+                BaseColor oddRow = BaseColor.WHITE;
+                int rowIdx = 0;
+                for (Feedback f : feedbacks) {
+                    BaseColor bg = (rowIdx % 2 == 0) ? evenRow : oddRow;
+                    rowIdx++;
+
+                    addCell(table, String.valueOf(f.getId()), cellFont, bg, Element.ALIGN_CENTER);
+                    addCell(table, f.getTitre() != null ? f.getTitre() : "", cellFont, bg, Element.ALIGN_LEFT);
+                    String commentaire = f.getCommentaire() != null ? f.getCommentaire() : "";
+                    if (commentaire.length() > 80) commentaire = commentaire.substring(0, 77) + "...";
+                    addCell(table, commentaire, cellFont, bg, Element.ALIGN_LEFT);
+                    addCell(table, f.getNote() != null ? f.getNote() : "", cellFont, bg, Element.ALIGN_CENTER);
+                    addCell(table, f.getAmbiance() != null ? f.getAmbiance() : "", cellFont, bg, Element.ALIGN_CENTER);
+                    addCell(table, f.getDateStatut() != null ? f.getDateStatut().toString() : "", cellFont, bg, Element.ALIGN_CENTER);
+                }
+                document.add(table);
+
+                document.add(new Paragraph(" "));
+                Paragraph stats = new Paragraph("Total : " + feedbacks.size() + " feedback(s)", dateFont);
+                stats.setAlignment(Element.ALIGN_RIGHT);
+                document.add(stats);
+            }
+
+            document.close();
+            showAlert("PDF exporte", "Le fichier a ete enregistre :\n" + file.getAbsolutePath(), Alert.AlertType.INFORMATION);
+        } catch (Exception e) {
+            e.printStackTrace();
+            showAlert("Erreur PDF", "Impossible de generer le PDF :\n" + e.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
+
+    private void addCell(PdfPTable table, String text, com.itextpdf.text.Font font, BaseColor bg, int align) {
+        PdfPCell cell = new PdfPCell(new Phrase(text, font));
+        cell.setBackgroundColor(bg);
+        cell.setHorizontalAlignment(align);
+        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        cell.setPadding(6);
+        table.addCell(cell);
     }
 
     @FXML

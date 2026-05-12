@@ -64,13 +64,21 @@
             <font><Font name="System Bold" size="16"/></font>
         </Button>
 
-        <Button fx:id="btnActualiser"
-                onAction="#actualiser"
-                text="🔄 ACTUALISER"
-                prefWidth="180"
-                style="-fx-background-color: linear-gradient(to bottom, #2196F3, #1976D2); -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 15 30; -fx-background-radius: 25; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 8, 0, 0, 3);">
-            <font><Font name="System Bold" size="16"/></font>
-        </Button>
+    <Button fx:id="btnActualiser"
+        onAction="#actualiser"
+        text="🔄 ACTUALISER"
+        prefWidth="180"
+        style="-fx-background-color: linear-gradient(to bottom, #2196F3, #1976D2); -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 15 30; -fx-background-radius: 25; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 8, 0, 0, 3);">
+        <font><Font name="System Bold" size="16"/></font>
+    </Button>
+
+    <Button fx:id="btnPDF"
+        onAction="#exporterPDF"
+        text="📄 EXPORTER PDF"
+        prefWidth="200"
+        style="-fx-background-color: linear-gradient(to bottom, #FF9800, #F57C00); -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 15 30; -fx-background-radius: 25; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 8, 0, 0, 3);">
+        <font><Font name="System Bold" size="16"/></font>
+    </Button>
     </HBox>
 
 </VBox>

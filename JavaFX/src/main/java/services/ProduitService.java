@@ -1,17 +1,20 @@
 package services;
 
-
-
 import models.Produit;
+import models.User;
 import utils.MyConnection;
+import utils.SessionManager;
 
 import java.sql.*;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class ProduitService implements IService<Produit> {
 
     private final Connection cnx;
+    private final CategorieService categorieService = new CategorieService();
 
     public ProduitService() {
         this.cnx = MyConnection.getInstance().getConnection();
@@ -19,43 +22,50 @@ public class ProduitService implements IService<Produit> {
 
     @Override
     public void add(Produit produit) throws SQLException {
-
+        ajouter(produit);
     }
 
     @Override
     public void update(Produit produit) throws SQLException {
-
+        modifier(produit, "");
     }
 
     @Override
     public void delete(Produit produit) throws SQLException {
-
+        supprimer(produit);
     }
 
     @Override
-    public List<Produit> getAll() throws SQLException {
-        return List.of();
+    public List<Produit> getAll() {
+        return recuperer();
     }
 
     @Override
     public void ajouter(Produit p) {
-        String req = "INSERT INTO produit (nom_produit, adresse, prix, quantite, image_url) VALUES (?, ?, ?, ?, ?)";
-        try (PreparedStatement pst = cnx.prepareStatement(req, Statement.RETURN_GENERATED_KEYS)) {
+        int categorieId = p.getCategorieId() > 0 ? p.getCategorieId() : categorieService.getDefaultCategoryId();
+        Integer fournisseurId = resolveCurrentSupplierId(p.getFournisseurId());
+        String slug = uniqueSlug(p.getNomProduit(), 0);
 
-            pst.setString(1, p.getNomProduit());
-            pst.setString(2, p.getAdresse());
-            pst.setDouble(3, p.getPrix());
-            pst.setInt(4, p.getQuantite());
-            pst.setString(5, p.getImageURL());
+        String sql = "INSERT INTO produit (nom_produit, adresse, prix, quantite, image_url, slug, categorie_id, fournisseur_id) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement ps = cnx.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, p.getNomProduit());
+            ps.setString(2, p.getAdresse());
+            ps.setDouble(3, p.getPrix());
+            ps.setInt(4, p.getQuantite());
+            ps.setString(5, blankToNull(p.getImageURL()));
+            ps.setString(6, slug);
+            ps.setInt(7, categorieId);
+            if (fournisseurId == null) ps.setNull(8, Types.INTEGER); else ps.setInt(8, fournisseurId);
 
-            int affectedRows = pst.executeUpdate();
+            int affectedRows = ps.executeUpdate();
             if (affectedRows > 0) {
-                try (ResultSet rs = pst.getGeneratedKeys()) {
-                    if (rs.next()) {
-                        p.setId(rs.getInt(1));
-                    }
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) p.setId(rs.getInt(1));
                 }
-                upsertStockForProduit(p);
+                p.setCategorieId(categorieId);
+                p.setFournisseurId(fournisseurId);
+                p.setSlug(slug);
             }
         } catch (SQLException e) {
             System.err.println("Erreur lors de l'ajout du produit : " + e.getMessage());
@@ -64,16 +74,11 @@ public class ProduitService implements IService<Produit> {
 
     @Override
     public void supprimer(Produit p) {
-        deleteStockForProduitId(p.getId());
-
-        String req = "DELETE FROM produit WHERE id = ?";
-        try (PreparedStatement pst = cnx.prepareStatement(req)) {
-            pst.setInt(1, p.getId());
-
-            int rowsDeleted = pst.executeUpdate();
-            if (rowsDeleted > 0) {
-                System.out.println("Produit supprimé avec succès !");
-            } else {
+        String sql = "DELETE FROM produit WHERE id = ?";
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            ps.setInt(1, p.getId());
+            int rowsDeleted = ps.executeUpdate();
+            if (rowsDeleted == 0) {
                 System.out.println("Aucun produit trouvé avec l'ID: " + p.getId());
             }
         } catch (SQLException e) {
@@ -83,24 +88,30 @@ public class ProduitService implements IService<Produit> {
 
     @Override
     public void modifier(Produit p, String ignored) {
-        // Le paramètre "ignored" existe car ton iService l'exige.
-        // Ici on modifie le produit avec les valeurs présentes dans l'objet p.
-        String req = "UPDATE produit SET nom_produit = ?, adresse = ?, prix = ?, quantite = ?, image_url = ? WHERE id = ?";
-        try (PreparedStatement pst = cnx.prepareStatement(req)) {
+        int categorieId = p.getCategorieId() > 0 ? p.getCategorieId() : categorieService.getDefaultCategoryId();
+        Integer fournisseurId = resolveCurrentSupplierId(p.getFournisseurId());
+        String slug = uniqueSlug(p.getNomProduit(), p.getId());
 
-            pst.setString(1, p.getNomProduit());
-            pst.setString(2, p.getAdresse());
-            pst.setDouble(3, p.getPrix());
-            pst.setInt(4, p.getQuantite());
-            pst.setString(5, p.getImageURL());
-            pst.setInt(6, p.getId());
+        String sql = "UPDATE produit SET nom_produit = ?, adresse = ?, prix = ?, quantite = ?, image_url = ?, " +
+                "slug = ?, categorie_id = ?, fournisseur_id = ? WHERE id = ?";
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            ps.setString(1, p.getNomProduit());
+            ps.setString(2, p.getAdresse());
+            ps.setDouble(3, p.getPrix());
+            ps.setInt(4, p.getQuantite());
+            ps.setString(5, blankToNull(p.getImageURL()));
+            ps.setString(6, slug);
+            ps.setInt(7, categorieId);
+            if (fournisseurId == null) ps.setNull(8, Types.INTEGER); else ps.setInt(8, fournisseurId);
+            ps.setInt(9, p.getId());
 
-            int rowsUpdated = pst.executeUpdate();
-            if (rowsUpdated > 0) {
-                System.out.println("Produit modifié avec succès !");
-                upsertStockForProduit(p);
-            } else {
+            int rowsUpdated = ps.executeUpdate();
+            if (rowsUpdated == 0) {
                 System.out.println("Aucun produit trouvé avec l'ID: " + p.getId());
+            } else {
+                p.setCategorieId(categorieId);
+                p.setFournisseurId(fournisseurId);
+                p.setSlug(slug);
             }
         } catch (SQLException e) {
             System.err.println("Erreur lors de la modification du produit : " + e.getMessage());
@@ -110,21 +121,11 @@ public class ProduitService implements IService<Produit> {
     @Override
     public List<Produit> recuperer() {
         List<Produit> produits = new ArrayList<>();
-        String req = "SELECT * FROM produit";
+        String sql = baseSelect() + " ORDER BY p.nom_produit ASC";
 
-        try (Statement st = cnx.createStatement();
-             ResultSet rs = st.executeQuery(req)) {
-
-            while (rs.next()) {
-                Produit p = new Produit(
-                        rs.getInt("id"),
-                        rs.getString("nom_produit"),
-                        rs.getString("adresse"),
-                        rs.getDouble("prix"),
-                        rs.getInt("quantite"),
-                        rs.getString("image_url")
-                );
-                produits.add(p);
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) produits.add(mapRow(rs));
             }
         } catch (SQLException e) {
             System.err.println("Erreur lors de la récupération des produits : " + e.getMessage());
@@ -133,65 +134,108 @@ public class ProduitService implements IService<Produit> {
         return produits;
     }
 
-    // ✅ Bonus utile (CRUD+) : récupérer un produit par ID
     public Produit recupererParId(int id) {
-        String req = "SELECT * FROM produit WHERE id = ?";
-
-        try (PreparedStatement pst = cnx.prepareStatement(req)) {
-            pst.setInt(1, id);
-
-            try (ResultSet rs = pst.executeQuery()) {
-                if (rs.next()) {
-                    return new Produit(
-                            rs.getInt("id"),
-                            rs.getString("nom_produit"),
-                            rs.getString("adresse"),
-                            rs.getDouble("prix"),
-                            rs.getInt("quantite"),
-                            rs.getString("image_url")
-                    );
-                }
+        String sql = baseSelect() + " WHERE p.id = ?";
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapRow(rs);
             }
         } catch (SQLException e) {
             System.err.println("Erreur lors de la récupération du produit avec l'ID " + id + " : " + e.getMessage());
         }
-
         return null;
     }
 
-    private void upsertStockForProduit(Produit p) {
-        String select = "SELECT id FROM stock WHERE produit_id = ?";
-        try (PreparedStatement pst = cnx.prepareStatement(select)) {
-            pst.setInt(1, p.getId());
-            try (ResultSet rs = pst.executeQuery()) {
-                if (rs.next()) {
-                    String update = "UPDATE stock SET quantite_disponible = ? WHERE produit_id = ?";
-                    try (PreparedStatement up = cnx.prepareStatement(update)) {
-                        up.setInt(1, p.getQuantite());
-                        up.setInt(2, p.getId());
-                        up.executeUpdate();
-                    }
-                } else {
-                    String insert = "INSERT INTO stock (produit_id, quantite_disponible) VALUES (?, ?)";
-                    try (PreparedStatement ins = cnx.prepareStatement(insert)) {
-                        ins.setInt(1, p.getId());
-                        ins.setInt(2, p.getQuantite());
-                        ins.executeUpdate();
-                    }
-                }
+    public List<Produit> recupererPourUtilisateurCourant() {
+        User currentUser = SessionManager.getInstance().getCurrentUser();
+        if (currentUser == null || !SessionManager.getInstance().isFournisseur()) {
+            return recuperer();
+        }
+
+        List<Produit> produits = new ArrayList<>();
+        String sql = baseSelect() + " WHERE p.fournisseur_id = ? ORDER BY p.nom_produit ASC";
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            ps.setInt(1, currentUser.getId());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) produits.add(mapRow(rs));
             }
         } catch (SQLException e) {
-            System.err.println("Erreur lors de la synchro stock produit: " + e.getMessage());
+            System.err.println("Erreur lors de la récupération des produits fournisseur : " + e.getMessage());
+        }
+        return produits;
+    }
+
+    private String baseSelect() {
+        return "SELECT p.id, p.nom_produit, p.adresse, p.prix, p.quantite, p.image_url, p.slug, " +
+                "p.categorie_id, c.nom AS categorie_nom, p.fournisseur_id, " +
+                "TRIM(CONCAT(COALESCE(f.prenom, ''), ' ', COALESCE(f.nom, ''))) AS fournisseur_nom " +
+                "FROM produit p " +
+                "LEFT JOIN categorie c ON c.id = p.categorie_id " +
+                "LEFT JOIN user f ON f.id = p.fournisseur_id";
+    }
+
+    private Produit mapRow(ResultSet rs) throws SQLException {
+        int fournisseurId = rs.getInt("fournisseur_id");
+        Integer fournisseur = rs.wasNull() ? null : fournisseurId;
+        return new Produit(
+                rs.getInt("id"),
+                rs.getString("nom_produit"),
+                rs.getString("adresse"),
+                rs.getDouble("prix"),
+                rs.getInt("quantite"),
+                rs.getString("image_url"),
+                rs.getString("slug"),
+                rs.getInt("categorie_id"),
+                rs.getString("categorie_nom"),
+                fournisseur,
+                rs.getString("fournisseur_nom")
+        );
+    }
+
+    private Integer resolveCurrentSupplierId(Integer fallback) {
+        User currentUser = SessionManager.getInstance().getCurrentUser();
+        if (currentUser != null && SessionManager.getInstance().isFournisseur()) {
+            return currentUser.getId();
+        }
+        return fallback;
+    }
+
+    private String uniqueSlug(String value, int currentId) {
+        String base = slugify(value);
+        if (base.isBlank()) base = "product";
+        String candidate = base;
+        int suffix = 2;
+        while (slugExists(candidate, currentId)) {
+            candidate = base + "-" + suffix++;
+        }
+        return candidate;
+    }
+
+    private boolean slugExists(String slug, int currentId) {
+        String sql = "SELECT COUNT(*) FROM produit WHERE slug = ? AND id <> ?";
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            ps.setString(1, slug);
+            ps.setInt(2, currentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            System.err.println("Erreur vérification slug produit: " + e.getMessage());
+            return false;
         }
     }
 
-    private void deleteStockForProduitId(int produitId) {
-        String req = "DELETE FROM stock WHERE produit_id = ?";
-        try (PreparedStatement pst = cnx.prepareStatement(req)) {
-            pst.setInt(1, produitId);
-            pst.executeUpdate();
-        } catch (SQLException e) {
-            System.err.println("Erreur lors de la suppression stock produit: " + e.getMessage());
-        }
+    private String slugify(String value) {
+        String normalized = Normalizer.normalize(value == null ? "" : value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("^-|-$", "");
+        return normalized;
+    }
+
+    private String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 }

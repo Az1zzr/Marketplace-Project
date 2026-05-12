@@ -29,6 +29,11 @@ public class SessionManager {
                 && currentUser.getRole().getNomRole().trim().toLowerCase().startsWith("fournisseur");
     }
 
+    public boolean isClient() {
+        return currentUser != null && currentUser.getRole() != null
+                && currentUser.getRole().getNomRole().trim().equalsIgnoreCase("client");
+    }
+
     /**
      * ✅ Vérifie si le rôle commence par "entrepreneur" (gère "entrepreneur" ET "entrepreneurs")
      */
@@ -44,7 +49,7 @@ public class SessionManager {
 
     /** ✅ Retourne true si l'utilisateur est Fournisseur OU Entrepreneur (pas admin) */
     public boolean isRegularUser() {
-        return isFournisseur() || isEntrepreneur();
+        return isClient() || isFournisseur() || isEntrepreneur();
     }
 
     public String getRoleName() {

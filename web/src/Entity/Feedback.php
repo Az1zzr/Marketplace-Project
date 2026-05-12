@@ -56,6 +56,9 @@ class Feedback
     #[ORM\JoinColumn(name: 'livraison_id', referencedColumnName: 'idLivraison', nullable: true, unique: true, onDelete: 'SET NULL')]
     private ?Livraison $livraison = null;
 
+    /**
+     * @var Collection<int, Reponse>
+     */
     #[ORM\OneToMany(mappedBy: 'feedback', targetEntity: Reponse::class, cascade: ['persist', 'remove'])]
     private Collection $reponses;
 
@@ -206,6 +209,9 @@ class Feedback
         return 'Product feedback';
     }
 
+    /**
+     * @return Collection<int, Reponse>
+     */
     public function getReponses(): Collection
     {
         return $this->reponses;

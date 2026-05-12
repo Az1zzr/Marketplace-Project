@@ -80,8 +80,8 @@ public class MainLayoutController {
     @FXML public void showRoles()        { loadPage("/ROLE.fxml",        "Rôles",        btnRoles); }
     @FXML public void showProduits()     { loadPage("/crudProduit.fxml",     "Produits",     btnProduits); }
     @FXML public void showFournisseurs() { loadPage("/Fournisseur.fxml", "Fournisseurs", btnFournisseurs); }
-    @FXML public void showCommandes()    { loadPage("/Commande.fxml",    "Commandes",    btnCommandes); }
-    @FXML public void showLivraisons()   { loadPage("/Livraison.fxml",   "Livraisons",   btnLivraisons); }
+    @FXML public void showCommandes()    { loadPage("/com/example/gestion_commande/AfficherCommandesView.fxml",    "Commandes",    btnCommandes); }
+    @FXML public void showLivraisons()   { loadPage("/com/example/gestion_commande/AfficherCommandesAvecLivraisonView.fxml",   "Livraisons",   btnLivraisons); }
     @FXML public void showFeedback()     { loadPage("/feedback/AfficherFeedbacks.fxml",    "Feedback",     btnFeedback); }
 
     /**
@@ -162,4 +162,3 @@ public class MainLayoutController {
         } catch (IOException e) { e.printStackTrace(); }
     }
 }
-

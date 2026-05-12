@@ -34,7 +34,7 @@ def main() -> int:
 
     bundle = joblib.load(args.model)
     model = bundle['model']
-    threshold = float(bundle.get('threshold', 0.75))
+    threshold = float(bundle.get('threshold', 0.60))
     probability = float(model.predict_proba([text])[0][1]) if text else 0.0
 
     print(json.dumps({

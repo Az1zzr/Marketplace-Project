@@ -8,7 +8,7 @@ public class Livraison {
     private String numeroBL; // Bon de livraison
     private LocalDate dateLivraison;
     private String livreur;
-    private String statutLivraison; // En cours, Livré, Retardé
+    private String statutLivraison; // En cours, Livree, Retardee
     private String noteDelivery;
     private double latitude; // Nouvelle variable pour la latitude
     private double longitude; // Nouvelle variable pour la longitude

@@ -44,6 +44,7 @@ public class UserDashboardController {
     @FXML private Button btnPaiement;
     @FXML private Button btnPublications;
     @FXML private Button btnFeedback;
+    @FXML private Button btnMessages;
 
     private Button activeButton;
     private final Map<String, Node> cache = new HashMap<>();
@@ -117,7 +118,11 @@ public class UserDashboardController {
 
     @FXML public void showProduits() {
         resetSubButtons();
-        loadPage("/crudProduit.fxml", "Mes Produits", btnProduits, false);
+        if (SessionManager.getInstance().isFournisseur()) {
+            loadPage("/crudProduit.fxml", "Mes Produits", btnProduits, false);
+        } else {
+            loadPage("/Produit.fxml", "Produits", btnProduits, false);
+        }
     }
 
     @FXML public void showPublications() {
@@ -128,6 +133,11 @@ public class UserDashboardController {
     @FXML public void showFeedback() {
         resetSubButtons();
         loadPage("/feedback/AfficherFeedbacks.fxml", "Feedback", btnFeedback, false);
+    }
+
+    @FXML public void showMessages() {
+        resetSubButtons();
+        loadPage("/messaging.fxml", "Messages", btnMessages, false);
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -165,8 +175,19 @@ public class UserDashboardController {
     /** Appelé depuis AjouterCommandeView / AfficherCommandesController → retour */
     public void showAjouterLivraison(int idCommande) {
         activateSubButton(btnAvecLivraison);
-        cache.remove("/com/example/gestion_commande/AjouterLivraisonView.fxml");
-        loadPage("/com/example/gestion_commande/AjouterLivraisonView.fxml", "Ajouter Livraison", btnAvecLivraison, true);
+        lblPageTitle.setText("Ajouter Livraison");
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/gestion_commande/AjouterLivraisonView.fxml"));
+            Node page = loader.load();
+            Object controller = loader.getController();
+            if (controller instanceof AjouterLivraisonController ajouterLivraisonController) {
+                ajouterLivraisonController.setIdCommande(idCommande);
+            }
+            contentArea.getChildren().setAll(page);
+        } catch (IOException e) {
+            e.printStackTrace();
+            showPlaceholder("Ajouter Livraison");
+        }
     }
 
     // ══════════════════════════════════════════════════════════════

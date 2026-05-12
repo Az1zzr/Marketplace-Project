@@ -1,7 +1,5 @@
 package services;
 
-
-
 import models.Stock;
 import utils.MyConnection;
 
@@ -18,182 +16,78 @@ public class StockService implements IService<Stock> {
     }
 
     @Override
-    public void add(Stock stock) throws SQLException {
-
-    }
+    public void add(Stock stock) throws SQLException { ajouter(stock); }
 
     @Override
-    public void update(Stock stock) throws SQLException {
-
-    }
+    public void update(Stock stock) throws SQLException { modifier(stock, ""); }
 
     @Override
-    public void delete(Stock stock) throws SQLException {
-
-    }
+    public void delete(Stock stock) throws SQLException { supprimer(stock); }
 
     @Override
-    public List<Stock> getAll() throws SQLException {
-        return List.of();
-    }
+    public List<Stock> getAll() { return recuperer(); }
 
     @Override
     public void ajouter(Stock s) {
-        Stock existing = recupererParProduitId(s.getProduitId());
-        if (existing != null) {
-            s.setId(existing.getId());
-            modifier(s, "");
-            return;
-        }
-
-        String req = "INSERT INTO stock (produit_id, quantite_disponible) VALUES (?, ?)";
-        try (PreparedStatement pst = cnx.prepareStatement(req, Statement.RETURN_GENERATED_KEYS)) {
-
-            pst.setInt(1, s.getProduitId());
-            pst.setInt(2, s.getQuantite());
-
-            int affectedRows = pst.executeUpdate();
-            if (affectedRows > 0) {
-                try (ResultSet rs = pst.getGeneratedKeys()) {
-                    if (rs.next()) {
-                        s.setId(rs.getInt(1));
-                    }
-                }
-                updateProduitQuantite(s.getProduitId(), s.getQuantite());
-            }
-        } catch (SQLException e) {
-            System.err.println("Erreur lors de l'ajout du stock : " + e.getMessage());
-        }
+        updateProduitQuantite(s.getProduitId(), s.getQuantite());
+        s.setId(s.getProduitId());
     }
 
     @Override
     public void supprimer(Stock s) {
-        int produitId = s.getProduitId();
-        if (produitId <= 0) {
-            Stock existing = recupererParId(s.getId());
-            if (existing != null) {
-                produitId = existing.getProduitId();
-            }
-        }
-
-        String req = "DELETE FROM stock WHERE id = ?";
-        try (PreparedStatement pst = cnx.prepareStatement(req)) {
-
-            pst.setInt(1, s.getId());
-
-            int rowsDeleted = pst.executeUpdate();
-            if (rowsDeleted > 0) {
-                System.out.println("Stock supprimé avec succès !");
-                if (produitId > 0) {
-                    updateProduitQuantite(produitId, 0);
-                }
-            } else {
-                System.out.println("Aucun stock trouvé avec l'ID: " + s.getId());
-            }
-        } catch (SQLException e) {
-            System.err.println("Erreur lors de la suppression du stock : " + e.getMessage());
-        }
+        int produitId = s.getProduitId() > 0 ? s.getProduitId() : s.getId();
+        updateProduitQuantite(produitId, 0);
     }
 
     @Override
     public void modifier(Stock s, String ignored) {
-        // Le paramètre "ignored" existe car ton iService l'exige.
-        String req = "UPDATE stock SET produit_id = ?, quantite_disponible = ? WHERE id = ?";
-        try (PreparedStatement pst = cnx.prepareStatement(req)) {
-
-            pst.setInt(1, s.getProduitId());
-            pst.setInt(2, s.getQuantite());
-            pst.setInt(3, s.getId());
-
-            int rowsUpdated = pst.executeUpdate();
-            if (rowsUpdated > 0) {
-                System.out.println("Stock modifié avec succès !");
-                updateProduitQuantite(s.getProduitId(), s.getQuantite());
-            } else {
-                System.out.println("Aucun stock trouvé avec l'ID: " + s.getId());
-            }
-        } catch (SQLException e) {
-            System.err.println("Erreur lors de la modification du stock : " + e.getMessage());
-        }
+        int produitId = s.getProduitId() > 0 ? s.getProduitId() : s.getId();
+        updateProduitQuantite(produitId, s.getQuantite());
+        s.setId(produitId);
     }
 
     @Override
     public List<Stock> recuperer() {
         List<Stock> stocks = new ArrayList<>();
-        String req = "SELECT * FROM stock";
-
-        try (Statement st = cnx.createStatement();
-             ResultSet rs = st.executeQuery(req)) {
-
+        String sql = "SELECT id, id AS produit_id, quantite FROM produit ORDER BY id ASC";
+        try (Statement st = cnx.createStatement(); ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
-                Stock s = new Stock(
-                        rs.getInt("id"),
-                        rs.getInt("produit_id"),
-                        rs.getInt("quantite_disponible")
-                );
-                stocks.add(s);
+                stocks.add(new Stock(rs.getInt("id"), rs.getInt("produit_id"), rs.getInt("quantite")));
             }
         } catch (SQLException e) {
-            System.err.println("Erreur lors de la récupération des stocks : " + e.getMessage());
+            System.err.println("Erreur lors de la récupération des quantités produit : " + e.getMessage());
         }
-
         return stocks;
     }
 
-    // ✅ Bonus utile (CRUD+) : récupérer un stock par ID
     public Stock recupererParId(int id) {
-        String req = "SELECT * FROM stock WHERE id = ?";
-
-        try (PreparedStatement pst = cnx.prepareStatement(req)) {
-            pst.setInt(1, id);
-
-            try (ResultSet rs = pst.executeQuery()) {
-                if (rs.next()) {
-                    return new Stock(
-                            rs.getInt("id"),
-                            rs.getInt("produit_id"),
-                            rs.getInt("quantite_disponible")
-                    );
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Erreur lors de la récupération du stock avec l'ID " + id + " : " + e.getMessage());
-        }
-
-        return null;
+        return recupererParProduitId(id);
     }
 
-    // ✅ Bonus très pratique : récupérer le stock d’un produit
     public Stock recupererParProduitId(int produitId) {
-        String req = "SELECT * FROM stock WHERE produit_id = ?";
-
-        try (PreparedStatement pst = cnx.prepareStatement(req)) {
-            pst.setInt(1, produitId);
-
-            try (ResultSet rs = pst.executeQuery()) {
-                if (rs.next()) {
-                    return new Stock(
-                            rs.getInt("id"),
-                            rs.getInt("produit_id"),
-                            rs.getInt("quantite_disponible")
-                    );
-                }
+        String sql = "SELECT id, id AS produit_id, quantite FROM produit WHERE id = ?";
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            ps.setInt(1, produitId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return new Stock(rs.getInt("id"), rs.getInt("produit_id"), rs.getInt("quantite"));
             }
         } catch (SQLException e) {
-            System.err.println("Erreur lors de la récupération du stock pour produit_id " + produitId + " : " + e.getMessage());
+            System.err.println("Erreur lors de la récupération de la quantité produit " + produitId + " : " + e.getMessage());
         }
-
         return null;
     }
 
     private void updateProduitQuantite(int produitId, int quantite) {
-        String req = "UPDATE produit SET quantite = ? WHERE id = ?";
-        try (PreparedStatement pst = cnx.prepareStatement(req)) {
-            pst.setInt(1, quantite);
-            pst.setInt(2, produitId);
-            pst.executeUpdate();
+        String sql = "UPDATE produit SET quantite = ? WHERE id = ?";
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            ps.setInt(1, Math.max(0, quantite));
+            ps.setInt(2, produitId);
+            int updated = ps.executeUpdate();
+            if (updated == 0) {
+                System.out.println("Aucun produit trouvé avec l'ID: " + produitId);
+            }
         } catch (SQLException e) {
-            System.err.println("Erreur lors de la synchro quantite produit: " + e.getMessage());
+            System.err.println("Erreur lors de la mise à jour quantité produit: " + e.getMessage());
         }
     }
 }

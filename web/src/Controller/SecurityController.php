@@ -56,10 +56,12 @@ class SecurityController extends AbstractController
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
+        $feedbacks = $feedbackRepository->findBySearchAndSort('', 'dateStatut', 'desc');
         $feedbackInsights = $this->buildFeedbackInsightsSummary(
-            $feedbackRepository->findBySearchAndSort('', 'dateStatut', 'desc'),
+            $feedbacks,
             $sentimentAnalyzer,
-            $feedbackInsightService
+            $feedbackInsightService,
+            $feedbackRepository->countResponsesByFeedbacks($feedbacks)
         );
 
         return $this->render('dashboard/admin.html.twig', [
@@ -104,7 +106,12 @@ class SecurityController extends AbstractController
             $ordersCount = count($commandeRepository->findBySearchAndSortForUser($user, '', 'dateCommande', 'desc', null));
             $supplierFeedbacks = $feedbackRepository->findBySearchAndSort('', 'dateStatut', 'desc', $user);
             $feedbackCount = count($supplierFeedbacks);
-            $feedbackInsights = $this->buildFeedbackInsightsSummary($supplierFeedbacks, $sentimentAnalyzer, $feedbackInsightService);
+            $feedbackInsights = $this->buildFeedbackInsightsSummary(
+                $supplierFeedbacks,
+                $sentimentAnalyzer,
+                $feedbackInsightService,
+                $feedbackRepository->countResponsesByFeedbacks($supplierFeedbacks)
+            );
         } elseif ($user->hasRoleCode(User::ROLE_CODE_CLIENT)) {
             $ordersCount = count($commandeRepository->findBySearchAndSortForUser($user, '', 'dateCommande', 'desc', null));
         }
@@ -124,16 +131,24 @@ class SecurityController extends AbstractController
     private function buildFeedbackInsightsSummary(
         array $feedbacks,
         AISentimentService $sentimentAnalyzer,
-        FeedbackInsightService $feedbackInsightService
+        FeedbackInsightService $feedbackInsightService,
+        array $responseCounts = []
     ): array {
         $feedbacksWithInsights = [];
 
         foreach ($feedbacks as $feedback) {
             $sentiment = $sentimentAnalyzer->analyze($feedback->getCommentaire());
+            $responseCount = $responseCounts[$feedback->getId()] ?? 0;
             $feedbacksWithInsights[] = [
                 'feedback'  => $feedback,
                 'sentiment' => $sentiment,
-                'insight'   => $feedbackInsightService->analyze($feedback, $sentiment),
+<<<<<<< HEAD
+                
+                'insight' => $feedbackInsightService->analyze($feedback, $sentiment, $responseCount),
+
+=====
+                'insight' => $feedbackInsightService->analyze($feedback, $sentiment, $responseCount),
+>>>>>>> d16bfe22170c5d281a08dc619cce035d707a54c9
             ];
         }
 

@@ -81,6 +81,9 @@
                     <Button fx:id="btnFeedback" text="💬   Feedback" maxWidth="Infinity" onAction="#showFeedback"
                             style="-fx-background-color: transparent; -fx-text-fill: #7a9ab8; -fx-font-size: 13px;
                                    -fx-alignment: CENTER_LEFT; -fx-padding: 12 16; -fx-background-radius: 10px; -fx-cursor: hand;"/>
+                    <Button fx:id="btnMessages" text="✉   Messages" maxWidth="Infinity" onAction="#showMessages"
+                            style="-fx-background-color: transparent; -fx-text-fill: #7a9ab8; -fx-font-size: 13px;
+                                   -fx-alignment: CENTER_LEFT; -fx-padding: 12 16; -fx-background-radius: 10px; -fx-cursor: hand;"/>
 
                     <!-- Zone accès refusé -->
                     <Region prefHeight="16"/>

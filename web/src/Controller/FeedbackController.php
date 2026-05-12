@@ -509,11 +509,13 @@ class FeedbackController extends AbstractController
         $order = in_array($order, ['asc', 'desc'], true) ? $order : 'desc';
 
         $feedbacks = $feedbackRepository->findBySearchAndSort($search, $sort, $order, $currentUser);
+        $responseCounts = $feedbackRepository->countResponsesByFeedbacks($feedbacks);
         $feedbacksWithSentiment = [];
 
         foreach ($feedbacks as $feedback) {
             $sentiment = $sentimentAnalyzer->analyze($feedback->getCommentaire());
-            $insight = $feedbackInsightService->analyze($feedback, $sentiment);
+            $responseCount = $responseCounts[$feedback->getId()] ?? 0;
+            $insight = $feedbackInsightService->analyze($feedback, $sentiment, $responseCount);
 
             if ('' !== $sentimentFilter && $sentiment['sentiment'] !== $sentimentFilter) {
                 continue;
@@ -531,6 +533,7 @@ class FeedbackController extends AbstractController
                 'feedback' => $feedback,
                 'sentiment' => $sentiment,
                 'insight' => $insight,
+                'responseCount' => $responseCount,
             ];
         }
 

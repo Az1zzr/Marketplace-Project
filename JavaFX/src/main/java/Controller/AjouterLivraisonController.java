@@ -51,7 +51,7 @@ public class AjouterLivraisonController {
         commandeService = new CommandeService();
 
         // Configurer le ComboBox
-        statutLivraisonComboBox.getItems().addAll("En cours", "Livré", "Retardé");
+        statutLivraisonComboBox.getItems().addAll("En cours", "Livree", "Retardee");
         statutLivraisonComboBox.setValue("En cours");
 
         // Date par défaut = aujourd'hui
@@ -189,7 +189,7 @@ public class AjouterLivraisonController {
     private void changerStatutCommande() {
         try {
             if (commandeActuelle != null) {
-                commandeActuelle.setStatut("Confirmée");
+                commandeActuelle.setStatut("Confirmee");
                 if (commandeService.modifier(commandeActuelle)) {
                     System.out.println("✅ Statut commande #" + idCommande + " → Confirmée");
                 }
@@ -197,7 +197,7 @@ public class AjouterLivraisonController {
                 // Si commandeActuelle est null, rechercher à nouveau
                 Commande commande = commandeService.rechercherParId(idCommande);
                 if (commande != null) {
-                    commande.setStatut("Confirmée");
+                    commande.setStatut("Confirmee");
                     if (commandeService.modifier(commande)) {
                         System.out.println("✅ Statut commande #" + idCommande + " → Confirmée");
                     }

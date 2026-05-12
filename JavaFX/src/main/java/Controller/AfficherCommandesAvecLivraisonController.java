@@ -117,7 +117,7 @@ public class AfficherCommandesAvecLivraisonController {
         VBox wrapper = new VBox(0);
         wrapper.setStyle("-fx-background-color: transparent;");
         wrapper.getChildren().add(creerLigneCommande(commande, livraison));
-        if (livraison != null && "Livré".equals(livraison.getStatutLivraison())) {
+        if (livraison != null && "Livree".equals(livraison.getStatutLivraison())) {
             wrapper.getChildren().add(creerBandeauCodePromo(commande));
         }
         return wrapper;
@@ -173,7 +173,7 @@ public class AfficherCommandesAvecLivraisonController {
         Label statutCommValue = new Label(commande.getStatut());
         statutCommValue.setFont(new Font("Arial Bold", 11));
         statutCommValue.setTextFill(Color.WHITE);
-        String couleurStatutComm = commande.getStatut().equals("Confirmée") ? "#4CAF50" :
+        String couleurStatutComm = commande.getStatut().equals("Confirmee") ? "#4CAF50" :
                 commande.getStatut().equals("En attente") ? "#FF9800" :
                         commande.getStatut().equals("Payée")      ? "#1F4AA8" : "#d9534f";
         statutCommValue.setStyle("-fx-background-color: " + couleurStatutComm +
@@ -188,7 +188,7 @@ public class AfficherCommandesAvecLivraisonController {
         Label statutLivValue;
         if (livraison != null) {
             statutLivValue = new Label(livraison.getStatutLivraison());
-            String couleurLiv = livraison.getStatutLivraison().equals("Livré")    ? "#4CAF50" :
+            String couleurLiv = livraison.getStatutLivraison().equals("Livree")    ? "#4CAF50" :
                     livraison.getStatutLivraison().equals("En cours") ? "#FF9800" : "#d9534f";
             statutLivValue.setStyle("-fx-background-color: " + couleurLiv +
                     "; -fx-text-fill: white; -fx-padding: 5px 8px; -fx-border-radius: 3;");
@@ -241,7 +241,7 @@ public class AfficherCommandesAvecLivraisonController {
         ligne.getChildren().addAll(numeroBox, clientBox, montantBox, statutCommBox,
                 statutLivBox, blBox, livreurBox, modifierLivraisonBtn, calBtn);
 
-        if ("Confirmée".equals(commande.getStatut())) {
+        if ("Confirmee".equals(commande.getStatut())) {
             Button payerBtn = new Button("💳 PAYER");
             payerBtn.setPrefWidth(90);
             payerBtn.setStyle("-fx-background-color: #1F4AA8; -fx-text-fill: white; " +
@@ -348,7 +348,7 @@ public class AfficherCommandesAvecLivraisonController {
             Label statutLabel = new Label("Statut de Livraison:");
             statutLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #FF6B00;");
             ComboBox<String> statutCombo = new ComboBox<>();
-            statutCombo.getItems().addAll("En cours", "Livré", "Retardé");
+            statutCombo.getItems().addAll("En cours", "Livree", "Retardee");
             statutCombo.setValue(livraison.getStatutLivraison());
             statutCombo.setPrefWidth(200);
 
@@ -489,7 +489,7 @@ public class AfficherCommandesAvecLivraisonController {
                     sb.append("  Numéro BL        : ").append(liv.getNumeroBL()).append("\n");
                     sb.append("  Livreur          : ").append(liv.getLivreur()).append("\n");
                     sb.append("  Date livraison   : ").append(liv.getDateLivraison()).append("\n");
-                    if ("Livré".equals(liv.getStatutLivraison()))
+                    if ("Livree".equals(liv.getStatutLivraison()))
                         sb.append("  Code promo 50%   : ").append(genererCodePromo(commande)).append("\n");
                 } else {
                     sb.append("  Livraison        : non assignée\n");
