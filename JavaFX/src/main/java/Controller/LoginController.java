@@ -13,7 +13,7 @@ import javafx.stage.Stage;
 import models.User;
 import services.UserService;
 import services.EmailService;
-/*import services.SmsService;*/
+import services.SmsService;
 import utils.SessionManager;
 
 import java.io.IOException;
