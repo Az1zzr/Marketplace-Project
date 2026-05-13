@@ -9,7 +9,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import models.User;
 import services.EmailService;
-import services.SmsService;
+/*import services.SmsService;*/
 import services.UserService;
 
 /**
@@ -105,7 +105,7 @@ public class ForgotPasswordController {
                 return;
             }
             generatedCode = generateCode();
-            SmsService.sendResetCode(normalizedPhone, generatedCode);
+            /*SmsService.sendResetCode(normalizedPhone, generatedCode);*/
 
             codeSentToLabel.setText("Code envoyé au : " + normalizedPhone);
             showFeedback("✅ SMS envoyé au " + normalizedPhone + " via Twilio.", true);
@@ -170,7 +170,7 @@ public class ForgotPasswordController {
             if (byEmail) {
                 EmailService.sendResetCode(emailField.getText().trim(), generatedCode);
             } else {
-                SmsService.sendResetCode(normalizePhone(phoneField.getText().trim()), generatedCode);
+                /*SmsService.sendResetCode(normalizePhone(phoneField.getText().trim()), generatedCode);*/
             }
             showFeedback("✅ Nouveau code envoyé !", true);
             codeField.clear();

@@ -13,7 +13,7 @@ import javafx.stage.Stage;
 import models.User;
 import services.UserService;
 import services.EmailService;
-import services.SmsService;
+/*import services.SmsService;*/
 import utils.SessionManager;
 
 import java.io.IOException;
@@ -384,7 +384,7 @@ public class LoginController {
         Thread smsThread = new Thread(() -> {
             try {
 
-                SmsService.sendResetCode(phone, codeGenere);
+                /*SmsService.sendResetCode(phone, codeGenere);*/
 
                 Platform.runLater(() -> {
                     sending.close();
