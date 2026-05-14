@@ -4,7 +4,7 @@ Projet de marketplace composé de deux parties :
 - Application Java Desktop
 
 ## Description
-Cette application permet la gestion des utilisateurs et des produits dans une marketplace.
+Cette application permet la gestion des utilisateurs , des produits et des feedbacks et des commandes  dans une marketplace.
 
 ## Technologies utilisées
 
